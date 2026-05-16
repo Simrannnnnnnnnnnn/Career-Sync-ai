@@ -3,7 +3,6 @@ import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
-
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,33 +26,19 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser()
   const path = request.nextUrl.pathname
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || request.nextUrl.origin
 
-  // Login nahi hai — login pe bhejo
-  if (!user && path.startsWith('/dashboard')) {
+  if (!user && (
+    path.startsWith('/dashboard') ||
+    path.startsWith('/interview') ||
+    path.startsWith('/resume') ||
+    path.startsWith('/career') ||
+    path.startsWith('/onboarding')
+  )) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (!user && path.startsWith('/onboarding')) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
-
-  // Login hai — onboarding check karo
-  if (user && path.startsWith('/dashboard')) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('onboarding_complete')
-      .eq('id', user.id)
-      .single()
-
-    if (!profile?.onboarding_complete) {
-      return NextResponse.redirect(`${siteUrl}/onboarding`)
-    }
-  }
-
-  // Login page pe logged in user aa gaya
   if (user && path === '/login') {
-    return NextResponse.redirect(`${siteUrl}/dashboard`)
+    return NextResponse.redirect(new URL('/dashboard', request.url))
   }
 
   return supabaseResponse

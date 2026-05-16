@@ -84,30 +84,34 @@ export default function Dashboard() {
 
         {/* Feature Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-blue-500 transition cursor-pointer">
-            <div className="text-3xl mb-3">🎤</div>
-            <h2 className="text-xl font-semibold mb-2">Interview Simulator</h2>
-            <p className="text-gray-400 text-sm">Practice with AI-powered mock interviews</p>
-          </div>
-          <Link href="/interview/setup" className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-blue-500 transition cursor-pointer block">
+
+          <Link href="/interview/setup" className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-blue-500 transition block">
             <div className="text-3xl mb-3">🎤</div>
             <h2 className="text-xl font-semibold mb-2">Interview Simulator</h2>
             <p className="text-gray-400 text-sm">Practice with AI-powered mock interviews</p>
           </Link>
 
-          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-green-500 transition cursor-pointer">
-            <div className="text-3xl mb-3">🧭</div>
-            <h2 className="text-xl font-semibold mb-2">Career Path Test</h2>
-            <p className="text-gray-400 text-sm">Find your ideal tech career path</p>
-          </div>
+          <Link href="/resume" className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-purple-500 transition block">
+            <div className="text-3xl mb-3">📄</div>
+            <h2 className="text-xl font-semibold mb-2">ATS Resume Scorer</h2>
+            <p className="text-gray-400 text-sm">Score your resume against job descriptions</p>
+          </Link>
 
-          <div className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-yellow-500 transition cursor-pointer">
-            <div className="text-3xl mb-3">📚</div>
-            <h2 className="text-xl font-semibold mb-2">Learning Roadmap</h2>
-            <p className="text-gray-400 text-sm">Phase-wise roadmap with free resources</p>
-          </div>
+          {/* Growth Hub — replaces Career Path + Learning Roadmap */}
+          <Link href="/growth-hub" className="md:col-span-2 bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-green-500 transition block">
+            <div className="text-3xl mb-3">🚀</div>
+            <h2 className="text-xl font-semibold mb-2">Growth Hub</h2>
+            <p className="text-gray-400 text-sm">
+              LinkedIn Optimizer • Career Path Test • Learning Roadmap
+            </p>
+          </Link>
+          <Link href="/cover-letter" className="bg-gray-900 p-6 rounded-2xl border border-gray-800 hover:border-blue-500 transition block">
+            <div className="text-3xl mb-3">✍️</div>
+            <h2 className="text-xl font-semibold mb-2">Cover Letter Generator</h2>
+            <p className="text-gray-400 text-sm">Generate a tailored cover letter for any job in seconds</p>
+          </Link>
+
         </div>
-
       </div>
     </div>
   )

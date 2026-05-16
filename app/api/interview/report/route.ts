@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
-export default async function POST(req: NextRequest) {
+export async function POST(req: NextRequest) {
   const { role, round, difficulty, messages } = await req.json()
 
   const conversation = messages
