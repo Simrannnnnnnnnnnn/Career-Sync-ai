@@ -30,7 +30,7 @@ export default function LoginPage() {
     setMessage('')
 
     if (!email || !password) {
-      setError('Email aur password dono bharo!')
+      setError('Please enter both email and password.')
       setLoading(false)
       return
     }
@@ -46,12 +46,12 @@ export default function LoginPage() {
       if (error) {
         setError(error.message)
       } else {
-        setMessage('✅ Confirmation email bheja! Inbox check karo.')
+        setMessage('✅ Confirmation email sent! Please check your inbox.')
       }
     } else {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       if (error) {
-        setError('Email ya password galat hai!')
+        setError('Invalid email or password. Please try again.')
       } else {
         router.push('/auth/callback?next=/dashboard')
       }
@@ -63,14 +63,11 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen w-full bg-[#09090b] text-zinc-100 flex items-center justify-center p-4 md:p-8 selection:bg-orange-500/30 selection:text-orange-200 antialiased relative overflow-hidden">
       
-      {/* ✅ Ambient Hero/Background Glow — Elegant Orange Accent Layer */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] bg-orange-500/10 rounded-full blur-[140px] pointer-events-none -z-10 animate-pulse" />
       <div className="absolute top-12 right-12 w-72 h-72 bg-purple-500/5 rounded-full blur-[100px] pointer-events-none -z-10" />
 
-      {/* Main Container Wrapper */}
       <div className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-8 items-center relative z-10">
         
-        {/* ✅ Desktop pe Left Side Side-by-Side Content Block */}
         <div className="space-y-6 text-center md:text-left hidden md:block px-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 text-xs font-semibold text-orange-400">
             <span className="w-2 h-2 rounded-full bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)] animate-ping" />
@@ -97,16 +94,13 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* ✅ Right Side (Glassmorphism Auth Card Form Factor) */}
         <div className="bg-zinc-900/40 border border-zinc-800/80 rounded-2xl p-6 md:p-8 shadow-2xl shadow-black/40 backdrop-blur-xl w-full">
           
-          {/* Mobile Header Visibility Alternative */}
           <div className="text-center mb-6 md:hidden">
             <h1 className="text-2xl font-extrabold text-white">CareerSync AI</h1>
             <p className="text-zinc-400 text-xs mt-1">Your AI-powered career platform</p>
           </div>
 
-          {/* ✅ Tone-Switch / Auth-Pill Style Switcher Buttons */}
           <div className="flex bg-zinc-950 p-1 rounded-xl border border-zinc-800/80 mb-6 backdrop-blur-md">
             <button
               onClick={() => { setIsSignUp(false); setError(''); setMessage('') }}
@@ -116,7 +110,7 @@ export default function LoginPage() {
                   : 'text-zinc-400 hover:text-zinc-200'
               }`}
             >
-              Sign In Pipeline
+              Sign In
             </button>
             <button
               onClick={() => { setIsSignUp(true); setError(''); setMessage('') }}
@@ -130,7 +124,6 @@ export default function LoginPage() {
             </button>
           </div>
 
-          {/* ✅ Google Authentication Button Link */}
           <button
             onClick={handleGoogleLogin}
             className="w-full flex items-center justify-center gap-3 bg-zinc-100 hover:bg-white text-zinc-950 font-bold py-2.5 px-4 rounded-xl transition-all duration-200 shadow-md hover:shadow-zinc-100/10 hover:-translate-y-0.5 active:translate-y-0 text-sm"
@@ -144,16 +137,13 @@ export default function LoginPage() {
             Continue with Google
           </button>
 
-          {/* Divider Elements */}
           <div className="flex items-center gap-4 my-5">
             <div className="flex-1 h-px bg-zinc-800" />
-            <span className="text-zinc-600 font-mono text-[10px] uppercase tracking-widest">OR EMAIL AUTH</span>
+            <span className="text-zinc-600 font-mono text-[10px] uppercase tracking-widest">or email</span>
             <div className="flex-1 h-px bg-zinc-800" />
           </div>
 
-          {/* Form Stack Elements */}
           <div className="space-y-4 mb-5">
-            {/* ✅ Glass Styled Inputs */}
             <div>
               <label className="text-[11px] font-semibold text-zinc-400 mb-1.5 block">Email Address</label>
               <input
@@ -167,7 +157,7 @@ export default function LoginPage() {
             </div>
             
             <div>
-              <label className="text-[11px] font-semibold text-zinc-400 mb-1.5 block">Secure Password</label>
+              <label className="text-[11px] font-semibold text-zinc-400 mb-1.5 block">Password</label>
               <input
                 type="password"
                 placeholder="••••••••••••"
@@ -179,7 +169,6 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* Notifications Alert UI Wrapper Blocks */}
           {error && (
             <div className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 rounded-xl p-3 mb-4 text-center">
               ⚠️ {error}
@@ -191,33 +180,30 @@ export default function LoginPage() {
             </div>
           )}
 
-          {/* ✅ Generate Action Button with Orange Gradient & Radiant Glow */}
           <button
             onClick={handleEmailAuth}
             disabled={loading}
             className="w-full relative group overflow-hidden bg-gradient-to-r from-orange-600 to-orange-500 hover:from-orange-500 hover:to-orange-400 text-white font-bold py-3 rounded-xl transition-all duration-300 shadow-lg shadow-orange-500/10 hover:shadow-orange-500/30 disabled:opacity-50 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2"
           >
-            {/* ✅ Spinner Animation Configured on Active Loading States */}
             {loading ? (
               <>
                 <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                <span>Processing Stream...</span>
+                <span>Please wait...</span>
               </>
             ) : (
-              <span>{isSignUp ? 'Generate Secure Account' : 'Initialize Session Login →'}</span>
+              <span>{isSignUp ? 'Create Account →' : 'Sign In →'}</span>
             )}
           </button>
 
-          {/* Alternate Screen Interface Switcher Links */}
           <div className="mt-5 text-center">
             <button
               type="button"
               onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage('') }}
               className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors duration-150 inline-flex items-center gap-1"
             >
-              <span>{isSignUp ? 'Already have an existing pipeline?' : 'Need to allocate new parameters?'}</span>
+              <span>{isSignUp ? 'Already have an account?' : "Don't have an account?"}</span>
               <span className="text-orange-400 hover:underline font-medium ml-0.5">
-                {isSignUp ? 'Sign In' : 'Register Here'}
+                {isSignUp ? 'Sign In' : 'Register'}
               </span>
             </button>
           </div>
