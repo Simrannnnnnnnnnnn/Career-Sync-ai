@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 interface Message {
@@ -47,7 +47,7 @@ const AI_BLOCKED_PATTERNS = [
   'deepseek', 'grok', 'groq', 'together.ai', 'replicate.com',
 ]
 
-export default function InterviewSession() {
+function InterviewSessionInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -872,5 +872,12 @@ export default function InterviewSession() {
         textarea { -webkit-user-select: text !important; user-select: text !important; }
       `}</style>
     </div>
+  )
+}
+export default function InterviewSession() {
+  return (
+    <Suspense fallback={<div style={{background:'#09090b',minHeight:'100vh'}}/>}>
+      <InterviewSessionInner />
+    </Suspense>
   )
 }

@@ -490,7 +490,7 @@ export default function GrowthHub() {
     finally { setRoadmapLoading(false) }
   }
 
-  function useCareerForRoadmap(careerTitle: string) {
+  function handleBuildRoadmap(careerTitle: string) {
     setRoadmapCareer(careerTitle); setActiveTab('roadmap')
   }
 
@@ -1004,7 +1004,7 @@ export default function GrowthHub() {
                         ))}
                       </div>
                     )}
-                    <button onClick={() => useCareerForRoadmap(career.title)}
+                    <button onClick={() => handleBuildRoadmap(career.title)}
                       className="text-xs px-3.5 py-1.5 rounded-xl font-semibold transition-all"
                       style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
                       🗺️ Build Roadmap →
