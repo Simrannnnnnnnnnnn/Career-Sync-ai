@@ -138,8 +138,12 @@ export default function InterviewSession() {
   // ── Fullscreen ────────────────────────────────────────────────────────────
   function enterFullscreen() {
     const el = document.documentElement
-    if (el.requestFullscreen)            el.requestFullscreen()
-    else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen()
+    try {
+      if (el.requestFullscreen) el.requestFullscreen().catch(() => {})
+        else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen()
+      } catch (e) {
+    // fullscreen not supported, ignore
+    }
     setIsFullscreen(true)
   }
 
