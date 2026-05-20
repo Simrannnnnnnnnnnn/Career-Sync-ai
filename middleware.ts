@@ -32,7 +32,9 @@ export async function middleware(request: NextRequest) {
     path.startsWith('/interview') ||
     path.startsWith('/resume') ||
     path.startsWith('/career') ||
-    path.startsWith('/onboarding')
+    path.startsWith('/onboarding') ||
+    path.startsWith('/profile')
+    
   )) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
