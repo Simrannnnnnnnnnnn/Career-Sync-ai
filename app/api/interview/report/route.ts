@@ -1,7 +1,4 @@
-import Groq from 'groq-sdk'
 import { NextRequest, NextResponse } from 'next/server'
-
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
 export async function POST(req: NextRequest) {
   const { role, round, difficulty, messages } = await req.json()
@@ -35,21 +32,38 @@ JSON format:
   ]
 }`
 
-  const completion = await groq.chat.completions.create({
-    model: 'llama-3.3-70b-versatile',
-    messages: [{ role: 'user', content: prompt }],
-    max_tokens: 1500,
-  })
-
-  const raw = completion.choices[0].message.content || ''
-
-  let report
   try {
-    const clean = raw.replace(/```json|```/g, '').trim()
-    report = JSON.parse(clean)
-  } catch {
-    return NextResponse.json({ error: 'Report parse error' }, { status: 500 })
-  }
+    const response = await fetch(
+      'https://simrankaurrrrr-careersync-ai.hf.space/chat',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: [{ role: 'user', content: prompt }],
+          systemPrompt: 'You are an expert interview evaluator. Always respond with valid JSON only.'
+        })
+      }
+    )
 
-  return NextResponse.json({ report })
+    if (!response.ok) {
+      throw new Error(`HF Space error: ${response.status}`)
+    }
+
+    const data = await response.json()
+    const raw = data.reply || ''
+
+    let report
+    try {
+      const clean = raw.replace(/```json|```/g, '').trim()
+      report = JSON.parse(clean)
+    } catch {
+      return NextResponse.json({ error: 'Report parse error' }, { status: 500 })
+    }
+
+    return NextResponse.json({ report })
+
+  } catch (error) {
+    console.error('Report generation error:', error)
+    return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 })
+  }
 }
