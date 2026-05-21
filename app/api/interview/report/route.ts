@@ -2,6 +2,35 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const HF_URL = `${process.env.HF_SPACE_URL}/chat`
 
+async function callHFSpace(body: object, retries = 2): Promise<Response> {
+  let lastError: Error | null = null
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      const res = await fetch(HF_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+        signal: AbortSignal.timeout(25000),
+      })
+      if (res.ok) return res
+      if (res.status === 503 && attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, 3000))
+        continue
+      }
+      const errText = await res.text()
+      console.error(`HF Space report error (attempt ${attempt + 1}):`, res.status, errText)
+      lastError = new Error(`HF Space returned ${res.status}`)
+    } catch (err: any) {
+      console.error(`HF Space report fetch failed (attempt ${attempt + 1}):`, err.message)
+      lastError = err
+      if (attempt < retries - 1) {
+        await new Promise(r => setTimeout(r, 2000))
+      }
+    }
+  }
+  throw lastError || new Error('HF Space unreachable')
+}
+
 export async function POST(req: NextRequest) {
   try {
     const { role, round, difficulty, messages } = await req.json()
@@ -13,7 +42,6 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // ── Format transcript cleanly ──
     const transcript = messages
       .map((m: any) => {
         const speaker = m.role === 'assistant' ? 'Interviewer' : 'Candidate'
@@ -54,37 +82,24 @@ ${transcript}
 
 Evaluate this interview and return the JSON report.`
 
-    const response = await fetch(HF_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: prompt }],
-        systemPrompt,
-        max_tokens: 2000, // ← Report needs much more space
-      }),
+    const response = await callHFSpace({
+      messages: [{ role: 'user', content: prompt }],
+      systemPrompt,
+      max_tokens: 2000,
     })
-
-    if (!response.ok) {
-      const errText = await response.text()
-      console.error('HF Space report error:', response.status, errText)
-      throw new Error(`HF Space returned ${response.status}`)
-    }
 
     const data = await response.json()
     const raw = data.reply || ''
 
-    // ── Robust JSON extraction ──
-    // Try 1: Direct parse
+    // Robust JSON extraction
     let report: any = null
     try {
       report = JSON.parse(raw.trim())
     } catch {
-      // Try 2: Strip markdown fences
       try {
         const stripped = raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
         report = JSON.parse(stripped)
       } catch {
-        // Try 3: Extract JSON block between first { and last }
         try {
           const firstBrace = raw.indexOf('{')
           const lastBrace = raw.lastIndexOf('}')
@@ -102,10 +117,8 @@ Evaluate this interview and return the JSON report.`
       }
     }
 
-    // ── Validate required fields ──
-    if (typeof report.overallScore !== 'number') {
-      report.overallScore = 60
-    }
+    // Validate required fields
+    if (typeof report.overallScore !== 'number') report.overallScore = 60
     if (!report.verdict) {
       report.verdict = report.overallScore >= 70 ? 'Ready' : report.overallScore >= 45 ? 'Needs Practice' : 'Not Ready'
     }
@@ -114,6 +127,7 @@ Evaluate this interview and return the JSON report.`
     if (!Array.isArray(report.questionFeedback)) report.questionFeedback = []
 
     return NextResponse.json({ report })
+
   } catch (error) {
     console.error('Report generation error:', error)
     return NextResponse.json(

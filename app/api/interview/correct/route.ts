@@ -3,14 +3,24 @@ import { NextRequest, NextResponse } from 'next/server'
 const HF_URL = `${process.env.HF_SPACE_URL}/chat`
 
 export async function POST(req: NextRequest) {
+  let transcript = ''
+  let role = ''
+  let round = ''
+
   try {
-    const { transcript, role, round } = await req.json()
+    const body = await req.json()
+    transcript = body.transcript || ''
+    role = body.role || ''
+    round = body.round || ''
+  } catch {
+    return NextResponse.json({ corrected: '' })
+  }
 
-    if (!transcript?.trim()) {
-      return NextResponse.json({ corrected: transcript || '' })
-    }
+  if (!transcript?.trim()) {
+    return NextResponse.json({ corrected: transcript || '' })
+  }
 
-    const systemPrompt = `You are a speech-to-text correction assistant. The speaker is giving a ${round} interview for a ${role} position.
+  const systemPrompt = `You are a speech-to-text correction assistant. The speaker is giving a ${round} interview for a ${role} position.
 
 YOUR ONLY JOB:
 - Fix mis-transcribed technical terms (e.g. "alga rhythm" → "algorithm", "cube earnest" → "Kubernetes", "react hooks" → "React Hooks")
@@ -21,6 +31,7 @@ YOUR ONLY JOB:
 - Keep the speaker's original words and tone as much as possible
 - Return ONLY the corrected text — no explanation, no prefix, no quotes`
 
+  try {
     const response = await fetch(HF_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -29,21 +40,20 @@ YOUR ONLY JOB:
         systemPrompt,
         max_tokens: 300,
       }),
+      signal: AbortSignal.timeout(10000),
     })
 
     if (!response.ok) {
-      // Silently fallback — correction is non-critical
       return NextResponse.json({ corrected: transcript })
     }
 
     const data = await response.json()
     const corrected = data.reply?.trim() || transcript
-
     return NextResponse.json({ corrected })
+
   } catch (error) {
+    // Correction is non-critical — always fallback gracefully
     console.error('Correction API error:', error)
-    // Always fallback gracefully — never block the interview
-    const body = await req.json().catch(() => ({}))
-    return NextResponse.json({ corrected: (body as any)?.transcript || '' })
+    return NextResponse.json({ corrected: transcript })
   }
 }
