@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-const HF_URL = 'https://simrankaurrrrr-careersync-ai.hf.space/chat'
+const HF_URL = `${process.env.HF_SPACE_URL}/chat`
 
 // How many Q's before wrapping up
 const MAX_QUESTIONS = 8
