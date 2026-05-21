@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, useCallback, Suspense } from 'react'
+import { useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 interface Message {
@@ -8,45 +8,29 @@ interface Message {
   content: string
 }
 
-// ─── Warning beep sound (Web Audio API — no file needed) ────────────────────
 function playWarningBeep(type: 'warn' | 'critical' = 'warn') {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)()
-    const oscillator = ctx.createOscillator()
-    const gainNode = ctx.createGain()
-    oscillator.connect(gainNode)
-    gainNode.connect(ctx.destination)
-    oscillator.type = 'sine'
-    oscillator.frequency.setValueAtTime(type === 'critical' ? 220 : 440, ctx.currentTime)
-    oscillator.frequency.exponentialRampToValueAtTime(type === 'critical' ? 110 : 880, ctx.currentTime + 0.3)
-    gainNode.gain.setValueAtTime(0.6, ctx.currentTime)
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
-    oscillator.start(ctx.currentTime)
-    oscillator.stop(ctx.currentTime + 0.6)
+    const o = ctx.createOscillator(); const g = ctx.createGain()
+    o.connect(g); g.connect(ctx.destination); o.type = 'sine'
+    o.frequency.setValueAtTime(type === 'critical' ? 220 : 440, ctx.currentTime)
+    o.frequency.exponentialRampToValueAtTime(type === 'critical' ? 110 : 880, ctx.currentTime + 0.3)
+    g.gain.setValueAtTime(0.6, ctx.currentTime)
+    g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.6)
+    o.start(ctx.currentTime); o.stop(ctx.currentTime + 0.6)
     if (type === 'critical') {
-      // Double beep for critical
-      const o2 = ctx.createOscillator()
-      const g2 = ctx.createGain()
-      o2.connect(g2); g2.connect(ctx.destination)
-      o2.type = 'sine'
+      const o2 = ctx.createOscillator(); const g2 = ctx.createGain()
+      o2.connect(g2); g2.connect(ctx.destination); o2.type = 'sine'
       o2.frequency.setValueAtTime(180, ctx.currentTime + 0.7)
       o2.frequency.exponentialRampToValueAtTime(90, ctx.currentTime + 1)
       g2.gain.setValueAtTime(0.7, ctx.currentTime + 0.7)
       g2.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.2)
-      o2.start(ctx.currentTime + 0.7)
-      o2.stop(ctx.currentTime + 1.2)
+      o2.start(ctx.currentTime + 0.7); o2.stop(ctx.currentTime + 1.2)
     }
-  } catch { /* silently ignore if audio context blocked */ }
+  } catch { }
 }
 
-// ─── AI Tool detection patterns ─────────────────────────────────────────────
-const AI_BLOCKED_PATTERNS = [
-  'chatgpt', 'openai', 'claude', 'gemini', 'bard', 'copilot', 'perplexity',
-  'you.com', 'phind', 'poe.com', 'character.ai', 'pi.ai', 'mistral',
-  'anthropic', 'cohere', 'huggingface', 'ollama', 'lmstudio',
-  'deepseek', 'grok', 'groq', 'together.ai', 'replicate.com',
-]
-
+// ─────────────────────────────────────────────────────────────────────────────
 function InterviewSessionInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -55,50 +39,53 @@ function InterviewSessionInner() {
   const round      = searchParams.get('round')      || ''
   const difficulty = searchParams.get('difficulty') || ''
 
-  // Refs
-  const videoRef        = useRef<HTMLVideoElement>(null)
-  const streamRef       = useRef<MediaStream | null>(null)
-  const recognitionRef  = useRef<any>(null)
-  const mediaRecRef     = useRef<MediaRecorder | null>(null)
-  const recordedChunks  = useRef<Blob[]>([])
-  const warningCountRef = useRef(0) // instant-sync ref alongside state
+  // ── Refs ──────────────────────────────────────────────────────────────────
+  const videoRef       = useRef<HTMLVideoElement>(null)
+  const streamRef      = useRef<MediaStream | null>(null)
+  const recognitionRef = useRef<any>(null)
+  const mediaRecRef    = useRef<MediaRecorder | null>(null)
+  const recordedChunks = useRef<Blob[]>([])
+  const warningRef     = useRef(0)
 
-  // Core state
-  const [transcript,          setTranscript]          = useState('')
-  const [isListening,         setIsListening]         = useState(false)
-  const [correctedTranscript, setCorrectedTranscript] = useState('')
-  const [correcting,          setCorrecting]          = useState(false)
+  // THE FIX FOR REPEATED QUESTIONS:
+  // messages state ke saath ek ref bhi rakhte hain
+  // fetchAIQuestion ref se padhega — koi stale closure nahi
+  const messagesRef = useRef<Message[]>([])
+
+  // ── State ─────────────────────────────────────────────────────────────────
   const [messages,            setMessages]            = useState<Message[]>([])
   const [currentQuestion,     setCurrentQuestion]     = useState('')
+  const [transcript,          setTranscript]          = useState('')
+  const [correctedTranscript, setCorrectedTranscript] = useState('')
+  const [isListening,         setIsListening]         = useState(false)
+  const [correcting,          setCorrecting]          = useState(false)
   const [aiLoading,           setAiLoading]           = useState(false)
-  const [interviewDone,       setInterviewDone]       = useState(false)
-  const [questionCount,       setQuestionCount]       = useState(0)
-  const [sessionStarted,      setSessionStarted]      = useState(false)
-  const [camReady,            setCamReady]            = useState(false)
   const [isSpeaking,          setIsSpeaking]          = useState(false)
   const [isRecording,         setIsRecording]         = useState(false)
+  const [sessionStarted,      setSessionStarted]      = useState(false)
+  const [interviewDone,       setInterviewDone]       = useState(false)
+  const [questionCount,       setQuestionCount]       = useState(0)
+  const [elapsed,             setElapsed]             = useState(0)
+  const [tabWarnings,         setTabWarnings]         = useState(0)
+  const [showWarning,         setShowWarning]         = useState(false)
+  const [warningMsg,          setWarningMsg]          = useState('')
+  const [aiBlocked,           setAiBlocked]           = useState(false)
+  const [aiBlockMsg,          setAiBlockMsg]          = useState('')
 
-  // Proctoring state
-  const [tabWarnings,  setTabWarnings]  = useState(0)
-  const [showWarning,  setShowWarning]  = useState(false)
-  const [warningMsg,   setWarningMsg]   = useState('')
-  const [isFullscreen, setIsFullscreen] = useState(false)
-  const [aiBlocked,    setAiBlocked]    = useState(false)
-  const [aiBlockMsg,   setAiBlockMsg]   = useState('')
+  // ── Sync messages state → ref (so fetchAIQuestion always reads fresh) ─────
+  useEffect(() => { messagesRef.current = messages }, [messages])
 
-  // Timer
-  const [elapsed, setElapsed] = useState(0)
-
-  // ── Timer ────────────────────────────────────────────────────────────────
+  // ── Timer ─────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!sessionStarted || interviewDone) return
     const t = setInterval(() => setElapsed(p => p + 1), 1000)
     return () => clearInterval(t)
   }, [sessionStarted, interviewDone])
 
-  const formatTime = (s: number) => `${String(Math.floor(s/60)).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`
+  const fmt = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
-  // ── Camera + MediaRecorder ───────────────────────────────────────────────
+  // ── Camera ────────────────────────────────────────────────────────────────
   async function startCamera() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
@@ -106,19 +93,33 @@ function InterviewSessionInner() {
         audio: true,
       })
       streamRef.current = stream
-      if (videoRef.current) videoRef.current.srcObject = stream
-
-      // Start recording user video
-      const recorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9,opus' })
-      recorder.ondataavailable = e => { if (e.data.size > 0) recordedChunks.current.push(e.data) }
-      recorder.start(1000) // chunk every 1s
-      mediaRecRef.current = recorder
+      // Attach immediately if video el already in DOM
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play().catch(() => {})
+      }
+      // MediaRecorder with fallback
+      const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+        ? 'video/webm;codecs=vp9,opus' : 'video/webm'
+      const rec = new MediaRecorder(stream, { mimeType: mime })
+      rec.ondataavailable = e => { if (e.data.size > 0) recordedChunks.current.push(e.data) }
+      rec.start(1000)
+      mediaRecRef.current = rec
       setIsRecording(true)
-      setCamReady(true)
     } catch {
       alert('Camera and microphone access are required for this interview session.')
     }
   }
+
+  // THE FIX FOR CAMERA NOT SHOWING:
+  // Jab sessionStarted true hota hai, active session ka video element
+  // naya mount hota hai — isliye yahan dobara srcObject attach karte hain
+  useEffect(() => {
+    if (sessionStarted && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current
+      videoRef.current.play().catch(() => {})
+    }
+  }, [sessionStarted])
 
   function stopCamera() {
     mediaRecRef.current?.stop()
@@ -129,35 +130,27 @@ function InterviewSessionInner() {
   function downloadRecording() {
     if (!recordedChunks.current.length) return
     const blob = new Blob(recordedChunks.current, { type: 'video/webm' })
-    const url  = URL.createObjectURL(blob)
-    const a    = document.createElement('a')
-    a.href = url; a.download = `interview-${role}-${round}-${Date.now()}.webm`
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `interview-${role}-${round}-${Date.now()}.webm`
     a.click(); URL.revokeObjectURL(url)
   }
 
   // ── Fullscreen ────────────────────────────────────────────────────────────
   function enterFullscreen() {
-    const el = document.documentElement
     try {
+      const el = document.documentElement
       if (el.requestFullscreen) el.requestFullscreen().catch(() => {})
-        else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen()
-      } catch (e) {
-    // fullscreen not supported, ignore
-    }
-    setIsFullscreen(true)
-  }
-
-  function exitFullscreenViolation() {
-    triggerViolation('fullscreen')
+      else if ((el as any).webkitRequestFullscreen) (el as any).webkitRequestFullscreen()
+    } catch { }
   }
 
   useEffect(() => {
     const handler = () => {
       const inFS = !!(document.fullscreenElement || (document as any).webkitFullscreenElement)
-      setIsFullscreen(inFS)
       if (!inFS && sessionStarted && !interviewDone) {
-        exitFullscreenViolation()
-        // Re-enter after 2s
+        triggerViolation('fullscreen')
         setTimeout(enterFullscreen, 2000)
       }
     }
@@ -169,74 +162,25 @@ function InterviewSessionInner() {
     }
   }, [sessionStarted, interviewDone])
 
-  // ── AI Tool detection ────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!sessionStarted || interviewDone) return
-
-    // Clipboard sniff (user copies text — likely to paste into AI)
-    const handleCopy = () => {
-      setAiBlocked(true)
-      setAiBlockMsg('Copying during interview is not allowed. This may indicate AI tool usage.')
-      playWarningBeep('warn')
-      setTimeout(() => setAiBlocked(false), 4000)
-    }
-    const handlePaste = () => {
-      setAiBlocked(true)
-      setAiBlockMsg('Pasting content detected — AI assistance is strictly prohibited.')
-      playWarningBeep('critical')
-      setTimeout(() => setAiBlocked(false), 4000)
-    }
-
-    // Context menu sniff
-    const preventContext = (e: MouseEvent) => e.preventDefault()
-
-    // DevTools detection (rough heuristic: window size diff)
-    const devToolsCheck = setInterval(() => {
-      const threshold = 160
-      if (
-        window.outerWidth - window.innerWidth > threshold ||
-        window.outerHeight - window.innerHeight > threshold
-      ) {
-        setAiBlocked(true)
-        setAiBlockMsg('Developer tools detected. AI tools and extensions are strictly blocked.')
-        playWarningBeep('critical')
-      }
-    }, 2000)
-
-    document.addEventListener('copy', handleCopy)
-    document.addEventListener('paste', handlePaste)
-    document.addEventListener('contextmenu', preventContext)
-
-    return () => {
-      document.removeEventListener('copy', handleCopy)
-      document.removeEventListener('paste', handlePaste)
-      document.removeEventListener('contextmenu', preventContext)
-      clearInterval(devToolsCheck)
-    }
-  }, [sessionStarted, interviewDone])
-
-  // ── Proctoring: tab / window switch ─────────────────────────────────────
+  // ── Proctoring ────────────────────────────────────────────────────────────
   function triggerViolation(type: 'tab' | 'fullscreen' = 'tab') {
     if (!sessionStarted || interviewDone) return
-
-    warningCountRef.current += 1
-    const count = warningCountRef.current
+    warningRef.current += 1
+    const count = warningRef.current
     setTabWarnings(count)
-
     if (count >= 3) {
       playWarningBeep('critical')
       setWarningMsg('🚫 Session Terminated — 3 violations detected. Redirecting...')
       setShowWarning(true)
-      stopCamera()
-      window.speechSynthesis.cancel()
+      stopCamera(); window.speechSynthesis.cancel()
       setTimeout(() => router.push('/dashboard'), 3500)
     } else {
       playWarningBeep(count === 2 ? 'critical' : 'warn')
-      const msgs: Record<string, string> = {
-        tab: `Warning ${count}/3 — Tab/window switch detected. Third violation will terminate your session.`,
-        fullscreen: `Warning ${count}/3 — Fullscreen exited. Stay in fullscreen during the interview.`,
-      }
-      setWarningMsg(msgs[type])
+      setWarningMsg(
+        type === 'tab'
+          ? `Warning ${count}/3 — Tab/window switch detected. Third violation terminates session.`
+          : `Warning ${count}/3 — Fullscreen exited. Stay in fullscreen during the interview.`
+      )
       setShowWarning(true)
       setTimeout(() => setShowWarning(false), 5000)
     }
@@ -244,46 +188,73 @@ function InterviewSessionInner() {
 
   useEffect(() => {
     if (!sessionStarted || interviewDone) return
-    const handleVisibility = () => { if (document.hidden) triggerViolation('tab') }
-    const handleBlur = () => triggerViolation('tab')
-    document.addEventListener('visibilitychange', handleVisibility)
-    window.addEventListener('blur', handleBlur)
+    const onVis  = () => { if (document.hidden) triggerViolation('tab') }
+    const onBlur = () => triggerViolation('tab')
+    document.addEventListener('visibilitychange', onVis)
+    window.addEventListener('blur', onBlur)
     return () => {
-      document.removeEventListener('visibilitychange', handleVisibility)
-      window.removeEventListener('blur', handleBlur)
+      document.removeEventListener('visibilitychange', onVis)
+      window.removeEventListener('blur', onBlur)
     }
   }, [sessionStarted, interviewDone])
 
-  // ── TTS (speak question) ─────────────────────────────────────────────────
+  // ── AI tool detection ─────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!sessionStarted || interviewDone) return
+    const onCopy = () => {
+      setAiBlocked(true)
+      setAiBlockMsg('Copying during interview is not allowed. This may indicate AI tool usage.')
+      playWarningBeep('warn')
+      setTimeout(() => setAiBlocked(false), 4000)
+    }
+    const onPaste = () => {
+      setAiBlocked(true)
+      setAiBlockMsg('Pasting detected — AI assistance is strictly prohibited.')
+      playWarningBeep('critical')
+      setTimeout(() => setAiBlocked(false), 4000)
+    }
+    const noCtx = (e: MouseEvent) => e.preventDefault()
+    const devCheck = setInterval(() => {
+      if (window.outerWidth - window.innerWidth > 160 || window.outerHeight - window.innerHeight > 160) {
+        setAiBlocked(true)
+        setAiBlockMsg('Developer tools detected. AI tools and extensions are strictly blocked.')
+        playWarningBeep('critical')
+      }
+    }, 2000)
+    document.addEventListener('copy', onCopy)
+    document.addEventListener('paste', onPaste)
+    document.addEventListener('contextmenu', noCtx)
+    return () => {
+      document.removeEventListener('copy', onCopy)
+      document.removeEventListener('paste', onPaste)
+      document.removeEventListener('contextmenu', noCtx)
+      clearInterval(devCheck)
+    }
+  }, [sessionStarted, interviewDone])
+
+  // ── TTS ───────────────────────────────────────────────────────────────────
   function speakText(text: string) {
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
     u.lang = 'en-IN'; u.rate = 0.88; u.pitch = 1.05
     u.onstart = () => setIsSpeaking(true)
-    u.onend = () => setIsSpeaking(false)
+    u.onend   = () => setIsSpeaking(false)
     u.onerror = () => setIsSpeaking(false)
     window.speechSynthesis.speak(u)
   }
 
-  // ── Speech recognition ───────────────────────────────────────────────────
+  // ── Speech recognition ────────────────────────────────────────────────────
   function startListening() {
     window.speechSynthesis.cancel(); setIsSpeaking(false)
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
-    if (!SR) { alert('Use Chrome for speech recognition.'); return }
-
-    const recognition = new SR()
-    recognition.lang = 'en-IN'
-    recognition.continuous = false
-    recognition.interimResults = false
-
-    recognition.onstart = () => setIsListening(true)
-    recognition.onend   = () => setIsListening(false)
-
-    recognition.onresult = async (event: any) => {
-      if (correcting) return
+    if (!SR) { alert('Please use Chrome for speech recognition.'); return }
+    const rec = new SR()
+    rec.lang = 'en-IN'; rec.continuous = false; rec.interimResults = false
+    rec.onstart = () => setIsListening(true)
+    rec.onend   = () => setIsListening(false)
+    rec.onresult = async (event: any) => {
       const text = event.results[0][0].transcript
-      setTranscript(text)
-      setCorrecting(true)
+      setTranscript(text); setCorrecting(true)
       try {
         const res = await fetch('/api/interview/correct', {
           method: 'POST',
@@ -291,19 +262,21 @@ function InterviewSessionInner() {
           body: JSON.stringify({ transcript: text, role, round }),
         })
         const data = await res.json()
-        setCorrectedTranscript(data.corrected)
+        setCorrectedTranscript(data.corrected || text)
       } catch { setCorrectedTranscript(text) }
       setCorrecting(false)
     }
-    recognition.onerror = () => setIsListening(false)
-    recognitionRef.current = recognition
-    recognition.start()
+    rec.onerror = () => setIsListening(false)
+    recognitionRef.current = rec
+    rec.start()
   }
 
   function stopListening() { recognitionRef.current?.stop(); setIsListening(false) }
 
-  // ── AI question fetcher ──────────────────────────────────────────────────
-  const fetchAIQuestion = useCallback(async (msgs: Message[]) => {
+  // ── fetchAIQuestion — plain async fn, NOT useCallback ────────────────────
+  // Receives msgs as argument — no stale closure possible
+  // This is the core fix for the repeated question bug
+  async function fetchAIQuestion(msgs: Message[]) {
     setAiLoading(true)
     try {
       const res = await fetch('/api/interview', {
@@ -312,42 +285,52 @@ function InterviewSessionInner() {
         body: JSON.stringify({ role, round, difficulty, messages: msgs }),
       })
       const data = await res.json()
-      const reply = data.reply || ''
+      const reply = (data.reply || '').trim()
 
       if (reply.includes('INTERVIEW_COMPLETE')) {
         setInterviewDone(true)
         setCurrentQuestion('Interview complete. Generating your performance report…')
         speakText('Great effort. Your performance report is being generated.')
         setTimeout(() => {
-          stopCamera()
-          downloadRecording()
+          stopCamera(); downloadRecording()
           const reportData = encodeURIComponent(JSON.stringify(msgs))
-          router.push(`/interview/report?data=${reportData}&role=${role}&round=${round}&difficulty=${difficulty}`)
+          router.push(
+            `/interview/report?data=${reportData}&role=${encodeURIComponent(role)}&round=${round}&difficulty=${difficulty}`
+          )
         }, 3500)
       } else {
         setCurrentQuestion(reply)
         speakText(reply)
         setQuestionCount(p => p + 1)
-        setMessages(p => [...p, { role: 'assistant', content: reply }])
+        // Update BOTH ref and state together
+        const next: Message[] = [...msgs, { role: 'assistant', content: reply }]
+        messagesRef.current = next
+        setMessages(next)
       }
-    } catch { setCurrentQuestion('Connection error. Please check your network.') }
+    } catch {
+      setCurrentQuestion('Connection error. Please check your network.')
+    }
     setAiLoading(false)
-  }, [role, round, difficulty, router])
+  }
 
   // ── Start session ─────────────────────────────────────────────────────────
   async function handleStartSession() {
     enterFullscreen()
     await startCamera()
     setSessionStarted(true)
+    // Pass empty array — first question
     await fetchAIQuestion([])
   }
 
   // ── Submit answer ─────────────────────────────────────────────────────────
+  // Read from messagesRef (not messages state) to guarantee latest value
   async function handleSubmitAnswer() {
     const answer = correctedTranscript.trim() || transcript.trim()
     if (!answer) return
     const userMsg: Message = { role: 'user', content: answer }
-    const updated = [...messages, userMsg]
+    // Build updated list from REF, not state
+    const updated: Message[] = [...messagesRef.current, userMsg]
+    messagesRef.current = updated
     setMessages(updated)
     setTranscript(''); setCorrectedTranscript('')
     await fetchAIQuestion(updated)
@@ -358,8 +341,8 @@ function InterviewSessionInner() {
   }, [])
 
   const difficultyLabel = difficulty === 'easy' ? 'Entry Level' : difficulty === 'medium' ? 'Mid Level' : 'Senior Level'
-  const roundLabel = round === 'hr' ? 'HR' : round === 'technical' ? 'Technical' : 'Analytical'
-  const diffColor = difficulty === 'easy' ? '#10b981' : difficulty === 'medium' ? '#f59e0b' : '#ef4444'
+  const roundLabel      = round === 'hr' ? 'HR' : round === 'technical' ? 'Technical' : 'Analytical'
+  const diffColor       = difficulty === 'easy' ? '#10b981' : difficulty === 'medium' ? '#f59e0b' : '#ef4444'
 
   // ══════════════════════════════════════════════════════════════════════════
   // PRE-SESSION SCREEN
@@ -369,16 +352,15 @@ function InterviewSessionInner() {
       <div style={{
         minHeight: '100vh', background: '#050507',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '24px', fontFamily: "'DM Mono', 'Fira Code', monospace",
+        padding: '24px', fontFamily: "'DM Sans', sans-serif",
         position: 'relative', overflow: 'hidden',
       }}>
-        {/* Background grid */}
         <div style={{
           position: 'fixed', inset: 0, pointerEvents: 'none',
-          backgroundImage: `linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(rgba(16,185,129,0.03) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(16,185,129,0.03) 1px, transparent 1px)`,
           backgroundSize: '40px 40px',
         }} />
-        {/* Glow */}
         <div style={{
           position: 'fixed', top: '-20%', left: '50%', transform: 'translateX(-50%)',
           width: 600, height: 400, borderRadius: '50%', pointerEvents: 'none',
@@ -386,7 +368,6 @@ function InterviewSessionInner() {
         }} />
 
         <div style={{ width: '100%', maxWidth: 520, position: 'relative', zIndex: 1 }}>
-          {/* Header badge */}
           <div style={{ textAlign: 'center', marginBottom: 32 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 16px',
@@ -398,11 +379,7 @@ function InterviewSessionInner() {
                 CareerSync AI — Interview Engine
               </span>
             </div>
-
-            <h1 style={{
-              color: '#f4f4f5', fontSize: 30, fontWeight: 700, margin: '0 0 8px',
-              letterSpacing: '-0.03em', lineHeight: 1.2,
-            }}>
+            <h1 style={{ color: '#f4f4f5', fontSize: 30, fontWeight: 700, margin: '0 0 8px', letterSpacing: '-0.03em', lineHeight: 1.2 }}>
               Ready for your<br />
               <span style={{ color: '#10b981' }}>{roundLabel} Interview</span>?
             </h1>
@@ -411,15 +388,13 @@ function InterviewSessionInner() {
             </p>
           </div>
 
-          {/* Rules card */}
           <div style={{
             background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
             borderRadius: 20, padding: '28px 32px', marginBottom: 16,
           }}>
-            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', marginBottom: 20, margin: '0 0 20px' }}>
+            <p style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.3)', textTransform: 'uppercase', margin: '0 0 20px' }}>
               Session Rules
             </p>
-
             {[
               { icon: '📹', title: 'Camera stays ON', sub: 'Your video and audio are recorded throughout the session.' },
               { icon: '🎤', title: 'Speak your answers', sub: 'Use the mic button to capture your spoken response after each question.' },
@@ -437,7 +412,6 @@ function InterviewSessionInner() {
             ))}
           </div>
 
-          {/* Consent note */}
           <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', textAlign: 'center', marginBottom: 20, lineHeight: 1.6 }}>
             By starting, you consent to video & audio recording for review purposes.<br />
             Recording is saved locally to your device.
@@ -447,14 +421,12 @@ function InterviewSessionInner() {
             width: '100%', padding: '16px', borderRadius: 16, border: 'none',
             background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
             color: '#fff', fontSize: 15, fontWeight: 700, cursor: 'pointer',
-            letterSpacing: '0.02em',
+            letterSpacing: '0.02em', fontFamily: 'inherit',
             boxShadow: '0 0 40px rgba(16,185,129,0.25), 0 4px 16px rgba(0,0,0,0.3)',
-            transition: 'all 0.2s', fontFamily: 'inherit',
           }}>
             Enter Session → Go Fullscreen
           </button>
         </div>
-
         <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }`}</style>
       </div>
     )
@@ -470,18 +442,19 @@ function InterviewSessionInner() {
       fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: '#f4f4f5',
       position: 'relative',
     }}>
-      {/* ── Background grid ── */}
+      {/* Background grid */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        backgroundImage: `linear-gradient(rgba(16,185,129,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(16,185,129,0.02) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(rgba(16,185,129,0.02) 1px, transparent 1px),
+                          linear-gradient(90deg, rgba(16,185,129,0.02) 1px, transparent 1px)`,
         backgroundSize: '48px 48px',
       }} />
 
-      {/* ── AI Block Overlay ── */}
+      {/* AI Block Overlay */}
       {aiBlocked && (
         <div style={{
           position: 'fixed', inset: 0, zIndex: 10000,
-          background: 'rgba(0,0,0,0.92)', backdropFilter: 'blur(8px)',
+          background: 'rgba(0,0,0,0.93)', backdropFilter: 'blur(8px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column', gap: 16, textAlign: 'center', padding: 32,
         }}>
@@ -489,22 +462,21 @@ function InterviewSessionInner() {
           <h2 style={{ color: '#ef4444', fontSize: 22, fontWeight: 700, margin: 0 }}>Security Violation Detected</h2>
           <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14, maxWidth: 360, lineHeight: 1.6, margin: 0 }}>{aiBlockMsg}</p>
           <button onClick={() => setAiBlocked(false)} style={{
-            marginTop: 8, padding: '10px 28px', borderRadius: 12, border: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(255,255,255,0.05)', color: '#fff', fontSize: 13, cursor: 'pointer',
-            fontFamily: 'inherit',
+            marginTop: 8, padding: '10px 28px', borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)',
+            color: '#fff', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
           }}>Acknowledge & Continue</button>
         </div>
       )}
 
-      {/* ── Warning Banner ── */}
+      {/* Warning Banner */}
       {showWarning && (
         <div style={{
           position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
           background: tabWarnings >= 3 ? 'rgba(127,29,29,0.98)' : 'rgba(67,20,7,0.98)',
           borderBottom: `2px solid ${tabWarnings >= 3 ? '#ef4444' : '#f97316'}`,
-          backdropFilter: 'blur(12px)',
-          color: '#fff', textAlign: 'center', padding: '16px 24px',
-          fontSize: 14, fontWeight: 600, letterSpacing: '0.02em',
+          backdropFilter: 'blur(12px)', color: '#fff', textAlign: 'center',
+          padding: '16px 24px', fontSize: 14, fontWeight: 600,
           boxShadow: `0 4px 40px ${tabWarnings >= 3 ? 'rgba(239,68,68,0.4)' : 'rgba(249,115,22,0.3)'}`,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
         }}>
@@ -523,45 +495,37 @@ function InterviewSessionInner() {
         </div>
       )}
 
-      {/* ── Top Bar ── */}
+      {/* Top Bar */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '12px 28px', zIndex: 50, flexShrink: 0,
         background: 'rgba(5,5,7,0.9)', backdropFilter: 'blur(12px)',
         borderBottom: '1px solid rgba(255,255,255,0.05)',
       }}>
-        {/* Left: Live dot + round */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 8, height: 8, borderRadius: '50%', background: '#ef4444',
-            boxShadow: '0 0 10px #ef4444', animation: 'pulse 1.5s infinite',
-          }} />
+          <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', boxShadow: '0 0 10px #ef4444', animation: 'pulse 1.5s infinite' }} />
           <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.12em', color: 'rgba(255,255,255,0.6)', textTransform: 'uppercase' }}>
             LIVE · {roundLabel} Round
           </span>
           {isRecording && (
             <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-              padding: '3px 8px', borderRadius: 99,
+              fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
               background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)',
-              color: '#ef4444', textTransform: 'uppercase',
+              color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.1em',
             }}>⏺ REC</span>
           )}
         </div>
 
-        {/* Center: Role + timer */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>
           <span>{role}</span>
           <span style={{ color: 'rgba(255,255,255,0.15)' }}>|</span>
-          <span style={{
-            fontFamily: "'DM Mono', monospace", fontSize: 13, fontWeight: 600,
-            color: elapsed > 1800 ? '#ef4444' : 'rgba(255,255,255,0.6)',
-          }}>{formatTime(elapsed)}</span>
+          <span style={{ fontFamily: 'monospace', fontSize: 13, fontWeight: 600, color: elapsed > 1800 ? '#ef4444' : 'rgba(255,255,255,0.6)' }}>
+            {fmt(elapsed)}
+          </span>
           <span style={{ color: 'rgba(255,255,255,0.15)' }}>|</span>
           <span style={{ color: diffColor, fontWeight: 600 }}>{difficultyLabel}</span>
         </div>
 
-        {/* Right: Warning indicator */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8,
           fontSize: 11, fontWeight: 600, padding: '6px 14px', borderRadius: 99,
@@ -583,7 +547,7 @@ function InterviewSessionInner() {
         </div>
       </div>
 
-      {/* ── Main Body ── */}
+      {/* Main Grid */}
       <div style={{
         display: 'grid', gridTemplateColumns: '1fr 1fr',
         gap: '20px', flex: 1, padding: '20px 28px 24px',
@@ -591,40 +555,42 @@ function InterviewSessionInner() {
         maxWidth: 1600, width: '100%', margin: '0 auto', boxSizing: 'border-box',
       }}>
 
-        {/* ── LEFT: Camera ── */}
+        {/* LEFT: Camera */}
         <div style={{
           background: '#0a0a0c', border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: 20, overflow: 'hidden', position: 'relative',
           display: 'flex', flexDirection: 'column',
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+          minHeight: 0,
         }}>
-          <video ref={videoRef} autoPlay muted playsInline style={{
-            width: '100%', height: '100%', objectFit: 'cover',
-            transform: 'scaleX(-1)', display: 'block',
-          }} />
+          {/* video must always be in DOM so the ref is ready when srcObject is set */}
+          <video
+            ref={videoRef}
+            autoPlay
+            muted
+            playsInline
+            style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: 'block' }}
+          />
 
-          {/* Scanline overlay for "real interview room" feel */}
+          {/* Scanlines */}
           <div style={{
             position: 'absolute', inset: 0, pointerEvents: 'none',
             backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
           }} />
 
-          {/* Corner brackets — professional look */}
+          {/* Corner brackets */}
           {[
-            { top: 16, left: 16,  borderTop: '2px solid #10b981', borderLeft: '2px solid #10b981' },
-            { top: 16, right: 16, borderTop: '2px solid #10b981', borderRight: '2px solid #10b981' },
-            { bottom: 16, left: 16,  borderBottom: '2px solid #10b981', borderLeft: '2px solid #10b981' },
-            { bottom: 16, right: 16, borderBottom: '2px solid #10b981', borderRight: '2px solid #10b981' },
-          ].map((style, i) => (
-            <div key={i} style={{ position: 'absolute', width: 24, height: 24, ...style }} />
-          ))}
+            { top: 16,    left: 16,  borderTop:    '2px solid #10b981', borderLeft:   '2px solid #10b981' },
+            { top: 16,    right: 16, borderTop:    '2px solid #10b981', borderRight:  '2px solid #10b981' },
+            { bottom: 16, left: 16,  borderBottom: '2px solid #10b981', borderLeft:   '2px solid #10b981' },
+            { bottom: 16, right: 16, borderBottom: '2px solid #10b981', borderRight:  '2px solid #10b981' },
+          ].map((s, i) => <div key={i} style={{ position: 'absolute', width: 24, height: 24, ...s }} />)}
 
-          {/* Top-left: Proctoring badge */}
+          {/* Proctoring badge */}
           <div style={{
             position: 'absolute', top: 20, left: 20,
             background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(16,185,129,0.3)',
-            padding: '6px 12px', borderRadius: 99,
+            border: '1px solid rgba(16,185,129,0.3)', padding: '6px 12px', borderRadius: 99,
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', animation: 'pulse 2s infinite' }} />
@@ -633,22 +599,18 @@ function InterviewSessionInner() {
             </span>
           </div>
 
-          {/* Top-right: Question counter */}
+          {/* Question counter */}
           <div style={{
             position: 'absolute', top: 20, right: 20,
             background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            padding: '6px 12px', borderRadius: 99,
+            border: '1px solid rgba(255,255,255,0.1)', padding: '6px 12px', borderRadius: 99,
             fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.6)',
           }}>
             Q {questionCount}
           </div>
 
-          {/* Bottom: Status chips */}
-          <div style={{
-            position: 'absolute', bottom: 20, left: 20, right: 20,
-            display: 'flex', gap: 8, flexWrap: 'wrap',
-          }}>
+          {/* Status chips */}
+          <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {isSpeaking && (
               <div style={{
                 padding: '7px 14px', borderRadius: 99,
@@ -658,10 +620,7 @@ function InterviewSessionInner() {
               }}>
                 <div style={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
                   {[4,6,8,6,4].map((h, i) => (
-                    <div key={i} style={{
-                      width: 2, height: h, background: '#fff', borderRadius: 99,
-                      animation: `wave 0.7s ease-in-out ${i*0.08}s infinite alternate`,
-                    }} />
+                    <div key={i} style={{ width: 2, height: h, background: '#fff', borderRadius: 99, animation: `wave 0.7s ease-in-out ${i*0.08}s infinite alternate` }} />
                   ))}
                 </div>
                 <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>AI Speaking…</span>
@@ -674,29 +633,23 @@ function InterviewSessionInner() {
                 border: '1px solid rgba(239,68,68,0.4)',
                 display: 'flex', alignItems: 'center', gap: 8,
               }}>
-                <span style={{
-                  width: 8, height: 8, borderRadius: '50%', background: '#fff',
-                  display: 'inline-block', animation: 'pulse 0.8s infinite',
-                }} />
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#fff', display: 'inline-block', animation: 'pulse 0.8s infinite' }} />
                 <span style={{ fontSize: 11, color: '#fff', fontWeight: 600 }}>Recording…</span>
               </div>
             )}
           </div>
         </div>
 
-        {/* ── RIGHT: Interview Panel ── */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', gap: '16px',
-          overflow: 'hidden',
-        }}>
+        {/* RIGHT: Interview Panel */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', overflow: 'hidden', minHeight: 0 }}>
+
           {/* Question card */}
           <div style={{
             flex: 1, borderRadius: 20, padding: '28px 32px',
             background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
-            display: 'flex', flexDirection: 'column', overflow: 'hidden',
-            position: 'relative',
+            display: 'flex', flexDirection: 'column', overflow: 'hidden', position: 'relative',
+            minHeight: 0,
           }}>
-            {/* Subtle glow behind question */}
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: 2,
               background: isSpeaking
@@ -709,47 +662,34 @@ function InterviewSessionInner() {
               display: 'inline-flex', alignItems: 'center', gap: 8,
               fontSize: 10, fontWeight: 700, letterSpacing: '0.12em', textTransform: 'uppercase',
               color: isSpeaking ? '#3b82f6' : '#10b981', marginBottom: 20,
-              padding: '5px 12px', borderRadius: 99,
+              padding: '5px 12px', borderRadius: 99, alignSelf: 'flex-start',
               background: isSpeaking ? 'rgba(59,130,246,0.08)' : 'rgba(16,185,129,0.08)',
               border: isSpeaking ? '1px solid rgba(59,130,246,0.2)' : '1px solid rgba(16,185,129,0.2)',
-              alignSelf: 'flex-start', transition: 'all 0.3s',
+              transition: 'all 0.3s',
             }}>
               🤖 {isSpeaking ? 'AI Interviewer Speaking' : `Question ${questionCount}`}
               {isSpeaking && (
                 <span style={{ display: 'flex', gap: 2, alignItems: 'flex-end' }}>
                   {[3,5,7,5,3].map((h, i) => (
-                    <div key={i} style={{
-                      width: 2, height: h, background: '#3b82f6', borderRadius: 99,
-                      animation: `wave 0.6s ease-in-out ${i*0.1}s infinite alternate`,
-                    }} />
+                    <div key={i} style={{ width: 2, height: h, background: '#3b82f6', borderRadius: 99, animation: `wave 0.6s ease-in-out ${i*0.1}s infinite alternate` }} />
                   ))}
                 </span>
               )}
             </div>
 
             {aiLoading ? (
-              <div style={{
-                flex: 1, display: 'flex', alignItems: 'center', gap: 12,
-                color: 'rgba(255,255,255,0.35)',
-              }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 12, color: 'rgba(255,255,255,0.35)' }}>
                 <div style={{ display: 'flex', gap: 5 }}>
                   {[0,1,2].map(i => (
-                    <div key={i} style={{
-                      width: 8, height: 8, borderRadius: '50%', background: '#10b981',
-                      animation: `bounce 0.9s ease-in-out ${i*0.18}s infinite alternate`,
-                      opacity: 0.7,
-                    }} />
+                    <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: '#10b981', animation: `bounce 0.9s ease-in-out ${i*0.18}s infinite alternate`, opacity: 0.7 }} />
                   ))}
                 </div>
                 <span style={{ fontSize: 15 }}>Formulating next question…</span>
               </div>
             ) : (
               <div style={{ flex: 1, overflowY: 'auto' }}>
-                <p style={{
-                  color: '#f4f4f5', fontSize: 20, fontWeight: 500,
-                  lineHeight: 1.65, margin: 0, letterSpacing: '-0.01em',
-                }}>
-                  {currentQuestion || "Your first question is loading…"}
+                <p style={{ color: '#f4f4f5', fontSize: 20, fontWeight: 500, lineHeight: 1.65, margin: 0, letterSpacing: '-0.01em' }}>
+                  {currentQuestion || 'Your first question is loading…'}
                 </p>
               </div>
             )}
@@ -762,15 +702,12 @@ function InterviewSessionInner() {
               background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)',
               flexShrink: 0,
             }}>
-              {/* Transcript preview */}
               {(transcript || correcting) && (
                 <div style={{
                   background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)',
                   borderRadius: 14, padding: '16px 18px', marginBottom: 14,
                 }}>
-                  <div style={{
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10,
-                  }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                     <span style={{ fontSize: 10, fontWeight: 700, color: '#10b981', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                       ✓ Your Response
                     </span>
@@ -790,9 +727,8 @@ function InterviewSessionInner() {
                     placeholder={correcting ? 'Processing your speech…' : ''}
                     rows={3}
                     style={{
-                      width: '100%', background: 'transparent',
-                      border: 'none', borderRadius: 0, padding: 0,
-                      color: '#e4e4e7', fontSize: 14, lineHeight: 1.6,
+                      width: '100%', background: 'transparent', border: 'none',
+                      padding: 0, color: '#e4e4e7', fontSize: 14, lineHeight: 1.6,
                       outline: 'none', resize: 'none', fontFamily: 'inherit',
                       boxSizing: 'border-box', opacity: correcting ? 0.4 : 1,
                     }}
@@ -800,32 +736,24 @@ function InterviewSessionInner() {
                 </div>
               )}
 
-              {/* Buttons */}
               <div style={{ display: 'flex', gap: 10 }}>
                 <button
                   onClick={isListening ? stopListening : startListening}
                   disabled={aiLoading || isSpeaking || correcting}
                   style={{
                     flex: 1, padding: '14px 20px', borderRadius: 14,
-                    border: isListening
-                      ? '1.5px solid rgba(239,68,68,0.5)'
-                      : '1px solid rgba(255,255,255,0.09)',
+                    border: isListening ? '1.5px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.09)',
                     background: isListening ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.03)',
-                    color: isListening ? '#ef4444'
-                      : (isSpeaking || correcting || aiLoading) ? 'rgba(255,255,255,0.2)' : '#e4e4e7',
+                    color: isListening ? '#ef4444' : (isSpeaking || correcting || aiLoading) ? 'rgba(255,255,255,0.2)' : '#e4e4e7',
                     fontSize: 13, fontWeight: 600,
                     cursor: (aiLoading || isSpeaking || correcting) ? 'not-allowed' : 'pointer',
                     transition: 'all 0.2s', fontFamily: 'inherit',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                    letterSpacing: '0.01em',
                   }}
                 >
-                  {isListening ? (
-                    <>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 0.8s infinite' }} />
-                      Stop Recording
-                    </>
-                  ) : '🎤 Record Answer'}
+                  {isListening
+                    ? <><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 0.8s infinite' }} /> Stop Recording</>
+                    : '🎤 Record Answer'}
                 </button>
 
                 {correctedTranscript && !isListening && !correcting && (
@@ -835,12 +763,10 @@ function InterviewSessionInner() {
                     style={{
                       padding: '14px 24px', borderRadius: 14, border: 'none',
                       background: 'linear-gradient(135deg, #10b981, #059669)',
-                      color: '#fff', fontSize: 13, fontWeight: 700,
+                      color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0,
                       cursor: (aiLoading || isSpeaking) ? 'not-allowed' : 'pointer',
                       opacity: (aiLoading || isSpeaking) ? 0.4 : 1,
-                      flexShrink: 0, fontFamily: 'inherit',
-                      boxShadow: '0 0 24px rgba(16,185,129,0.2)',
-                      letterSpacing: '0.01em',
+                      fontFamily: 'inherit', boxShadow: '0 0 24px rgba(16,185,129,0.2)',
                     }}
                   >
                     Submit →
@@ -848,11 +774,7 @@ function InterviewSessionInner() {
                 )}
               </div>
 
-              <p style={{
-                textAlign: 'center', color: 'rgba(255,255,255,0.18)',
-                fontSize: 11, marginTop: 12, margin: '12px 0 0',
-                letterSpacing: '0.03em',
-              }}>
+              <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.18)', fontSize: 11, margin: '12px 0 0', letterSpacing: '0.03em' }}>
                 {isSpeaking
                   ? 'Wait for AI to finish speaking before recording your answer'
                   : isListening
@@ -865,18 +787,19 @@ function InterviewSessionInner() {
       </div>
 
       <style>{`
-        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.3} }
         @keyframes bounce { from{transform:translateY(0)} to{transform:translateY(-5px)} }
-        @keyframes wave { from{transform:scaleY(0.5)} to{transform:scaleY(1.5)} }
-        * { -webkit-user-select: none; user-select: none; }
-        textarea { -webkit-user-select: text !important; user-select: text !important; }
+        @keyframes wave   { from{transform:scaleY(0.5)} to{transform:scaleY(1.5)} }
+        * { -webkit-user-select:none; user-select:none; }
+        textarea { -webkit-user-select:text !important; user-select:text !important; }
       `}</style>
     </div>
   )
 }
+
 export default function InterviewSession() {
   return (
-    <Suspense fallback={<div style={{background:'#09090b',minHeight:'100vh'}}/>}>
+    <Suspense fallback={<div style={{ background: '#09090b', minHeight: '100vh' }} />}>
       <InterviewSessionInner />
     </Suspense>
   )
