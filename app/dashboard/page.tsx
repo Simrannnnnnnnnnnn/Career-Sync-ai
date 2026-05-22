@@ -36,6 +36,8 @@ const FEATURES = [
     accent: '#8b5cf6',
     bg: 'rgba(139,92,246,0.07)',
     badge: null,
+    badgeColor: undefined,
+    badgeBg: undefined,
   },
   {
     href: '/cover',
@@ -45,6 +47,8 @@ const FEATURES = [
     accent: '#f97316',
     bg: 'rgba(249,115,22,0.07)',
     badge: null,
+    badgeColor: undefined,
+    badgeBg: undefined,
   },
   {
     href: '/growth',
@@ -54,6 +58,8 @@ const FEATURES = [
     accent: '#10b981',
     bg: 'rgba(16,185,129,0.07)',
     badge: null,
+    badgeColor: undefined,
+    badgeBg: undefined,
   },
   {
     href: '/jobs',
@@ -63,6 +69,8 @@ const FEATURES = [
     accent: '#f59e0b',
     bg: 'rgba(245,158,11,0.07)',
     badge: null,
+    badgeColor: undefined,
+    badgeBg: undefined,
   },
 ]
 
@@ -173,16 +181,6 @@ export default function Dashboard() {
           </div>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {/* CareerSync badge */}
-            <div style={{
-              padding: '6px 14px', borderRadius: 99,
-              background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
-              fontSize: 12, fontWeight: 700, color: '#52525b', letterSpacing: '0.05em',
-              display: 'none',
-            }}>
-              CareerSync AI
-            </div>
-            {/* Logout */}
             <button onClick={handleLogout}
               style={{
                 width: 40, height: 40, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -199,7 +197,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Hero row: Welcome + Vibe ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+        <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
           {/* Welcome card */}
           <div style={{
@@ -241,7 +239,6 @@ export default function Dashboard() {
               </div>
             </div>
 
-            {/* Daily tip */}
             {tip && (
               <div style={{
                 marginTop: 20, padding: '12px 16px', borderRadius: 12,
@@ -257,7 +254,7 @@ export default function Dashboard() {
         </div>
 
         {/* ── Stats row ── */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
+        <div className="stats-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginBottom: 28 }}>
           {[
             { label: 'Interviews Done', val: '0', icon: '🎤', color: '#3b82f6' },
             { label: 'Jobs Applied', val: '0', icon: '📋', color: '#f59e0b' },
@@ -285,15 +282,16 @@ export default function Dashboard() {
           Tools
         </p>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+        <div className="features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
           {FEATURES.map(f => (
             <Link key={f.href} href={f.href} style={{ textDecoration: 'none' }}>
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: 16,
-                padding: '18px 20px', borderRadius: 20,
-                background: f.bg, border: `1px solid ${f.accent}20`,
-                cursor: 'pointer', transition: 'all 0.2s',
-              }}
+              <div
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '18px 20px', borderRadius: 20,
+                  background: f.bg, border: `1px solid ${f.accent}20`,
+                  cursor: 'pointer', transition: 'all 0.2s',
+                }}
                 onMouseEnter={e => {
                   (e.currentTarget as HTMLElement).style.border = `1px solid ${f.accent}45`
                   ;(e.currentTarget as HTMLElement).style.transform = 'translateY(-1px)'
@@ -372,10 +370,26 @@ export default function Dashboard() {
 
       <style>{`
         @keyframes spin { to { transform: rotate(360deg) } }
+
         @media (max-width: 640px) {
-          .hero-grid { grid-template-columns: 1fr !important; }
-          .features-grid { grid-template-columns: 1fr !important; }
-          .stats-grid { grid-template-columns: 1fr !important; }
+          .hero-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .features-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .stats-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+
+        @media (min-width: 641px) and (max-width: 768px) {
+          .features-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .stats-grid {
+            grid-template-columns: repeat(3, 1fr) !important;
+          }
         }
       `}</style>
     </div>
