@@ -18,17 +18,6 @@ const FEATURES = [
     badgeBg: 'rgba(249,115,22,0.12)',
   },
   {
-    href: '/interview/mock-setup',
-    icon: '🧠',
-    title: 'Mock Interview Bank',
-    desc: 'Practice questions with model answers — no camera',
-    accent: '#6366f1',
-    bg: 'rgba(99,102,241,0.07)',
-    badge: 'NEW',
-    badgeColor: '#818cf8',
-    badgeBg: 'rgba(99,102,241,0.15)',
-  },
-  {
     href: '/resume',
     icon: '📄',
     title: 'ATS Resume Scorer',
@@ -38,6 +27,17 @@ const FEATURES = [
     badge: null,
     badgeColor: undefined,
     badgeBg: undefined,
+  },
+  {
+    href: '/interview/mock-setup',
+    icon: '🧠',
+    title: 'Mock Interview Bank',
+    desc: 'Practice questions with model answers — no camera',
+    accent: '#6366f1',
+    bg: 'rgba(99,102,241,0.07)',
+    badge: 'NEW',
+    badgeColor: '#818cf8',
+    badgeBg: 'rgba(99,102,241,0.15)',
   },
   {
     href: '/cover',
@@ -196,7 +196,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ── Hero row: Welcome + Vibe ── */}
+        {/* ── Hero row ── */}
         <div className="hero-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
           {/* Welcome card */}
@@ -372,24 +372,14 @@ export default function Dashboard() {
         @keyframes spin { to { transform: rotate(360deg) } }
 
         @media (max-width: 640px) {
-          .hero-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .features-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .stats-grid {
-            grid-template-columns: 1fr !important;
-          }
+          .hero-grid { grid-template-columns: 1fr !important; }
+          .features-grid { grid-template-columns: 1fr !important; }
+          .stats-grid { grid-template-columns: 1fr !important; }
         }
 
         @media (min-width: 641px) and (max-width: 768px) {
-          .features-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .stats-grid {
-            grid-template-columns: repeat(3, 1fr) !important;
-          }
+          .features-grid { grid-template-columns: 1fr !important; }
+          .stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
         }
       `}</style>
     </div>
