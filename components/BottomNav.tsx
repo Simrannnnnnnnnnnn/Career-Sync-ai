@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 const NAV_ITEMS = [
   {
@@ -15,8 +16,9 @@ const NAV_ITEMS = [
     )
   },
   {
-    href: '/interview/setup',
+    href: '/practice',
     label: 'Practice',
+    isPractice: true,
     icon: (active: boolean) => (
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
         <circle cx="12" cy="12" r="9"/>
@@ -59,44 +61,211 @@ const NAV_ITEMS = [
   },
 ]
 
+const PRACTICE_OPTIONS = [
+  {
+    href: '/interview/setup',
+    icon: '🎤',
+    title: 'AI Interview Simulator',
+    desc: 'Camera · Voice · Live feedback',
+    accent: '#3b82f6',
+    bg: 'rgba(59,130,246,0.08)',
+    badge: 'HOT',
+    badgeColor: '#f97316',
+    badgeBg: 'rgba(249,115,22,0.15)',
+  },
+  {
+    href: '/interview/mock-setup',
+    icon: '🧠',
+    title: 'Mock Interview Bank',
+    desc: 'Questions · Model answers · No camera',
+    accent: '#6366f1',
+    bg: 'rgba(99,102,241,0.08)',
+    badge: 'NEW',
+    badgeColor: '#818cf8',
+    badgeBg: 'rgba(99,102,241,0.18)',
+  },
+]
+
 export default function BottomNav() {
   const pathname = usePathname()
+  const router = useRouter()
+  const [showPracticeSheet, setShowPracticeSheet] = useState(false)
 
   const hideOn = ['/login', '/onboarding', '/interview/session', '/interview/report']
   if (hideOn.some(p => pathname.startsWith(p))) return null
 
+  const isPracticeActive = pathname.startsWith('/interview')
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-2 py-2 pb-safe"
-      style={{
-        background: 'rgba(9, 9, 11, 0.85)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(255,255,255,0.06)',
-      }}
-    >
-      {NAV_ITEMS.map((item) => {
-        const isActive = pathname === item.href ||
-          (item.href !== '/dashboard' && pathname.startsWith(item.href))
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="flex flex-col items-center gap-1 px-3 py-1 rounded-2xl transition-all duration-200"
-            style={{ color: isActive ? '#3b82f6' : '#52525b' }}
-          >
-            <div className="transition-transform duration-200"
-              style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>
-              {item.icon(isActive)}
+    <>
+      {/* ── Bottom Nav ── */}
+      <nav
+        className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-2 py-2 pb-safe"
+        style={{
+          background: 'rgba(9, 9, 11, 0.92)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+        }}
+      >
+        {NAV_ITEMS.map((item) => {
+          const isActive = (item as any).isPractice
+            ? isPracticeActive
+            : pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+
+          if ((item as any).isPractice) {
+            return (
+              <button
+                key="practice"
+                onClick={() => setShowPracticeSheet(true)}
+                className="flex flex-col items-center gap-1 px-3 py-1 rounded-2xl transition-all duration-200 border-0 bg-transparent cursor-pointer"
+                style={{ color: isActive ? '#3b82f6' : '#52525b' }}
+              >
+                <div className="transition-transform duration-200"
+                  style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>
+                  {item.icon(isActive)}
+                </div>
+                <span className="text-[10px] font-medium tracking-wide">
+                  {item.label}
+                </span>
+                {isActive && (
+                  <div className="w-1 h-1 rounded-full bg-blue-500" />
+                )}
+              </button>
+            )
+          }
+
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex flex-col items-center gap-1 px-3 py-1 rounded-2xl transition-all duration-200"
+              style={{ color: isActive ? '#3b82f6' : '#52525b' }}
+            >
+              <div className="transition-transform duration-200"
+                style={{ transform: isActive ? 'scale(1.1)' : 'scale(1)' }}>
+                {item.icon(isActive)}
+              </div>
+              <span className="text-[10px] font-medium tracking-wide">
+                {item.label}
+              </span>
+              {isActive && (
+                <div className="w-1 h-1 rounded-full bg-blue-500" />
+              )}
+            </Link>
+          )
+        })}
+      </nav>
+
+      {/* ── Practice Sheet Overlay ── */}
+      {showPracticeSheet && (
+        <>
+          {/* Backdrop */}
+          <div
+            onClick={() => setShowPracticeSheet(false)}
+            style={{
+              position: 'fixed', inset: 0, zIndex: 60,
+              background: 'rgba(0,0,0,0.6)',
+              backdropFilter: 'blur(4px)',
+              WebkitBackdropFilter: 'blur(4px)',
+            }}
+          />
+
+          {/* Sheet */}
+          <div style={{
+            position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70,
+            background: '#111113',
+            borderTop: '1px solid rgba(255,255,255,0.08)',
+            borderRadius: '20px 20px 0 0',
+            padding: '20px 20px 40px',
+            fontFamily: "'DM Sans', 'Segoe UI', sans-serif",
+          }}>
+
+            {/* Handle bar */}
+            <div style={{
+              width: 36, height: 4, borderRadius: 99,
+              background: 'rgba(255,255,255,0.12)',
+              margin: '0 auto 20px',
+            }} />
+
+            {/* Title */}
+            <p style={{
+              fontSize: 11, fontWeight: 700, letterSpacing: '0.15em',
+              textTransform: 'uppercase', color: '#52525b',
+              marginBottom: 16, textAlign: 'center',
+            }}>
+              Choose Practice Mode
+            </p>
+
+            {/* Options */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {PRACTICE_OPTIONS.map(opt => (
+                <button
+                  key={opt.href}
+                  onClick={() => { setShowPracticeSheet(false); router.push(opt.href) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '16px 18px', borderRadius: 16,
+                    background: opt.bg, border: `1px solid ${opt.accent}25`,
+                    cursor: 'pointer', textAlign: 'left', width: '100%',
+                    transition: 'all 0.15s',
+                    fontFamily: 'inherit',
+                  }}
+                >
+                  {/* Emoji icon */}
+                  <div style={{
+                    width: 48, height: 48, borderRadius: 14, flexShrink: 0,
+                    background: `${opt.accent}15`,
+                    border: `1px solid ${opt.accent}20`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 22,
+                  }}>
+                    {opt.icon}
+                  </div>
+
+                  {/* Text */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                      <span style={{ fontSize: 14, fontWeight: 700, color: '#f4f4f5' }}>
+                        {opt.title}
+                      </span>
+                      <span style={{
+                        fontSize: 9, fontWeight: 800, padding: '2px 7px', borderRadius: 99,
+                        letterSpacing: '0.08em', color: opt.badgeColor, background: opt.badgeBg,
+                      }}>
+                        {opt.badge}
+                      </span>
+                    </div>
+                    <p style={{ fontSize: 12, color: '#52525b', margin: 0, lineHeight: 1.4 }}>
+                      {opt.desc}
+                    </p>
+                  </div>
+
+                  {/* Arrow */}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke={opt.accent} strokeWidth="2" style={{ flexShrink: 0, opacity: 0.6 }}>
+                    <path d="M9 18l6-6-6-6"/>
+                  </svg>
+                </button>
+              ))}
             </div>
-            <span className="text-[10px] font-medium tracking-wide">
-              {item.label}
-            </span>
-            {isActive && (
-              <div className="w-1 h-1 rounded-full bg-blue-500 absolute -bottom-0.5" />
-            )}
-          </Link>
-        )
-      })}
-    </nav>
+
+            {/* Cancel */}
+            <button
+              onClick={() => setShowPracticeSheet(false)}
+              style={{
+                width: '100%', marginTop: 12, padding: '13px',
+                borderRadius: 14, border: '1px solid rgba(255,255,255,0.07)',
+                background: 'transparent', color: '#52525b',
+                fontSize: 14, fontWeight: 500, cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
+    </>
   )
 }
