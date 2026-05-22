@@ -40,7 +40,7 @@ YOUR ONLY JOB:
         systemPrompt,
         max_tokens: 300,
       }),
-      signal: AbortSignal.timeout(10000),
+      signal: AbortSignal.timeout(25000), // 25s — HF Space cold start handle karta hai
     })
 
     if (!response.ok) {
@@ -52,7 +52,6 @@ YOUR ONLY JOB:
     return NextResponse.json({ corrected })
 
   } catch (error) {
-    // Correction is non-critical — always fallback gracefully
     console.error('Correction API error:', error)
     return NextResponse.json({ corrected: transcript })
   }

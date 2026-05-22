@@ -40,6 +40,7 @@ function InterviewSessionInner() {
   const difficulty = searchParams.get('difficulty') || ''
 
   // ── Refs ──────────────────────────────────────────────────────────────────
+  const correctionInProgressRef = useRef(false)
   const videoRef       = useRef<HTMLVideoElement>(null)
   const streamRef      = useRef<MediaStream | null>(null)
   const recognitionRef = useRef<any>(null)
@@ -252,7 +253,11 @@ function InterviewSessionInner() {
     rec.lang = 'en-IN'; rec.continuous = false; rec.interimResults = false
     rec.onstart = () => setIsListening(true)
     rec.onend   = () => setIsListening(false)
+    
     rec.onresult = async (event: any) => {
+      if (correctionInProgressRef.current) return
+      correctionInProgressRef.current = true
+
       const text = event.results[0][0].transcript
       setTranscript(text); setCorrecting(true)
       try {
@@ -265,8 +270,13 @@ function InterviewSessionInner() {
         setCorrectedTranscript(data.corrected || text)
       } catch { setCorrectedTranscript(text) }
       setCorrecting(false)
+      correctionInProgressRef.current = false
     }
-    rec.onerror = () => setIsListening(false)
+    rec.onerror = () => {
+      setIsListening(false)
+      correctionInProgressRef.current = false
+    }
+    
     recognitionRef.current = rec
     rec.start()
   }
