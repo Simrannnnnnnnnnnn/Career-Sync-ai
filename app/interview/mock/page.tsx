@@ -34,6 +34,7 @@ interface StarAnswer {
 interface QuestionData {
   question: string
   star: StarAnswer
+  example: StarAnswer | null
   tips: string[]
   companies: string[]
 }
@@ -63,6 +64,7 @@ function MockInner() {
   const [savedAnswers,  setSavedAnswers]  = useState<Record<number, string>>({})
   const [done,          setDone]          = useState(false)
   const [expandedStar,  setExpandedStar]  = useState<string | null>(null)
+  const [showExample,   setShowExample]   = useState(false)
   const askedRef = useRef<string[]>([])
 
   const roundLabel = round === 'screening' ? 'Screening Call'
@@ -81,10 +83,7 @@ function MockInner() {
       const res = await fetch('/api/interview/mock', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role, round, difficulty,
-          askedQuestions: askedRef.current,
-        }),
+        body: JSON.stringify({ role, round, difficulty, askedQuestions: askedRef.current }),
       })
       const data = await res.json()
 
@@ -95,6 +94,7 @@ function MockInner() {
         action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
         result: 'Share the outcome. Quantify the impact wherever possible.',
       }
+      const example: StarAnswer | null = data.example || null
       const tips: string[] = data.tips || [
         'Use specific numbers and metrics in your result',
         'Keep situation + task brief — spend most time on action',
@@ -106,7 +106,7 @@ function MockInner() {
 
       setQuestions(prev => {
         const updated = [...prev]
-        updated[index] = { question, star, tips, companies }
+        updated[index] = { question, star, example, tips, companies }
         return updated
       })
     } catch {
@@ -117,6 +117,12 @@ function MockInner() {
           task: 'Explain what YOUR specific responsibility was in this situation.',
           action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
           result: 'Share the outcome. Quantify the impact wherever possible.',
+        },
+        example: {
+          situation: 'Our college quiz platform was crashing during exams — 200+ students affected.',
+          task: 'I was the backend lead responsible for fixing the stability and performance issues.',
+          action: 'I migrated from SQLite to MongoDB Atlas, added Redis caching, and built a queue for concurrent submissions. The migration took 3 weeks including testing.',
+          result: 'Zero crashes in the next 3 exam cycles. Load time dropped from 8s to 1.5s. Now handles 500+ concurrent users.',
         },
         tips: ['Use the STAR method', 'Be specific with numbers', 'Practice out loud'],
         companies: getCompanyTags(role),
@@ -138,6 +144,7 @@ function MockInner() {
     setCurrentIndex(next)
     setShowAnswer(false)
     setExpandedStar(null)
+    setShowExample(false)
     setUserAnswer(savedAnswers[next] || '')
     if (!questions[next]) fetchQuestion(next)
   }
@@ -149,13 +156,14 @@ function MockInner() {
     setCurrentIndex(prev)
     setShowAnswer(false)
     setExpandedStar(null)
+    setShowExample(false)
     setUserAnswer(savedAnswers[prev] || '')
   }
 
   const current = questions[currentIndex]
   const progress = ((currentIndex + 1) / count) * 100
 
-  // ── Done screen ──────────────────────────────────────────────────────────
+  // ── Done screen ──
   if (done) return (
     <div style={{
       minHeight: '100vh', background: '#050507',
@@ -171,7 +179,7 @@ function MockInner() {
         You completed all {count} questions for <strong style={{ color: '#818cf8' }}>{role}</strong> — {roundLabel}
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
-        <button onClick={() => router.push(`/interview/mock-setup`)}
+        <button onClick={() => router.push('/interview/mock-setup')}
           style={{
             padding: '14px 28px', borderRadius: 14, border: 'none',
             background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
@@ -189,13 +197,13 @@ function MockInner() {
     </div>
   )
 
-  // ── Main screen ──────────────────────────────────────────────────────────
+  // ── Main screen ──
   return (
     <div style={{
       minHeight: '100vh', background: '#050507',
       fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: '#f4f4f5',
     }}>
-      {/* Background */}
+      {/* Background grid */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
         backgroundImage: `linear-gradient(rgba(99,102,241,0.02) 1px, transparent 1px),
@@ -232,7 +240,7 @@ function MockInner() {
               }}>Exit</button>
           </div>
         </div>
-        {/* Progress */}
+        {/* Progress bar */}
         <div style={{ maxWidth: 780, margin: '10px auto 0' }}>
           <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
@@ -265,7 +273,6 @@ function MockInner() {
             }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, #6366f1, transparent)' }} />
 
-              {/* Q number + company tags */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px',
@@ -291,9 +298,9 @@ function MockInner() {
               </p>
             </div>
 
-            {/* ── Answer section toggle ── */}
+            {/* ── Answer toggle ── */}
             <div style={{ marginBottom: 16 }}>
-              <button onClick={() => { setShowAnswer(p => !p); setExpandedStar(null) }}
+              <button onClick={() => { setShowAnswer(p => !p); setExpandedStar(null); setShowExample(false) }}
                 style={{
                   width: '100%', padding: '15px 20px', borderRadius: 16,
                   border: showAnswer ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.08)',
@@ -310,9 +317,9 @@ function MockInner() {
               {showAnswer && (
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-                  {/* STAR label */}
+                  {/* STAR header */}
                   <div style={{
-                    padding: '10px 16px', borderRadius: 12,
+                    padding: '12px 16px', borderRadius: 12,
                     background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)',
                     display: 'flex', alignItems: 'center', gap: 10,
                   }}>
@@ -325,7 +332,7 @@ function MockInner() {
                     </div>
                   </div>
 
-                  {/* STAR sections */}
+                  {/* STAR accordion sections */}
                   {STAR_CONFIG.map(({ key, label, color, bg, border, icon }) => {
                     const isOpen = expandedStar === key
                     const text = current.star[key as keyof StarAnswer]
@@ -364,7 +371,86 @@ function MockInner() {
                     )
                   })}
 
-                  {/* Tips section */}
+                  {/* ── Example section ── */}
+                  {current.example && (
+                    <div style={{
+                      borderRadius: 14, overflow: 'hidden',
+                      border: showExample ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                      transition: 'border 0.2s',
+                    }}>
+                      {/* Toggle header */}
+                      <button
+                        onClick={() => setShowExample(p => !p)}
+                        style={{
+                          width: '100%', padding: '14px 18px',
+                          background: showExample ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)',
+                          border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                          display: 'flex', alignItems: 'center', gap: 12,
+                          transition: 'background 0.2s',
+                        }}
+                      >
+                        <span style={{ fontSize: 18, flexShrink: 0 }}>💬</span>
+                        <div style={{ flex: 1, textAlign: 'left' }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: showExample ? '#10b981' : '#a1a1aa', letterSpacing: '0.02em' }}>
+                            See a Full Example Answer
+                          </span>
+                          {!showExample && (
+                            <span style={{ display: 'block', fontSize: 11, color: '#52525b', marginTop: 2 }}>
+                              A real-world sample answer using the STAR structure above
+                            </span>
+                          )}
+                        </div>
+                        <span style={{ fontSize: 12, color: showExample ? '#10b981' : '#52525b' }}>{showExample ? '▲' : '▼'}</span>
+                      </button>
+
+                      {/* Example content */}
+                      {showExample && (
+                        <div style={{ padding: '0 18px 20px', background: 'rgba(16,185,129,0.04)' }}>
+                          <div style={{ width: '100%', height: 1, background: 'rgba(16,185,129,0.2)', marginBottom: 16 }} />
+
+                          <p style={{ fontSize: 10, fontWeight: 700, color: '#10b981', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 14px' }}>
+                            📝 Sample Answer — How a strong candidate might respond
+                          </p>
+
+                          {/* Example STAR breakdown */}
+                          {[
+                            { key: 'situation', label: 'Situation', color: '#3b82f6', icon: '🎯' },
+                            { key: 'task',      label: 'Task',      color: '#8b5cf6', icon: '📋' },
+                            { key: 'action',    label: 'Action',    color: '#10b981', icon: '⚡' },
+                            { key: 'result',    label: 'Result',    color: '#f59e0b', icon: '🏆' },
+                          ].map(({ key, label, color, icon }, idx, arr) => (
+                            <div key={key} style={{ marginBottom: idx < arr.length - 1 ? 14 : 0 }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                <span style={{ fontSize: 14 }}>{icon}</span>
+                                <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                  {label}
+                                </span>
+                              </div>
+                              <div style={{
+                                padding: '12px 14px', borderRadius: 10,
+                                background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}18`,
+                              }}>
+                                <p style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+                                  {current.example![key as keyof StarAnswer]}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+
+                          <div style={{
+                            marginTop: 16, padding: '10px 14px', borderRadius: 10,
+                            background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)',
+                          }}>
+                            <p style={{ fontSize: 12, color: '#6ee7b7', lineHeight: 1.6, margin: 0 }}>
+                              💡 <strong>Remember:</strong> This is just a template. Replace with YOUR real experience — the structure is what matters, not copying this example word for word.
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Tips */}
                   {current.tips?.length > 0 && (
                     <div style={{
                       borderRadius: 14, padding: '18px 20px',
@@ -392,7 +478,7 @@ function MockInner() {
               )}
             </div>
 
-            {/* ── Your answer textarea ── */}
+            {/* ── Your answer ── */}
             <div style={{
               background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 16, padding: '20px 22px', marginBottom: 20,

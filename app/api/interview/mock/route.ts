@@ -30,6 +30,7 @@ async function callHFSpace(body: object, retries = 2): Promise<Response> {
 const FALLBACK_BY_ROUND: Record<string, {
   question: string
   star: { situation: string; task: string; action: string; result: string }
+  example: { situation: string; task: string; action: string; result: string }
   tips: string[]
 }[]> = {
   screening: [
@@ -41,6 +42,12 @@ const FALLBACK_BY_ROUND: Record<string, {
         action: "Structure it as: (1) Who you are and your current role/education, (2) Your top 2-3 relevant skills or experiences, (3) Why you're excited about THIS specific role at THIS company. Practice until it flows naturally.",
         result: "A great answer leaves the recruiter nodding and wanting to learn more. End with something like: 'That's a quick overview — I'd love to learn more about what success looks like in this role.'"
       },
+      example: {
+        situation: "You're interviewing for a Data Analyst role at a fintech startup.",
+        task: "Introduce yourself in a way that highlights your analytical background and enthusiasm for fintech.",
+        action: "\"I'm a final-year MCA student specializing in Data Science. Over the past year I've built projects involving Python, SQL, and machine learning — including a resume parser that reduced screening time by 40% in a mock deployment. I interned at IBM SkillsBuild where I worked on AI strategy and BI dashboards. I'm particularly excited about this role because I love turning messy financial data into actionable insights.\"",
+        result: "The recruiter immediately sees relevant skills, real project experience, and genuine motivation — all in under 90 seconds."
+      },
       tips: [
         "Keep it under 2 minutes — recruiters hear this answer 50 times a day",
         "Always end by connecting back to the specific role",
@@ -51,10 +58,16 @@ const FALLBACK_BY_ROUND: Record<string, {
     {
       question: "What are your salary expectations?",
       star: {
-        situation: "The recruiter is trying to quickly qualify whether your expectations align with the budget before investing more time. This is a power question — handle it carefully.",
+        situation: "The recruiter is trying to quickly qualify whether your expectations align with the budget before investing more time.",
         task: "Give a range that's well-researched, shows you know your market value, and leaves room for negotiation without underselling yourself.",
-        action: "Research the market rate on LinkedIn Salary, Glassdoor, and AmbitionBox for this exact role and city. Then say: 'Based on my research and X years of experience, I'm targeting Y–Z LPA, but I'm open to the full compensation package.' Always give a range, not a number.",
+        action: "Research the market rate on LinkedIn Salary, Glassdoor, and AmbitionBox for this exact role and city. Then say: 'Based on my research and X years of experience, I'm targeting Y–Z LPA, but I'm open to the full compensation package.' Always give a range, not a single number.",
         result: "A confident, researched answer shows you're a professional who knows their worth — not desperate or naive. It also keeps the door open for negotiation."
+      },
+      example: {
+        situation: "You're a fresher applying for a Software Engineer role in Bangalore.",
+        task: "Give a salary range that's realistic for a fresher but not undercutting yourself.",
+        action: "\"Based on my research on Glassdoor and AmbitionBox for entry-level SDE roles in Bangalore, the range is typically 6–10 LPA. Given my internship experience and the projects I've shipped, I'm targeting 7–9 LPA — but I'm absolutely open to discussing the full package including learning opportunities and growth.\"",
+        result: "You've anchored on a researched range, shown confidence, and signaled flexibility — without leaving money on the table."
       },
       tips: [
         "Never give a single number — always a range (the lower end should be your floor)",
@@ -63,68 +76,48 @@ const FALLBACK_BY_ROUND: Record<string, {
         "Never apologize for your number — say it confidently",
       ]
     },
-    {
-      question: "Why are you looking for a new opportunity?",
-      star: {
-        situation: "Recruiters ask this to check for red flags — are you running away from something bad, or running toward something better? They want to hire motivated people, not desperate ones.",
-        task: "Frame your answer positively around growth, not frustration. Even if your current job is terrible, never say that.",
-        action: "Use this structure: (1) Acknowledge what you've learned or achieved in your current role, (2) Explain what you're looking for that you can't get there (growth, scope, domain), (3) Connect it to why THIS role specifically is the right next step.",
-        result: "The interviewer should feel you're moving TOWARD this role with purpose — not fleeing your current one. End with enthusiasm about what excites you about their company."
-      },
-      tips: [
-        "Never say anything negative about your current employer — ever",
-        "'I want more money' is honest but incomplete — tie it to growth too",
-        "Research the company so your 'why this company' sounds genuine, not generic",
-        "Practice this answer — it's asked in almost every first interview",
-      ]
-    },
   ],
   initial: [
     {
       question: "Describe your most impactful project.",
       star: {
-        situation: "Set the context clearly: what was the business problem, what was at stake, and what was the state of things before you got involved? Give enough context that the interviewer understands WHY this project mattered.",
-        task: "Be explicit about YOUR role — not the team's role. What were YOU specifically responsible for? What decisions did you own? Interviewers want to assess YOUR contribution, not your team's.",
-        action: "Walk through the key decisions and actions you personally took. What approach did you choose and why? What alternatives did you consider and reject? What was technically or organizationally hard about this? This is the longest part — be specific and show your thinking.",
-        result: "Quantify the impact wherever possible: 'reduced load time by 40%', 'saved 200 engineering hours per month', 'increased conversion by 12%'. If you don't have numbers, describe the qualitative impact clearly."
+        situation: "Set the context clearly: what was the business problem, what was at stake, and what was the state of things before you got involved?",
+        task: "Be explicit about YOUR role — not the team's role. What were YOU specifically responsible for? What decisions did you own?",
+        action: "Walk through the key decisions and actions you personally took. What approach did you choose and why? What was technically or organizationally hard about this? Be specific and show your thinking.",
+        result: "Quantify the impact wherever possible: 'reduced load time by 40%', 'saved 200 engineering hours per month', 'increased conversion by 12%'."
+      },
+      example: {
+        situation: "During my MCA final year, our college's quiz platform kept crashing during exams because it was built on SQLite with no proper session handling — 200+ students affected.",
+        task: "I was the backend lead responsible for redesigning the database layer and API to handle concurrent users without data loss.",
+        action: "I migrated the database from SQLite to MongoDB Atlas, built a custom REST API with Node.js and added Redis-based session caching. I also added a queue system so concurrent quiz submissions wouldn't conflict. The whole migration took 3 weeks including testing.",
+        result: "Zero crashes in the next 3 exam cycles. Page load time dropped from 8 seconds to under 1.5 seconds. The platform now handles 500+ concurrent users reliably — and I deployed it on HuggingFace Spaces with Docker."
       },
       tips: [
         "Prepare 2-3 projects in full STAR detail before the interview",
         "Pick a project where YOUR decision made a real difference",
         "Numbers are gold — spend time before the interview gathering metrics",
-        "If the project failed, you can still use it — show what you learned",
         "Keep Situation + Task under 90 seconds — spend most time on Action and Result",
       ]
     },
     {
       question: "Tell me about a time you failed and what you learned.",
       star: {
-        situation: "Choose a real failure — not a fake one ('my biggest weakness is I work too hard'). Interviewers can tell. Pick something meaningful enough to show self-awareness, but not so catastrophic it raises red flags.",
-        task: "Show you owned the failure — not that you blame others or circumstances. You were responsible, and you acknowledge it clearly.",
-        action: "Walk through what you did wrong, what warning signs you missed, and what you tried to do to fix it once you realized the problem. Be specific — generic failures don't land well.",
-        result: "This is the most important part: what did you CHANGE because of this failure? Show that you extracted a concrete lesson and applied it. Interviewers want to see growth, not perfection."
+        situation: "Choose a real failure — not a fake one. Pick something meaningful enough to show self-awareness, but not so catastrophic it raises red flags.",
+        task: "Show you owned the failure — not that you blame others or circumstances.",
+        action: "Walk through what you did wrong, what warning signs you missed, and what you tried to do to fix it. Be specific — generic failures don't land well.",
+        result: "What did you CHANGE because of this failure? Show that you extracted a concrete lesson and applied it."
+      },
+      example: {
+        situation: "In my second year, I was leading a team project to build a recommendation system. I assumed everyone understood the timeline and didn't hold formal check-ins.",
+        task: "I was project lead — responsible for delivery and team coordination.",
+        action: "Two days before the deadline, I realized two teammates had been blocked on an API integration for a week but hadn't spoken up. I stayed up two nights to fix it but we still submitted late and lost 15% of our grade.",
+        result: "I changed my approach completely — now I run brief daily standups on any team project and explicitly ask 'what's blocking you?' I haven't had a surprise blocker since. That failure taught me that leadership is about creating safety for problems to surface early."
       },
       tips: [
         "Don't pick a trivial failure — it looks like you're hiding something",
         "Don't over-explain or justify — own it clearly and move to the learning",
         "The 'what I changed' part is what differentiates great answers",
-        "Avoid failures that involve interpersonal conflicts or blaming teammates",
         "End on a forward-looking note — show you're better because of it",
-      ]
-    },
-    {
-      question: "How do you handle competing priorities?",
-      star: {
-        situation: "Think of a specific time — ideally recent — where you had multiple urgent things demanding your attention at the same time. Set up the context: what were the competing priorities, who was involved, and what was at stake?",
-        task: "Your job was to make a smart prioritization decision under pressure without dropping the ball on anything critical.",
-        action: "Walk through your framework: (1) Assess urgency vs importance for each task, (2) Communicate early with all stakeholders — never go silent, (3) Break tasks into milestones and tackle the highest-leverage work first, (4) Re-evaluate daily as things shift. Be specific about what you actually did.",
-        result: "What happened? Did you deliver everything? If not, what did you deprioritize and why? Show that your decisions were deliberate and communicated — not reactive."
-      },
-      tips: [
-        "Have a real example ready — generic frameworks without examples don't land",
-        "Emphasize proactive communication — stakeholders hate surprises",
-        "Show you can say no (or 'not yet') professionally when needed",
-        "Mention any tools you use: Notion, Jira, a simple list — shows organization",
       ]
     },
   ],
@@ -132,33 +125,22 @@ const FALLBACK_BY_ROUND: Record<string, {
     {
       question: "How would you design a URL shortener like bit.ly?",
       star: {
-        situation: "This is a classic system design question. The interviewer wants to see how you think through scale, tradeoffs, and architecture — not just if you know the answer.",
-        task: "Design a system that can take a long URL, generate a short unique code, store the mapping, and redirect users when they visit the short URL — at potentially millions of requests per day.",
-        action: "Walk through each component: (1) API layer — POST /shorten, GET /{code}. (2) Hashing — use base62 encoding of an auto-increment ID (gives you 56 billion+ combinations). (3) Storage — primary DB (Postgres/MySQL) for the mapping, Redis cache for hot URLs. (4) Redirect — 301 (permanent, cached by browser) vs 302 (temporary, better for analytics). (5) Scale — read-heavy system, so add CDN + read replicas. (6) Analytics — async event queue (Kafka) for click tracking without slowing redirects.",
-        result: "A complete answer covers the happy path, handles edge cases (duplicate URLs, expired links, custom slugs), and discusses tradeoffs like consistency vs availability."
+        situation: "This is a classic system design question. The interviewer wants to see how you think through scale, tradeoffs, and architecture.",
+        task: "Design a system that can shorten URLs, store the mapping, and redirect users — at potentially millions of requests per day.",
+        action: "Walk through each component: (1) API layer — POST /shorten, GET /{code}. (2) Hashing — base62 encoding of auto-increment ID. (3) Storage — Postgres for mappings, Redis for hot URL cache. (4) Redirect — 301 vs 302 tradeoff. (5) Scale — CDN + read replicas. (6) Analytics — async Kafka queue.",
+        result: "A complete answer covers the happy path, edge cases (duplicate URLs, expiry, custom slugs), and discusses tradeoffs clearly."
+      },
+      example: {
+        situation: "Interviewer asks: 'Design bit.ly for 100M daily active users.'",
+        task: "You need to walk through the full architecture in ~10 minutes, covering storage, hashing, redirects, and scale.",
+        action: "\"I'd start with a POST /shorten endpoint that takes a long URL. I'd generate a short code using base62 encoding of an auto-incremented DB ID — that gives 56 billion+ unique codes with 6 characters. Store the mapping in Postgres. For redirects, use a Redis cache with a 24-hour TTL — 80% of traffic hits cached URLs anyway. For the redirect itself, I'd use 302 (not 301) so we can track analytics. At scale, I'd add a CDN in front and horizontal DB read replicas.\"",
+        result: "You've shown you can think through the full stack — from API design to caching to scale — and you understand the WHY behind each decision."
       },
       tips: [
         "Always clarify requirements first: scale? analytics needed? custom URLs?",
-        "Draw the architecture — even verbally walk through the boxes and arrows",
         "Explain WHY you chose each component, not just what",
         "Discuss tradeoffs: SQL vs NoSQL, 301 vs 302, cache TTL choices",
         "Don't jump to the most complex solution first — start simple, then scale",
-      ]
-    },
-    {
-      question: "Explain the difference between REST and GraphQL.",
-      star: {
-        situation: "Both REST and GraphQL are API design paradigms, but they solve different problems. Interviewers ask this to test if you understand real-world API design tradeoffs — not just definitions.",
-        task: "Explain the core differences clearly, and show you know WHEN to use each one in practice.",
-        action: "REST: multiple endpoints (GET /users, GET /posts), fixed response shape — client gets what the server decides. Can lead to over-fetching (too much data) or under-fetching (multiple round trips). Simple, cacheable, widely understood. GraphQL: single endpoint (/graphql), client specifies exactly what fields it needs in a query. Solves over/under-fetching. Better for complex, nested data (social feeds, dashboards). Harder to cache, steeper learning curve, needs schema management.",
-        result: "Use REST for simple, public APIs where cacheability matters. Use GraphQL for complex client-driven data needs like mobile apps or dashboards where bandwidth and round-trips are a concern."
-      },
-      tips: [
-        "Don't just define them — explain the tradeoffs with real examples",
-        "Mention when you'd choose one over the other — shows practical judgment",
-        "Caching is REST's big advantage — GraphQL is harder to cache by default",
-        "Mention tools: REST + OpenAPI/Swagger, GraphQL + Apollo/Hasura",
-        "If you've used both, mention your personal experience",
       ]
     },
   ],
@@ -166,15 +148,20 @@ const FALLBACK_BY_ROUND: Record<string, {
     {
       question: "What's your long-term career vision?",
       star: {
-        situation: "Final round interviewers — often senior leaders — want to know if you're a long-term investment. They're asking: will you grow with us, or leave in 18 months? They also want to see if you're self-aware and ambitious.",
+        situation: "Final round interviewers want to know if you're a long-term investment. They're asking: will you grow with us, or leave in 18 months?",
         task: "Paint a credible, authentic picture of where you want to be in 3-5 years that logically connects to this role as a stepping stone.",
-        action: "Structure it as: (1) Short term (1-2 years): what you want to master and contribute in this role, (2) Medium term (3-5 years): where you see yourself growing — deeper IC expertise, or moving toward a lead/manager role, (3) How this company specifically helps you get there. Make it feel genuine, not rehearsed.",
-        result: "A great answer shows ambition + humility + alignment with the company's growth trajectory. End by asking: 'What does the growth path look like for this role here?'"
+        action: "Structure it as: (1) Short term — what you want to master in this role, (2) Medium term — where you want to grow (senior IC or lead), (3) How this company specifically helps you get there.",
+        result: "A great answer shows ambition + humility + alignment with the company's growth trajectory. Flip it into a question at the end."
+      },
+      example: {
+        situation: "You're in the final round for an ML Engineer role at a product company.",
+        task: "Show that your career goals align with the company's direction and that you're a long-term bet worth making.",
+        action: "\"In the next 1-2 years, I want to go deep on production ML — building robust pipelines, learning MLOps best practices, and owning models end-to-end in a real product environment. In 3-5 years, I see myself as a senior ML engineer who can both design systems and mentor junior engineers. I'm particularly drawn to this company because you're building AI features that reach millions of users — that's the scale I want to learn at. Can I ask — what does the typical growth path look like for engineers who join at this level?\"",
+        result: "You've shown ambition that's grounded and realistic, tied your vision directly to the company, and turned it into a two-way conversation."
       },
       tips: [
         "Research the company's growth trajectory — ambitious companies want ambitious people",
-        "Don't say 'your job' or 'in your seat' — it makes senior leaders uncomfortable",
-        "It's okay to say you're deciding between IC and management paths — shows self-awareness",
+        "Don't say 'your job' — it makes senior leaders uncomfortable",
         "Tie your vision to the company's mission where possible",
         "Always flip it into a question at the end — shows genuine interest",
       ]
@@ -186,16 +173,21 @@ const DEFAULT_FALLBACK = [
   {
     question: "Tell me about a challenging project you worked on.",
     star: {
-      situation: "Set the context: what was the project, why was it important, and what made it challenging? Give enough background that the interviewer understands the stakes — but keep it under 60 seconds.",
-      task: "Be crystal clear about YOUR specific role and ownership. What were you personally responsible for? What decisions did you have the authority to make?",
-      action: "This is the heart of your answer. Walk through the key steps you took, the obstacles you faced, the decisions you made, and why. Be specific — avoid vague statements like 'I worked on the backend'. Say 'I redesigned the database schema to eliminate N+1 queries, which required coordinating with 3 other teams.'",
-      result: "Quantify wherever possible. 'Reduced page load time by 60%', 'shipped 2 weeks ahead of schedule', 'zero production incidents in 6 months post-launch'. Numbers make your answer memorable."
+      situation: "Set the context: what was the project, why was it important, and what made it challenging?",
+      task: "Be crystal clear about YOUR specific role and ownership. What were you personally responsible for?",
+      action: "Walk through the key steps you took, the obstacles you faced, the decisions you made, and why. Be specific.",
+      result: "Quantify wherever possible. 'Reduced page load time by 60%', 'shipped 2 weeks ahead of schedule'."
+    },
+    example: {
+      situation: "Our team's e-commerce site had a 12-second load time that was killing conversion rates.",
+      task: "I was tasked with identifying and fixing the top 3 performance bottlenecks as the sole backend developer.",
+      action: "I profiled the app with Chrome DevTools and found 3 issues: unoptimized images (added WebP conversion), N+1 SQL queries (rewrote with JOIN), and no caching (added Redis for product listings). Took 2 weeks working evenings.",
+      result: "Load time dropped from 12s to 2.3s. Bounce rate fell 22%. The CTO used it as a case study in our next all-hands. Taught me to always measure before optimizing."
     },
     tips: [
       "Prepare 3-4 projects in full STAR format before any interview",
       "The Action section should be 50-60% of your total answer time",
-      "Anticipate follow-up questions: 'What would you do differently?' 'What was the hardest part?'",
-      "If the project involved a team, be clear about YOUR contribution vs the team's",
+      "Anticipate follow-up questions: 'What would you do differently?'",
       "Practice out loud — STAR answers that aren't practiced sound disjointed",
     ]
   },
@@ -214,7 +206,7 @@ export async function POST(req: NextRequest) {
       ? `Already asked — DO NOT repeat or rephrase:\n${askedQuestions.map((q: string, i: number) => `${i + 1}. ${q}`).join('\n')}`
       : ''
 
-    const systemPrompt = `You are an expert interview coach generating questions with detailed STAR-method answers.
+    const systemPrompt = `You are an expert interview coach generating questions with detailed STAR-method answers AND a concrete real-world example.
 
 Generate ONE unique interview question for:
 - Role: ${role}
@@ -229,10 +221,16 @@ JSON format (exact):
 {
   "question": "<the interview question>",
   "star": {
-    "situation": "<2-3 sentences: set the context and background for how to answer this question>",
-    "task": "<2-3 sentences: what the candidate's specific responsibility or goal should be in their answer>",
-    "action": "<4-6 sentences: detailed explanation of WHAT to say and HOW to structure the action part — include specific examples, frameworks, or approaches>",
-    "result": "<2-3 sentences: what a strong result/conclusion sounds like, including how to quantify impact>"
+    "situation": "<2-3 sentences: HOW TO set the context — guide the candidate on what kind of situation to describe>",
+    "task": "<2-3 sentences: HOW TO explain their specific responsibility — what they should focus on>",
+    "action": "<4-5 sentences: HOW TO structure the action — specific steps, frameworks, or approaches to mention>",
+    "result": "<2-3 sentences: HOW TO describe the outcome — how to quantify and what strong results sound like>"
+  },
+  "example": {
+    "situation": "<1-2 sentences: a CONCRETE example situation someone in a ${role} role might have faced>",
+    "task": "<1 sentence: their specific responsibility in that example>",
+    "action": "<2-3 sentences: exactly what they DID — specific tools, steps, decisions — written as if the candidate is speaking>",
+    "result": "<1-2 sentences: the measurable outcome with specific numbers or clear qualitative impact>"
   },
   "tips": [
     "<specific actionable tip 1 for answering this question well>",
@@ -244,9 +242,9 @@ JSON format (exact):
 
     try {
       const response = await callHFSpace({
-        messages: [{ role: 'user', content: `Generate a unique ${round} interview question with full STAR answer for ${role} at ${difficulty} level.` }],
+        messages: [{ role: 'user', content: `Generate a unique ${round} interview question with full STAR answer AND a concrete example for ${role} at ${difficulty} level.` }],
         systemPrompt,
-        max_tokens: 1000,
+        max_tokens: 1200,
       })
 
       const data = await response.json()
@@ -271,6 +269,7 @@ JSON format (exact):
         return NextResponse.json({
           question: parsed.question,
           star: parsed.star,
+          example: parsed.example || null,
           tips: parsed.tips || [],
         })
       }
