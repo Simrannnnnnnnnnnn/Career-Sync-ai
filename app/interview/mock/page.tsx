@@ -160,7 +160,15 @@ function MockInner() {
         action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
         result: 'Share the outcome. Quantify the impact wherever possible.',
       }
-      const example: ExampleAnswer | null = data.example || null
+      const exampleRaw = data.example || null
+      const example: ExampleAnswer | null = exampleRaw ? {
+        prose: exampleRaw.prose || `${exampleRaw.situation || ''} ${exampleRaw.action || ''} ${exampleRaw.result || ''}`.trim(),
+        situation: exampleRaw.situation || '',
+        task: exampleRaw.task || '',
+        action: exampleRaw.action || '',
+        result: exampleRaw.result || '',
+      } : null
+      
       const tips: string[] = data.tips || [
         'Use specific numbers and metrics in your result',
         'Keep situation + task brief — spend most time on action',
