@@ -30,7 +30,13 @@ async function callHFSpace(body: object, retries = 2): Promise<Response> {
 const FALLBACK_BY_ROUND: Record<string, {
   question: string
   star: { situation: string; task: string; action: string; result: string }
-  example: { situation: string; task: string; action: string; result: string }
+  example: {
+    prose: string
+    situation: string
+    task: string
+    action: string
+    result: string
+  }
   tips: string[]
 }[]> = {
   screening: [
@@ -43,6 +49,7 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A great answer leaves the recruiter nodding and wanting to learn more. End with something like: 'That's a quick overview — I'd love to learn more about what success looks like in this role.'"
       },
       example: {
+        prose: "I'm a final-year MCA student specialising in Data Science at LPU. Over the past year I've been building and shipping real projects — the one I'm most proud of is a resume parser that used Groq's Llama 3.3 and PyMuPDF to extract skills and match them against job descriptions, cutting mock screening time by around 40%. Before that, I interned with IBM SkillsBuild where I built AI strategy dashboards and got my hands dirty with BI tooling. I love the intersection of ML and product — taking a messy problem and building something that actually works end to end. I'm excited about this role specifically because you're building data products at scale, and that's exactly the environment I want to grow in. Happy to go deeper on any of this — and I'd love to understand what a strong first 90 days looks like here.",
         situation: "You're interviewing for a Data Analyst role at a fintech startup.",
         task: "Introduce yourself in a way that highlights your analytical background and enthusiasm for fintech.",
         action: "\"I'm a final-year MCA student specializing in Data Science. Over the past year I've built projects involving Python, SQL, and machine learning — including a resume parser that reduced screening time by 40% in a mock deployment. I interned at IBM SkillsBuild where I worked on AI strategy and BI dashboards. I'm particularly excited about this role because I love turning messy financial data into actionable insights.\"",
@@ -64,6 +71,7 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A confident, researched answer shows you're a professional who knows their worth — not desperate or naive. It also keeps the door open for negotiation."
       },
       example: {
+        prose: "Based on my research across Glassdoor, AmbitionBox, and LinkedIn Salary for entry-level Data Analyst and SDE roles in Bangalore, the typical range sits between 6 and 10 LPA for candidates with internship experience. Given the internship I completed with IBM, the projects I've shipped end-to-end, and the skills I bring in Python, SQL, and ML — I'm targeting somewhere in the 7 to 9 LPA range. That said, I'm genuinely open to discussing the full package, including learning opportunities, mentorship, and growth trajectory, because long-term fit matters more to me than just the number. If it helps, I'm happy to be flexible depending on what the role and team look like.",
         situation: "You're a fresher applying for a Software Engineer role in Bangalore.",
         task: "Give a salary range that's realistic for a fresher but not undercutting yourself.",
         action: "\"Based on my research on Glassdoor and AmbitionBox for entry-level SDE roles in Bangalore, the range is typically 6–10 LPA. Given my internship experience and the projects I've shipped, I'm targeting 7–9 LPA — but I'm absolutely open to discussing the full package including learning opportunities and growth.\"",
@@ -87,6 +95,7 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "Quantify the impact wherever possible: 'reduced load time by 40%', 'saved 200 engineering hours per month', 'increased conversion by 12%'."
       },
       example: {
+        prose: "The most impactful project I've worked on is SmartQuizzer — our college's exam platform that was genuinely falling apart under load. We had 200+ students hitting it simultaneously during exams and it kept crashing because the whole thing was running on SQLite with no proper session handling. I was the backend lead, so the database layer and API were entirely on me. I made the call to migrate to MongoDB Atlas, rewrote the API in Node.js, and layered Redis on top for session caching. The trickiest part was building a queue system so concurrent quiz submissions wouldn't collide and cause data loss — that took the most debugging. Total migration was about three weeks including testing cycles. The result was pretty satisfying — zero crashes across the next three exam cycles, page load time went from 8 seconds down to under 1.5, and we're now comfortably handling 500+ concurrent users. I also Dockerised the whole thing and deployed it on HuggingFace Spaces, so the team could iterate without worrying about infra.",
         situation: "During my MCA final year, our college's quiz platform kept crashing during exams because it was built on SQLite with no proper session handling — 200+ students affected.",
         task: "I was the backend lead responsible for redesigning the database layer and API to handle concurrent users without data loss.",
         action: "I migrated the database from SQLite to MongoDB Atlas, built a custom REST API with Node.js and added Redis-based session caching. I also added a queue system so concurrent quiz submissions wouldn't conflict. The whole migration took 3 weeks including testing.",
@@ -108,6 +117,7 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "What did you CHANGE because of this failure? Show that you extracted a concrete lesson and applied it."
       },
       example: {
+        prose: "Honestly, the failure that taught me the most was during a second-year team project — we were building a recommendation system and I was leading it. I made a classic mistake: I assumed everyone understood the timeline and what they were working on, so I didn't set up any formal check-ins. Just trusted that people would flag issues. Two days before the deadline, I found out two teammates had been completely blocked on an API integration for over a week and hadn't said anything because they didn't want to seem incompetent. I pulled two all-nighters trying to fix it but we still submitted late and lost 15% of our grade. That one stung. What I changed immediately after was introducing brief daily standups on every team project — nothing formal, just a quick 'what did you do, what are you doing, what's blocking you.' That last question is everything. I haven't had a surprise blocker since. The real lesson wasn't about process though — it was that leadership means creating psychological safety so problems surface early, not waiting for people to volunteer bad news.",
         situation: "In my second year, I was leading a team project to build a recommendation system. I assumed everyone understood the timeline and didn't hold formal check-ins.",
         task: "I was project lead — responsible for delivery and team coordination.",
         action: "Two days before the deadline, I realized two teammates had been blocked on an API integration for a week but hadn't spoken up. I stayed up two nights to fix it but we still submitted late and lost 15% of our grade.",
@@ -131,6 +141,7 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A complete answer covers the happy path, edge cases (duplicate URLs, expiry, custom slugs), and discusses tradeoffs clearly."
       },
       example: {
+        prose: "Sure, let me walk through how I'd approach this. First I'd clarify scope — do we need analytics, custom slugs, expiry? Assuming yes for all three at 100M DAU. The core is simple: a POST /shorten endpoint takes a long URL, we generate a short code using base62 encoding of an auto-incremented database ID — that gives us 56 billion unique codes at just 6 characters, so we won't run out. We store the long-to-short mapping in Postgres. For redirects, we expose a GET /{code} endpoint that looks up the code — but here's where caching matters: about 80% of traffic hits the same popular URLs, so I'd put Redis in front with a 24-hour TTL. That keeps most requests off the database entirely. For the redirect itself, I'd use 302 rather than 301 — 301 gets cached by the browser forever and we'd lose analytics visibility. At scale I'd add a CDN layer for geographic distribution and horizontal read replicas on Postgres. For analytics, I'd fire events to a Kafka queue asynchronously — you don't want click tracking to slow down the redirect itself. Edge cases worth mentioning: we'd want to deduplicate identical long URLs, handle expired links gracefully, and rate-limit the shortening endpoint to prevent abuse.",
         situation: "Interviewer asks: 'Design bit.ly for 100M daily active users.'",
         task: "You need to walk through the full architecture in ~10 minutes, covering storage, hashing, redirects, and scale.",
         action: "\"I'd start with a POST /shorten endpoint that takes a long URL. I'd generate a short code using base62 encoding of an auto-incremented DB ID — that gives 56 billion+ unique codes with 6 characters. Store the mapping in Postgres. For redirects, use a Redis cache with a 24-hour TTL — 80% of traffic hits cached URLs anyway. For the redirect itself, I'd use 302 (not 301) so we can track analytics. At scale, I'd add a CDN in front and horizontal DB read replicas.\"",
@@ -154,9 +165,10 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A great answer shows ambition + humility + alignment with the company's growth trajectory. Flip it into a question at the end."
       },
       example: {
+        prose: "In the next one to two years, I want to go genuinely deep on production ML — not just training models, but owning them end to end: robust pipelines, proper monitoring, versioning, the full MLOps picture. I want to understand what it takes to keep a model healthy in production, not just get it deployed. In the three to five year range, I see myself as a senior ML engineer who can both architect systems and bring junior engineers up to speed — someone who bridges the gap between research ideas and things that actually scale. What draws me to this company specifically is that you're building AI features that reach millions of users, and that's the scale I want to develop my instincts at. There's a big difference between ML that works in a notebook and ML that works at scale under real traffic, and I want to learn that the hard way here. Can I ask — what does the growth path typically look like for engineers who join at this level? I'm curious how quickly people move into more ownership.",
         situation: "You're in the final round for an ML Engineer role at a product company.",
         task: "Show that your career goals align with the company's direction and that you're a long-term bet worth making.",
-        action: "\"In the next 1-2 years, I want to go deep on production ML — building robust pipelines, learning MLOps best practices, and owning models end-to-end in a real product environment. In 3-5 years, I see myself as a senior ML engineer who can both design systems and mentor junior engineers. I'm particularly drawn to this company because you're building AI features that reach millions of users — that's the scale I want to learn at. Can I ask — what does the typical growth path look like for engineers who join at this level?\"",
+        action: "\"In the next 1-2 years, I want to go deep on production ML — building robust pipelines, learning MLOps best practices, and owning models end-to-end in a real product environment. In 3-5 years, I see myself as a senior ML engineer who can both design systems and mentor junior engineers.\"",
         result: "You've shown ambition that's grounded and realistic, tied your vision directly to the company, and turned it into a two-way conversation."
       },
       tips: [
@@ -179,6 +191,7 @@ const DEFAULT_FALLBACK = [
       result: "Quantify wherever possible. 'Reduced page load time by 60%', 'shipped 2 weeks ahead of schedule'."
     },
     example: {
+      prose: "The project I'd point to is our e-commerce platform's performance overhaul. The site had a 12-second load time and it was genuinely killing conversion — users were bouncing before the page even finished loading. I was the sole backend developer on the fix, so the whole diagnostic and execution was on me. I started by profiling properly with Chrome DevTools rather than guessing, and found three distinct bottlenecks: images weren't optimised at all, so I added a WebP conversion pipeline; there were classic N+1 queries throughout the product listing endpoints, which I rewrote using JOINs; and there was zero caching, so I introduced Redis for the product catalog queries that were hitting the database on every single request. The whole thing took about two weeks of evening work alongside my regular responsibilities. Load time dropped from 12 seconds to 2.3 seconds. Bounce rate fell by 22%. The CTO actually used it as a case study in the next all-hands, which was a nice moment. The thing it really drilled into me was: always measure before you optimise. I had assumptions about where the bottleneck was and I was wrong about two of the three.",
       situation: "Our team's e-commerce site had a 12-second load time that was killing conversion rates.",
       task: "I was tasked with identifying and fixing the top 3 performance bottlenecks as the sole backend developer.",
       action: "I profiled the app with Chrome DevTools and found 3 issues: unoptimized images (added WebP conversion), N+1 SQL queries (rewrote with JOIN), and no caching (added Redis for product listings). Took 2 weeks working evenings.",
@@ -227,6 +240,7 @@ JSON format (exact):
     "result": "<2-3 sentences: HOW TO describe the outcome — how to quantify and what strong results sound like>"
   },
   "example": {
+    "prose": "<A 5-8 sentence flowing, first-person answer as if a strong candidate is speaking naturally in the interview. Weave in the STAR structure seamlessly — do NOT label the parts. It should sound confident, specific, and human. Include real-sounding metrics and decisions.>",
     "situation": "<1-2 sentences: a CONCRETE example situation someone in a ${role} role might have faced>",
     "task": "<1 sentence: their specific responsibility in that example>",
     "action": "<2-3 sentences: exactly what they DID — specific tools, steps, decisions — written as if the candidate is speaking>",
@@ -244,7 +258,7 @@ JSON format (exact):
       const response = await callHFSpace({
         messages: [{ role: 'user', content: `Generate a unique ${round} interview question with full STAR answer AND a concrete example for ${role} at ${difficulty} level.` }],
         systemPrompt,
-        max_tokens: 1200,
+        max_tokens: 1400,
       })
 
       const data = await response.json()
