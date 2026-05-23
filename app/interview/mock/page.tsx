@@ -38,7 +38,7 @@ interface ExampleAnswer extends StarAnswer {
 interface QuestionData {
   question: string
   star: StarAnswer
-  example: ExampleAnswer | null
+  example: ExampleAnswer
   tips: string[]
   companies: string[]
 }
@@ -161,14 +161,21 @@ function MockInner() {
         result: 'Share the outcome. Quantify the impact wherever possible.',
       }
       const exampleRaw = data.example || null
-      const example: ExampleAnswer | null = exampleRaw ? {
-        prose: exampleRaw.prose || `${exampleRaw.situation || ''} ${exampleRaw.action || ''} ${exampleRaw.result || ''}`.trim(),
-        situation: exampleRaw.situation || '',
-        task: exampleRaw.task || '',
-        action: exampleRaw.action || '',
-        result: exampleRaw.result || '',
-      } : null
-      
+      const example: ExampleAnswer = exampleRaw ? {
+        prose: exampleRaw.prose ||
+          [exampleRaw.situation, exampleRaw.task, exampleRaw.action, exampleRaw.result]
+            .filter(Boolean).join(' '),
+        situation: exampleRaw.situation || star.situation,
+        task:      exampleRaw.task      || star.task,
+        action:    exampleRaw.action    || star.action,
+        result:    exampleRaw.result    || star.result,
+      } : {
+        prose: `Here's how a strong candidate might approach this. ${star.situation} ${star.action} ${star.result}`,
+        situation: star.situation,
+        task:      star.task,
+        action:    star.action,
+        result:    star.result,
+      }
       const tips: string[] = data.tips || [
         'Use specific numbers and metrics in your result',
         'Keep situation + task brief — spend most time on action',
@@ -446,7 +453,7 @@ function MockInner() {
                     )
                   })}
 
-                  {/* ── Example section ── */}
+                  {/* ── Example section — always shown ── */}
                   {current.example && (
                     <div style={{
                       borderRadius: 14, overflow: 'hidden',
