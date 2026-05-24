@@ -31,14 +31,21 @@ interface StarAnswer {
   result: string
 }
 
-interface ExampleAnswer extends StarAnswer {
-  prose: string
+interface ElaborationStep {
+  title: string
+  body: string
 }
 
 interface QuestionData {
   question: string
   star: StarAnswer
-  example: ExampleAnswer
+  example: {
+    elaboration: ElaborationStep[]
+    situation: string
+    task: string
+    action: string
+    result: string
+  } | null
   tips: string[]
   companies: string[]
 }
@@ -49,68 +56,6 @@ const STAR_CONFIG = [
   { key: 'action',    label: 'A — Action',    color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', icon: '⚡' },
   { key: 'result',    label: 'R — Result',    color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', icon: '🏆' },
 ]
-
-// ── BreakdownToggle: prose ke neeche S/T/A/R labeled accordion ──
-function BreakdownToggle({ example }: { example: ExampleAnswer }) {
-  const [open, setOpen] = useState(false)
-
-  return (
-    <div style={{
-      borderRadius: 12, overflow: 'hidden',
-      border: open ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.07)',
-      transition: 'border 0.2s',
-    }}>
-      <button
-        onClick={() => setOpen(p => !p)}
-        style={{
-          width: '100%', padding: '12px 16px',
-          background: open ? 'rgba(99,102,241,0.08)' : 'rgba(255,255,255,0.02)',
-          border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          transition: 'background 0.2s',
-        }}
-      >
-        <span style={{ fontSize: 13, fontWeight: 700, color: open ? '#818cf8' : '#a1a1aa', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <span>🔍</span> Break it down →
-        </span>
-        <span style={{ fontSize: 11, color: open ? '#818cf8' : '#52525b' }}>
-          {open ? '▲ Hide' : '▼ Show S/T/A/R'}
-        </span>
-      </button>
-
-      {open && (
-        <div style={{ padding: '4px 16px 16px', background: 'rgba(99,102,241,0.04)' }}>
-          {[
-            { key: 'situation', label: 'Situation', color: '#3b82f6', icon: '🎯' },
-            { key: 'task',      label: 'Task',      color: '#8b5cf6', icon: '📋' },
-            { key: 'action',    label: 'Action',    color: '#10b981', icon: '⚡' },
-            { key: 'result',    label: 'Result',    color: '#f59e0b', icon: '🏆' },
-          ].map(({ key, label, color, icon }, idx, arr) => (
-            <div key={key} style={{ marginTop: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                <span style={{ fontSize: 13 }}>{icon}</span>
-                <span style={{
-                  fontSize: 11, fontWeight: 700, color,
-                  letterSpacing: '0.08em', textTransform: 'uppercase' as const,
-                }}>
-                  {label}
-                </span>
-              </div>
-              <div style={{
-                padding: '10px 14px', borderRadius: 10,
-                background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}22`,
-              }}>
-                <p style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                  {example[key as keyof StarAnswer]}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
 
 function MockInner() {
   const searchParams = useSearchParams()
@@ -130,7 +75,7 @@ function MockInner() {
   const [savedAnswers,  setSavedAnswers]  = useState<Record<number, string>>({})
   const [done,          setDone]          = useState(false)
   const [expandedStar,  setExpandedStar]  = useState<string | null>(null)
-  const [showExample,   setShowExample]   = useState(false)
+  const [showStarBreakdown, setShowStarBreakdown] = useState(false)
   const askedRef = useRef<string[]>([])
 
   const roundLabel = round === 'screening' ? 'Screening Call'
@@ -160,22 +105,7 @@ function MockInner() {
         action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
         result: 'Share the outcome. Quantify the impact wherever possible.',
       }
-      const exampleRaw = data.example || null
-      const example: ExampleAnswer = exampleRaw ? {
-        prose: exampleRaw.prose ||
-          [exampleRaw.situation, exampleRaw.task, exampleRaw.action, exampleRaw.result]
-            .filter(Boolean).join(' '),
-        situation: exampleRaw.situation || star.situation,
-        task:      exampleRaw.task      || star.task,
-        action:    exampleRaw.action    || star.action,
-        result:    exampleRaw.result    || star.result,
-      } : {
-        prose: `Here's how a strong candidate might approach this. ${star.situation} ${star.action} ${star.result}`,
-        situation: star.situation,
-        task:      star.task,
-        action:    star.action,
-        result:    star.result,
-      }
+      const example = data.example || null
       const tips: string[] = data.tips || [
         'Use specific numbers and metrics in your result',
         'Keep situation + task brief — spend most time on action',
@@ -200,7 +130,24 @@ function MockInner() {
           result: 'Share the outcome. Quantify the impact wherever possible.',
         },
         example: {
-          prose: "The project I'm most proud of is our college quiz platform overhaul. It was crashing under exam load — 200+ students affected — because the whole backend was built on SQLite with no session handling. I was the backend lead, so the fix was entirely on me. I migrated to MongoDB Atlas, rewrote the API in Node.js, and added Redis for session caching. The trickiest part was building a submission queue so concurrent requests wouldn't cause data loss. Total: 3 weeks. Result: zero crashes in the next 3 exam cycles, load time down from 8s to 1.5s, and we now comfortably handle 500+ concurrent users.",
+          elaboration: [
+            {
+              title: "Pick a project with a real before/after contrast",
+              body: "Quantify the problem clearly: load time, error rate, users affected. The more concrete the 'before' state, the more impressive the outcome sounds. Vague problems produce vague answers."
+            },
+            {
+              title: "Show your decision-making, not just your actions",
+              body: "Walk through the options you considered and why you chose the approach you did. 'I chose X over Y because...' is the sentence that separates senior thinking from junior thinking."
+            },
+            {
+              title: "Be honest about what was hard",
+              body: "Include a genuine moment of difficulty — something that took longer than expected or a tradeoff that was genuinely tough. Pretending it was smooth makes you sound inexperienced."
+            },
+            {
+              title: "Prepare for 'What would you do differently?'",
+              body: "Almost every project answer gets this follow-up. Have a real, specific answer ready — not 'nothing, it went perfectly.' That's a red flag for any experienced interviewer."
+            }
+          ],
           situation: 'Our college quiz platform was crashing during exams — 200+ students affected.',
           task: 'I was the backend lead responsible for fixing the stability and performance issues.',
           action: 'I migrated from SQLite to MongoDB Atlas, added Redis caching, and built a queue for concurrent submissions. The migration took 3 weeks including testing.',
@@ -226,7 +173,7 @@ function MockInner() {
     setCurrentIndex(next)
     setShowAnswer(false)
     setExpandedStar(null)
-    setShowExample(false)
+    setShowStarBreakdown(false)
     setUserAnswer(savedAnswers[next] || '')
     if (!questions[next]) fetchQuestion(next)
   }
@@ -238,7 +185,7 @@ function MockInner() {
     setCurrentIndex(prev)
     setShowAnswer(false)
     setExpandedStar(null)
-    setShowExample(false)
+    setShowStarBreakdown(false)
     setUserAnswer(savedAnswers[prev] || '')
   }
 
@@ -382,7 +329,7 @@ function MockInner() {
 
             {/* ── Answer toggle ── */}
             <div style={{ marginBottom: 16 }}>
-              <button onClick={() => { setShowAnswer(p => !p); setExpandedStar(null); setShowExample(false) }}
+              <button onClick={() => { setShowAnswer(p => !p); setExpandedStar(null); setShowStarBreakdown(false) }}
                 style={{
                   width: '100%', padding: '15px 20px', borderRadius: 16,
                   border: showAnswer ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.08)',
@@ -392,14 +339,14 @@ function MockInner() {
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   transition: 'all 0.2s',
                 }}>
-                <span>💡 {showAnswer ? 'Hide Model Answer' : 'Show Detailed STAR Answer + Tips'}</span>
+                <span>💡 {showAnswer ? 'Hide Model Answer' : 'Show Detailed Answer Guide + Tips'}</span>
                 <span style={{ fontSize: 12 }}>{showAnswer ? '▲' : '▼'}</span>
               </button>
 
               {showAnswer && (
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-                  {/* STAR header */}
+                  {/* ── STAR guide ── */}
                   <div style={{
                     padding: '12px 16px', borderRadius: 12,
                     background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)',
@@ -453,76 +400,113 @@ function MockInner() {
                     )
                   })}
 
-                  {/* ── Example section — always shown ── */}
-                  {current.example && (
+                  {/* ── Expert Strategy Guide (elaboration) ── */}
+                  {current.example && current.example.elaboration?.length > 0 && (
                     <div style={{
-                      borderRadius: 14, overflow: 'hidden',
-                      border: showExample ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.07)',
-                      transition: 'border 0.2s',
+                      borderRadius: 16, overflow: 'hidden',
+                      border: '1px solid rgba(99,102,241,0.2)',
+                      background: 'rgba(99,102,241,0.03)',
                     }}>
-                      {/* Toggle header */}
-                      <button
-                        onClick={() => setShowExample(p => !p)}
-                        style={{
-                          width: '100%', padding: '14px 18px',
-                          background: showExample ? 'rgba(16,185,129,0.06)' : 'rgba(255,255,255,0.02)',
-                          border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                          display: 'flex', alignItems: 'center', gap: 12,
-                          transition: 'background 0.2s',
-                        }}
-                      >
-                        <span style={{ fontSize: 18, flexShrink: 0 }}>💬</span>
-                        <div style={{ flex: 1, textAlign: 'left' }}>
-                          <span style={{ fontSize: 13, fontWeight: 700, color: showExample ? '#10b981' : '#a1a1aa', letterSpacing: '0.02em' }}>
-                            See a Full Example Answer
-                          </span>
-                          {!showExample && (
-                            <span style={{ display: 'block', fontSize: 11, color: '#52525b', marginTop: 2 }}>
-                              A real-world sample answer using the STAR structure above
+                      {/* Header — always visible */}
+                      <div style={{ padding: '18px 20px 16px' }}>
+                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
+                          <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>🧠</span>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', margin: '0 0 4px', letterSpacing: '0.02em' }}>
+                              How to nail this answer
+                            </p>
+                            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.5 }}>
+                              When an interviewer asks this, they're evaluating more than just your answer — here's the strategic framework to stand out.
+                            </p>
+                          </div>
+                        </div>
+
+                        {/* Elaboration steps — always shown */}
+                        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                          {current.example.elaboration.map((step, i) => (
+                            <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+                              {/* Step number */}
+                              <div style={{
+                                flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
+                                background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 11, fontWeight: 800, color: '#818cf8', marginTop: 1,
+                              }}>{i + 1}</div>
+                              <div style={{ flex: 1 }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: '#e4e4e7', margin: '0 0 5px', lineHeight: 1.4 }}>
+                                  {step.title}
+                                </p>
+                                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.7 }}>
+                                  {step.body}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* STAR breakdown toggle button */}
+                      <div style={{ borderTop: '1px solid rgba(99,102,241,0.15)', padding: '0' }}>
+                        <button
+                          onClick={() => setShowStarBreakdown(p => !p)}
+                          style={{
+                            width: '100%', padding: '13px 20px',
+                            background: showStarBreakdown ? 'rgba(16,185,129,0.06)' : 'transparent',
+                            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                            transition: 'background 0.2s',
+                          }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 14 }}>💬</span>
+                            <span style={{ fontSize: 12, fontWeight: 700, color: showStarBreakdown ? '#10b981' : 'rgba(255,255,255,0.4)', letterSpacing: '0.04em' }}>
+                              See a sample answer broken down by STAR
                             </span>
-                          )}
-                        </div>
-                        <span style={{ fontSize: 12, color: showExample ? '#10b981' : '#52525b' }}>{showExample ? '▲' : '▼'}</span>
-                      </button>
+                          </div>
+                          <span style={{ fontSize: 11, color: showStarBreakdown ? '#10b981' : '#52525b' }}>
+                            {showStarBreakdown ? '▲ Hide' : '▼ Show'}
+                          </span>
+                        </button>
 
-                      {/* ── Example content: prose first, then Break it down ── */}
-                      {showExample && (
-                        <div style={{ padding: '0 18px 20px', background: 'rgba(16,185,129,0.04)' }}>
-                          <div style={{ width: '100%', height: 1, background: 'rgba(16,185,129,0.2)', marginBottom: 16 }} />
-
-                          {/* Prose answer */}
-                          <p style={{
-                            fontSize: 10, fontWeight: 700, color: '#10b981',
-                            letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 10px',
-                          }}>
-                            🎙️ How a strong candidate might answer
-                          </p>
-                          <div style={{
-                            padding: '16px 18px', borderRadius: 12, marginBottom: 14,
-                            background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.2)',
-                          }}>
-                            <p style={{
-                              color: '#e4e4e7', fontSize: 14, lineHeight: 1.85,
-                              margin: 0, fontStyle: 'italic',
+                        {/* STAR breakdown content */}
+                        {showStarBreakdown && (
+                          <div style={{ padding: '4px 20px 20px' }}>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                              {[
+                                { key: 'situation', label: 'Situation', color: '#3b82f6', icon: '🎯' },
+                                { key: 'task',      label: 'Task',      color: '#8b5cf6', icon: '📋' },
+                                { key: 'action',    label: 'Action',    color: '#10b981', icon: '⚡' },
+                                { key: 'result',    label: 'Result',    color: '#f59e0b', icon: '🏆' },
+                              ].map(({ key, label, color, icon }) => (
+                                <div key={key}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                                    <span style={{ fontSize: 13 }}>{icon}</span>
+                                    <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                                      {label}
+                                    </span>
+                                  </div>
+                                  <div style={{
+                                    padding: '11px 14px', borderRadius: 10,
+                                    background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}18`,
+                                  }}>
+                                    <p style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
+                                      {current.example![key as keyof typeof current.example] as string}
+                                    </p>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                            <div style={{
+                              marginTop: 14, padding: '10px 14px', borderRadius: 10,
+                              background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)',
                             }}>
-                              "{current.example.prose}"
-                            </p>
+                              <p style={{ fontSize: 12, color: '#6ee7b7', lineHeight: 1.6, margin: 0 }}>
+                                💡 <strong>Remember:</strong> Replace with YOUR real experience — the structure is what matters, not copying this word for word.
+                              </p>
+                            </div>
                           </div>
-
-                          {/* Break it down accordion */}
-                          <BreakdownToggle example={current.example} />
-
-                          {/* Reminder note */}
-                          <div style={{
-                            marginTop: 14, padding: '10px 14px', borderRadius: 10,
-                            background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)',
-                          }}>
-                            <p style={{ fontSize: 12, color: '#6ee7b7', lineHeight: 1.6, margin: 0 }}>
-                              💡 <strong>Remember:</strong> This is just a template. Replace with YOUR real experience — the structure is what matters, not copying this example word for word.
-                            </p>
-                          </div>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   )}
 

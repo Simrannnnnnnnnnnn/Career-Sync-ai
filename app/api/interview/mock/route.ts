@@ -26,17 +26,32 @@ async function callHFSpace(body: object, retries = 2): Promise<Response> {
   throw lastError || new Error('HF Space unreachable')
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface StarAnswer {
+  situation: string
+  task: string
+  action: string
+  result: string
+}
+
+interface ElaborationStep {
+  title: string       // e.g. "Never jump straight to the fix"
+  body: string        // 2-4 sentences of strategic guidance
+}
+
+interface ExampleData {
+  elaboration: ElaborationStep[]   // 4-5 strategic steps — the "expert guide"
+  situation: string
+  task: string
+  action: string
+  result: string
+}
+
 // ─── Rich fallback pool ───────────────────────────────────────────────────────
 const FALLBACK_BY_ROUND: Record<string, {
   question: string
-  star: { situation: string; task: string; action: string; result: string }
-  example: {
-    prose: string
-    situation: string
-    task: string
-    action: string
-    result: string
-  }
+  star: StarAnswer
+  example: ExampleData
   tips: string[]
 }[]> = {
   screening: [
@@ -49,7 +64,28 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A great answer leaves the recruiter nodding and wanting to learn more. End with something like: 'That's a quick overview — I'd love to learn more about what success looks like in this role.'"
       },
       example: {
-        prose: "I'm a final-year MCA student specialising in Data Science at LPU. Over the past year I've been building and shipping real projects — the one I'm most proud of is a resume parser that used Groq's Llama 3.3 and PyMuPDF to extract skills and match them against job descriptions, cutting mock screening time by around 40%. Before that, I interned with IBM SkillsBuild where I built AI strategy dashboards and got my hands dirty with BI tooling. I love the intersection of ML and product — taking a messy problem and building something that actually works end to end. I'm excited about this role specifically because you're building data products at scale, and that's exactly the environment I want to grow in. Happy to go deeper on any of this — and I'd love to understand what a strong first 90 days looks like here.",
+        elaboration: [
+          {
+            title: "Start with your professional identity, not your biography",
+            body: "The trap most candidates fall into is starting with where they grew up or what degree they're doing. Recruiters don't care yet — they want to know who you are professionally right now. Lead with your current role, specialisation, and the most impressive thing you've shipped or done. That sets the frame for everything else."
+          },
+          {
+            title: "Use the Present → Past → Future structure",
+            body: "This is the cleanest flow for this answer. Start with what you're doing now (current role/project), briefly reference what built you up to this (1-2 past experiences with impact), then end with why you're here talking to them today. It creates a narrative arc, not a CV reading."
+          },
+          {
+            title: "Pick ONE specific achievement to anchor the answer",
+            body: "Don't list five projects — pick the most impressive one and mention it with a real metric. 'I built a resume parser that reduced screening time by 40%' lands ten times harder than 'I've worked on several ML projects.' Specificity signals credibility."
+          },
+          {
+            title: "End with a bridge to them — not a full stop",
+            body: "The best 'tell me about yourself' answers don't end with you — they pivot to the company. Something like: 'That's the quick version — I'm excited about this role because X, and I'd love to understand what the team is focused on right now.' This signals you're a two-way conversation, not a monologue."
+          },
+          {
+            title: "Prepare three versions and know which one to use",
+            body: "Have a 30-second version (phone screen), a 90-second version (standard), and a 3-minute version (if they say 'tell me more'). The 30-second one is just: who you are, one achievement, why you're here. Don't give the 3-minute version when they asked for the 30-second one."
+          }
+        ],
         situation: "You're interviewing for a Data Analyst role at a fintech startup.",
         task: "Introduce yourself in a way that highlights your analytical background and enthusiasm for fintech.",
         action: "\"I'm a final-year MCA student specializing in Data Science. Over the past year I've built projects involving Python, SQL, and machine learning — including a resume parser that reduced screening time by 40% in a mock deployment. I interned at IBM SkillsBuild where I worked on AI strategy and BI dashboards. I'm particularly excited about this role because I love turning messy financial data into actionable insights.\"",
@@ -71,7 +107,24 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A confident, researched answer shows you're a professional who knows their worth — not desperate or naive. It also keeps the door open for negotiation."
       },
       example: {
-        prose: "Based on my research across Glassdoor, AmbitionBox, and LinkedIn Salary for entry-level Data Analyst and SDE roles in Bangalore, the typical range sits between 6 and 10 LPA for candidates with internship experience. Given the internship I completed with IBM, the projects I've shipped end-to-end, and the skills I bring in Python, SQL, and ML — I'm targeting somewhere in the 7 to 9 LPA range. That said, I'm genuinely open to discussing the full package, including learning opportunities, mentorship, and growth trajectory, because long-term fit matters more to me than just the number. If it helps, I'm happy to be flexible depending on what the role and team look like.",
+        elaboration: [
+          {
+            title: "Never give a single number — always a range",
+            body: "A single number either anchors too low (you leave money on the table) or too high (you get screened out). A range gives you negotiation room. Make the lower end of your range your actual floor — the number below which you would not accept the offer."
+          },
+          {
+            title: "Do your research before the call, not during it",
+            body: "Check AmbitionBox, Glassdoor, and LinkedIn Salary for the exact role, city, and company size. Look at what people with similar experience are earning. Going in with real data is the difference between sounding confident and sounding like you guessed."
+          },
+          {
+            title: "Flip the question back if you're asked too early",
+            body: "If they ask in the very first call before you know much about the role, it's completely professional to say: 'I'd love to understand the full scope of the role first — could you share the budgeted range?' Many companies will answer this. If they push, give a broad range and say you're open to discussing further."
+          },
+          {
+            title: "Always add 'open to the full package'",
+            body: "Compensation isn't just base salary — it includes bonuses, ESOPs, flexible work, learning budget, and growth trajectory. Adding 'I'm open to the full compensation package' signals maturity and keeps the conversation open even if the base is slightly below your range."
+          }
+        ],
         situation: "You're a fresher applying for a Software Engineer role in Bangalore.",
         task: "Give a salary range that's realistic for a fresher but not undercutting yourself.",
         action: "\"Based on my research on Glassdoor and AmbitionBox for entry-level SDE roles in Bangalore, the range is typically 6–10 LPA. Given my internship experience and the projects I've shipped, I'm targeting 7–9 LPA — but I'm absolutely open to discussing the full package including learning opportunities and growth.\"",
@@ -95,7 +148,28 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "Quantify the impact wherever possible: 'reduced load time by 40%', 'saved 200 engineering hours per month', 'increased conversion by 12%'."
       },
       example: {
-        prose: "The most impactful project I've worked on is SmartQuizzer — our college's exam platform that was genuinely falling apart under load. We had 200+ students hitting it simultaneously during exams and it kept crashing because the whole thing was running on SQLite with no proper session handling. I was the backend lead, so the database layer and API were entirely on me. I made the call to migrate to MongoDB Atlas, rewrote the API in Node.js, and layered Redis on top for session caching. The trickiest part was building a queue system so concurrent quiz submissions wouldn't collide and cause data loss — that took the most debugging. Total migration was about three weeks including testing cycles. The result was pretty satisfying — zero crashes across the next three exam cycles, page load time went from 8 seconds down to under 1.5, and we're now comfortably handling 500+ concurrent users. I also Dockerised the whole thing and deployed it on HuggingFace Spaces, so the team could iterate without worrying about infra.",
+        elaboration: [
+          {
+            title: "Pick a project where YOUR decision changed the outcome",
+            body: "The interviewer isn't evaluating the project — they're evaluating you. Choose something where you personally made a call that mattered: a technology choice, an architectural decision, a tradeoff you owned. If you were just executing someone else's plan, find a different project."
+          },
+          {
+            title: "Set the 'before state' clearly — make the problem feel real",
+            body: "Spend 20 seconds painting the picture of how bad things were before you got involved. Numbers help: '8-second load time', '200 students affected', 'zero test coverage'. The worse you make the 'before' sound (credibly), the more impressive the 'after' becomes."
+          },
+          {
+            title: "Walk through your decision-making, not just your actions",
+            body: "Don't just say what you did — say why you chose that approach over alternatives. 'I chose MongoDB over PostgreSQL here because our data was document-structured and schema was changing weekly' is ten times more impressive than 'I used MongoDB.' Interviewers are listening for engineering judgment."
+          },
+          {
+            title: "Quantify everything you possibly can",
+            body: "Before the interview, audit your project for numbers: load time before/after, users affected, deployment time, error rate reduction, lines of code, time saved. Even rough estimates with caveats ('roughly 40% faster, based on our load testing') beat vague claims like 'significantly improved performance.'"
+          },
+          {
+            title: "Prepare for the follow-up: 'What would you do differently?'",
+            body: "Every strong project answer gets this follow-up. Have a real answer ready — not a fake weakness. 'I'd write tests first this time' or 'I underestimated the migration complexity and would allocate more buffer' shows maturity. Saying 'nothing, it went perfectly' is a red flag."
+          }
+        ],
         situation: "During my MCA final year, our college's quiz platform kept crashing during exams because it was built on SQLite with no proper session handling — 200+ students affected.",
         task: "I was the backend lead responsible for redesigning the database layer and API to handle concurrent users without data loss.",
         action: "I migrated the database from SQLite to MongoDB Atlas, built a custom REST API with Node.js and added Redis-based session caching. I also added a queue system so concurrent quiz submissions wouldn't conflict. The whole migration took 3 weeks including testing.",
@@ -117,7 +191,28 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "What did you CHANGE because of this failure? Show that you extracted a concrete lesson and applied it."
       },
       example: {
-        prose: "Honestly, the failure that taught me the most was during a second-year team project — we were building a recommendation system and I was leading it. I made a classic mistake: I assumed everyone understood the timeline and what they were working on, so I didn't set up any formal check-ins. Just trusted that people would flag issues. Two days before the deadline, I found out two teammates had been completely blocked on an API integration for over a week and hadn't said anything because they didn't want to seem incompetent. I pulled two all-nighters trying to fix it but we still submitted late and lost 15% of our grade. That one stung. What I changed immediately after was introducing brief daily standups on every team project — nothing formal, just a quick 'what did you do, what are you doing, what's blocking you.' That last question is everything. I haven't had a surprise blocker since. The real lesson wasn't about process though — it was that leadership means creating psychological safety so problems surface early, not waiting for people to volunteer bad news.",
+        elaboration: [
+          {
+            title: "Don't pick a fake failure — interviewers see through it immediately",
+            body: "The classic fake failure is 'I work too hard' or 'I'm a perfectionist.' These are not failures. Pick something real where you genuinely dropped the ball, misjudged a situation, or made a wrong call. The self-awareness you show by owning something real is worth far more than a polished non-answer."
+          },
+          {
+            title: "Own it completely — no 'but the team also...'",
+            body: "The moment you start distributing blame, you've lost the interviewer. Even if others were involved, your answer should focus entirely on what YOU did wrong and what YOU could have done differently. 'I should have set up check-ins' is strong. 'The team didn't communicate well' is weak."
+          },
+          {
+            title: "Describe the warning signs you missed",
+            body: "This is the most underrated part of a great failure answer. What signals were there early on that you ignored or didn't notice? Showing that you can now recognise those signals demonstrates genuine learning — not just a rehearsed lesson."
+          },
+          {
+            title: "The 'what I changed' section is everything",
+            body: "The entire point of this question is the lesson. Spend at least 40% of your answer on what specifically changed in your behaviour, process, or thinking afterward. A concrete behaviour change ('I now run daily standups on every team project') is far stronger than a vague insight ('I learned communication is important')."
+          },
+          {
+            title: "End forward, not backward",
+            body: "Close by showing you're better because of this failure — not still scarred by it. 'That failure completely changed how I lead teams, and I haven't had a surprise blocker since' closes on confidence. The interviewer should leave thinking: this person learns fast and doesn't repeat mistakes."
+          }
+        ],
         situation: "In my second year, I was leading a team project to build a recommendation system. I assumed everyone understood the timeline and didn't hold formal check-ins.",
         task: "I was project lead — responsible for delivery and team coordination.",
         action: "Two days before the deadline, I realized two teammates had been blocked on an API integration for a week but hadn't spoken up. I stayed up two nights to fix it but we still submitted late and lost 15% of our grade.",
@@ -141,7 +236,28 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A complete answer covers the happy path, edge cases (duplicate URLs, expiry, custom slugs), and discusses tradeoffs clearly."
       },
       example: {
-        prose: "Sure, let me walk through how I'd approach this. First I'd clarify scope — do we need analytics, custom slugs, expiry? Assuming yes for all three at 100M DAU. The core is simple: a POST /shorten endpoint takes a long URL, we generate a short code using base62 encoding of an auto-incremented database ID — that gives us 56 billion unique codes at just 6 characters, so we won't run out. We store the long-to-short mapping in Postgres. For redirects, we expose a GET /{code} endpoint that looks up the code — but here's where caching matters: about 80% of traffic hits the same popular URLs, so I'd put Redis in front with a 24-hour TTL. That keeps most requests off the database entirely. For the redirect itself, I'd use 302 rather than 301 — 301 gets cached by the browser forever and we'd lose analytics visibility. At scale I'd add a CDN layer for geographic distribution and horizontal read replicas on Postgres. For analytics, I'd fire events to a Kafka queue asynchronously — you don't want click tracking to slow down the redirect itself. Edge cases worth mentioning: we'd want to deduplicate identical long URLs, handle expired links gracefully, and rate-limit the shortening endpoint to prevent abuse.",
+        elaboration: [
+          {
+            title: "Always clarify requirements before designing anything",
+            body: "The trap is jumping straight into the architecture. A senior engineer always asks first: Do we need analytics? Custom slugs? Link expiry? What's the scale — 1M or 100M DAU? These answers completely change the design. Taking 60 seconds to ask these questions signals engineering maturity."
+          },
+          {
+            title: "Start simple, then scale — don't begin with Kafka",
+            body: "Walk through the simplest version that works first: POST endpoint, base62 hash, Postgres, redirect. Then layer on complexity as you discuss scale. Starting with a distributed Kafka + sharded NoSQL architecture before explaining the core flow makes you look like you're pattern-matching, not thinking."
+          },
+          {
+            title: "Explain the WHY behind every technology choice",
+            body: "'I'd use Redis for caching' is weak. 'I'd use Redis with a 24-hour TTL because roughly 80% of redirect traffic hits the same popular URLs — caching them eliminates most DB reads' is strong. Interviewers are testing engineering judgment, not technology name-dropping."
+          },
+          {
+            title: "Know the 301 vs 302 tradeoff cold",
+            body: "This is a classic follow-up in URL shortener design. 301 (permanent) gets cached by browsers — faster for users, but you lose all analytics visibility. 302 (temporary) hits your server every time — slightly slower, but you can track every click. The right answer depends on whether analytics matter, and you should say so."
+          },
+          {
+            title: "Cover edge cases to show senior thinking",
+            body: "Mention at least 2-3 edge cases without being prompted: duplicate long URLs (do you return the same short code or a new one?), expired links (404 or redirect to expiry page?), abuse prevention (rate limiting on the /shorten endpoint). Interviewers remember candidates who think about what breaks."
+          }
+        ],
         situation: "Interviewer asks: 'Design bit.ly for 100M daily active users.'",
         task: "You need to walk through the full architecture in ~10 minutes, covering storage, hashing, redirects, and scale.",
         action: "\"I'd start with a POST /shorten endpoint that takes a long URL. I'd generate a short code using base62 encoding of an auto-incremented DB ID — that gives 56 billion+ unique codes with 6 characters. Store the mapping in Postgres. For redirects, use a Redis cache with a 24-hour TTL — 80% of traffic hits cached URLs anyway. For the redirect itself, I'd use 302 (not 301) so we can track analytics. At scale, I'd add a CDN in front and horizontal DB read replicas.\"",
@@ -165,7 +281,24 @@ const FALLBACK_BY_ROUND: Record<string, {
         result: "A great answer shows ambition + humility + alignment with the company's growth trajectory. Flip it into a question at the end."
       },
       example: {
-        prose: "In the next one to two years, I want to go genuinely deep on production ML — not just training models, but owning them end to end: robust pipelines, proper monitoring, versioning, the full MLOps picture. I want to understand what it takes to keep a model healthy in production, not just get it deployed. In the three to five year range, I see myself as a senior ML engineer who can both architect systems and bring junior engineers up to speed — someone who bridges the gap between research ideas and things that actually scale. What draws me to this company specifically is that you're building AI features that reach millions of users, and that's the scale I want to develop my instincts at. There's a big difference between ML that works in a notebook and ML that works at scale under real traffic, and I want to learn that the hard way here. Can I ask — what does the growth path typically look like for engineers who join at this level? I'm curious how quickly people move into more ownership.",
+        elaboration: [
+          {
+            title: "Make it a story that leads logically to this role",
+            body: "Your career vision should feel inevitable given where you've been — not random. Connect your past experience to what you want to master next, and show how this specific role is the natural next step. If the connection isn't obvious, explain it. 'This role gives me X which I need to get to Y' is a compelling frame."
+          },
+          {
+            title: "Be ambitious but grounded — avoid 'I want to be a VP in 2 years'",
+            body: "Final round interviewers are experienced enough to know what's realistic. Overpromising ambition makes you sound naive. Underpromising makes you sound like you'll leave the moment something better comes along. The sweet spot: clear ambition for depth and ownership in 1-2 years, leadership or senior IC in 3-5."
+          },
+          {
+            title: "Tie your vision explicitly to this company's trajectory",
+            body: "Generic career vision answers get forgotten. Research the company — what are they building in the next 2-3 years? Where is the team growing? Then say: 'I'm particularly drawn to this because you're doing X, and that's exactly the scale I want to develop my instincts at.' It shows you did your homework."
+          },
+          {
+            title: "Always flip it into a question at the end",
+            body: "End your answer by turning it back to them: 'What does the growth path typically look like for engineers who join at this level?' This does three things: shows genuine interest, makes it a dialogue rather than a monologue, and gives you real information you can use in your decision."
+          }
+        ],
         situation: "You're in the final round for an ML Engineer role at a product company.",
         task: "Show that your career goals align with the company's direction and that you're a long-term bet worth making.",
         action: "\"In the next 1-2 years, I want to go deep on production ML — building robust pipelines, learning MLOps best practices, and owning models end-to-end in a real product environment. In 3-5 years, I see myself as a senior ML engineer who can both design systems and mentor junior engineers.\"",
@@ -191,7 +324,24 @@ const DEFAULT_FALLBACK = [
       result: "Quantify wherever possible. 'Reduced page load time by 60%', 'shipped 2 weeks ahead of schedule'."
     },
     example: {
-      prose: "The project I'd point to is our e-commerce platform's performance overhaul. The site had a 12-second load time and it was genuinely killing conversion — users were bouncing before the page even finished loading. I was the sole backend developer on the fix, so the whole diagnostic and execution was on me. I started by profiling properly with Chrome DevTools rather than guessing, and found three distinct bottlenecks: images weren't optimised at all, so I added a WebP conversion pipeline; there were classic N+1 queries throughout the product listing endpoints, which I rewrote using JOINs; and there was zero caching, so I introduced Redis for the product catalog queries that were hitting the database on every single request. The whole thing took about two weeks of evening work alongside my regular responsibilities. Load time dropped from 12 seconds to 2.3 seconds. Bounce rate fell by 22%. The CTO actually used it as a case study in the next all-hands, which was a nice moment. The thing it really drilled into me was: always measure before you optimise. I had assumptions about where the bottleneck was and I was wrong about two of the three.",
+      elaboration: [
+        {
+          title: "Pick a project with a real before/after contrast",
+          body: "The more concrete the 'before' state, the more impressive the outcome. Quantify the problem: load time, error rate, manual hours, users affected. Vague problems produce vague answers — and vague answers don't get offers."
+        },
+        {
+          title: "Show your decision-making process, not just the outcome",
+          body: "Walk through the options you considered and why you chose the approach you did. Interviewers aren't just evaluating what you built — they're evaluating how you think. 'I chose X over Y because...' is the sentence that separates senior thinking from junior thinking."
+        },
+        {
+          title: "Be honest about what was hard",
+          body: "The best project answers include a genuine moment of difficulty — something that took longer than expected, a technical approach that didn't work, a tradeoff that was genuinely hard to make. Pretending it was smooth makes you sound either inexperienced or dishonest."
+        },
+        {
+          title: "Prepare for the follow-up: 'What would you do differently?'",
+          body: "Almost every project answer gets this. Have a real, specific answer ready. 'I'd write tests from the start instead of adding them at the end' or 'I'd spend more time on the data schema before building the API' shows engineering maturity and genuine reflection."
+        }
+      ],
       situation: "Our team's e-commerce site had a 12-second load time that was killing conversion rates.",
       task: "I was tasked with identifying and fixing the top 3 performance bottlenecks as the sole backend developer.",
       action: "I profiled the app with Chrome DevTools and found 3 issues: unoptimized images (added WebP conversion), N+1 SQL queries (rewrote with JOIN), and no caching (added Redis for product listings). Took 2 weeks working evenings.",
@@ -219,7 +369,7 @@ export async function POST(req: NextRequest) {
       ? `Already asked — DO NOT repeat or rephrase:\n${askedQuestions.map((q: string, i: number) => `${i + 1}. ${q}`).join('\n')}`
       : ''
 
-    const systemPrompt = `You are an expert interview coach generating questions with detailed STAR-method answers AND a concrete real-world example.
+    const systemPrompt = `You are an expert interview coach generating questions with detailed STAR-method answers AND a strategic expert guide.
 
 Generate ONE unique interview question for:
 - Role: ${role}
@@ -240,7 +390,24 @@ JSON format (exact):
     "result": "<2-3 sentences: HOW TO describe the outcome — how to quantify and what strong results sound like>"
   },
   "example": {
-    "prose": "<A 5-8 sentence flowing, first-person answer as if a strong candidate is speaking naturally in the interview. Weave in the STAR structure seamlessly — do NOT label the parts. It should sound confident, specific, and human. Include real-sounding metrics and decisions.>",
+    "elaboration": [
+      {
+        "title": "<short, punchy title for strategic step 1 — e.g. 'Never jump straight to the solution'>",
+        "body": "<2-4 sentences of strategic guidance: what the common trap is, what to do instead, and why it matters to the interviewer. Be specific to THIS question.>"
+      },
+      {
+        "title": "<strategic step 2 title>",
+        "body": "<2-4 sentences>"
+      },
+      {
+        "title": "<strategic step 3 title>",
+        "body": "<2-4 sentences>"
+      },
+      {
+        "title": "<strategic step 4 title — senior mindset, production reality, or common follow-up to prepare for>",
+        "body": "<2-4 sentences>"
+      }
+    ],
     "situation": "<1-2 sentences: a CONCRETE example situation someone in a ${role} role might have faced>",
     "task": "<1 sentence: their specific responsibility in that example>",
     "action": "<2-3 sentences: exactly what they DID — specific tools, steps, decisions — written as if the candidate is speaking>",
@@ -256,9 +423,9 @@ JSON format (exact):
 
     try {
       const response = await callHFSpace({
-        messages: [{ role: 'user', content: `Generate a unique ${round} interview question with full STAR answer AND a concrete example for ${role} at ${difficulty} level.` }],
+        messages: [{ role: 'user', content: `Generate a unique ${round} interview question with full STAR answer AND strategic elaboration guide for ${role} at ${difficulty} level.` }],
         systemPrompt,
-        max_tokens: 1400,
+        max_tokens: 1600,
       })
 
       const data = await response.json()
