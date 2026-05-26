@@ -31,21 +31,23 @@ interface StarAnswer {
   result: string
 }
 
-interface ElaborationStep {
-  title: string
-  body: string
+interface ActionStep {
+  heading: string
+  content: string
+  bullets?: string[]
+}
+
+interface ModelAnswer {
+  situationTask: string
+  actionSteps: ActionStep[]
+  result: string
+  whyItWins: string[]
 }
 
 interface QuestionData {
   question: string
   star: StarAnswer
-  example: {
-    elaboration: ElaborationStep[]
-    situation: string
-    task: string
-    action: string
-    result: string
-  } | null
+  modelAnswer: ModelAnswer | null
   tips: string[]
   companies: string[]
 }
@@ -75,7 +77,7 @@ function MockInner() {
   const [savedAnswers,  setSavedAnswers]  = useState<Record<number, string>>({})
   const [done,          setDone]          = useState(false)
   const [expandedStar,  setExpandedStar]  = useState<string | null>(null)
-  const [showStarBreakdown, setShowStarBreakdown] = useState(false)
+  const [showStarGuide, setShowStarGuide] = useState(false)
   const askedRef = useRef<string[]>([])
 
   const roundLabel = round === 'screening' ? 'Screening Call'
@@ -105,7 +107,7 @@ function MockInner() {
         action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
         result: 'Share the outcome. Quantify the impact wherever possible.',
       }
-      const example = data.example || null
+      const modelAnswer: ModelAnswer | null = data.modelAnswer || null
       const tips: string[] = data.tips || [
         'Use specific numbers and metrics in your result',
         'Keep situation + task brief — spend most time on action',
@@ -114,10 +116,9 @@ function MockInner() {
 
       askedRef.current.push(question)
       const companies = getCompanyTags(role)
-
       setQuestions(prev => {
         const updated = [...prev]
-        updated[index] = { question, star, example, tips, companies }
+        updated[index] = { question, star, modelAnswer, tips, companies }
         return updated
       })
     } catch {
@@ -129,29 +130,26 @@ function MockInner() {
           action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
           result: 'Share the outcome. Quantify the impact wherever possible.',
         },
-        example: {
-          elaboration: [
+        modelAnswer: {
+          situationTask: "During my final year, our college quiz platform was crashing under exam load — 200+ students affected and the backend was entirely on SQLite with no concurrency handling. I was the backend lead, so this was fully on me to fix.",
+          actionSteps: [
             {
-              title: "Pick a project with a real before/after contrast",
-              body: "Quantify the problem clearly: load time, error rate, users affected. The more concrete the 'before' state, the more impressive the outcome sounds. Vague problems produce vague answers."
+              heading: "Step 1: Profile before touching anything",
+              content: "I diagnosed three root causes: SQLite file-lock blocking concurrent writes, zero session caching (every request hit the DB), and no queue for simultaneous submissions causing race conditions.",
+              bullets: ["SQLite → MongoDB Atlas for concurrent write support", "Redis for session caching (sub-ms vs 80ms+ DB reads)", "Submission queue with retry logic to eliminate race conditions"]
             },
             {
-              title: "Show your decision-making, not just your actions",
-              body: "Walk through the options you considered and why you chose the approach you did. 'I chose X over Y because...' is the sentence that separates senior thinking from junior thinking."
-            },
-            {
-              title: "Be honest about what was hard",
-              body: "Include a genuine moment of difficulty — something that took longer than expected or a tradeoff that was genuinely tough. Pretending it was smooth makes you sound inexperienced."
-            },
-            {
-              title: "Prepare for 'What would you do differently?'",
-              body: "Almost every project answer gets this follow-up. Have a real, specific answer ready — not 'nothing, it went perfectly.' That's a red flag for any experienced interviewer."
+              heading: "Step 2: Migrate and deploy",
+              content: "Migrated to MongoDB Atlas, added Redis caching, built the submission queue, Dockerised the stack, and deployed on HuggingFace Spaces. Total: 3 weeks including testing.",
             }
           ],
-          situation: 'Our college quiz platform was crashing during exams — 200+ students affected.',
-          task: 'I was the backend lead responsible for fixing the stability and performance issues.',
-          action: 'I migrated from SQLite to MongoDB Atlas, added Redis caching, and built a queue for concurrent submissions. The migration took 3 weeks including testing.',
-          result: 'Zero crashes in the next 3 exam cycles. Load time dropped from 8s to 1.5s. Now handles 500+ concurrent users.',
+          result: "Zero crashes in the next 3 exam cycles. Load time: 8s → 1.5s. Now handles 500+ concurrent users. Lesson: always profile before optimising — assumptions about bottlenecks are usually wrong.",
+          whyItWins: [
+            "Real before/after numbers (8s → 1.5s, zero crashes) make the impact concrete",
+            "Diagnosis-first approach signals engineering maturity",
+            "Specific tech choices with reasoning (MongoDB for document model fit)",
+            "Live deployment link offer proves the project is real"
+          ]
         },
         tips: ['Use the STAR method', 'Be specific with numbers', 'Practice out loud'],
         companies: getCompanyTags(role),
@@ -173,7 +171,7 @@ function MockInner() {
     setCurrentIndex(next)
     setShowAnswer(false)
     setExpandedStar(null)
-    setShowStarBreakdown(false)
+    setShowStarGuide(false)
     setUserAnswer(savedAnswers[next] || '')
     if (!questions[next]) fetchQuestion(next)
   }
@@ -185,7 +183,7 @@ function MockInner() {
     setCurrentIndex(prev)
     setShowAnswer(false)
     setExpandedStar(null)
-    setShowStarBreakdown(false)
+    setShowStarGuide(false)
     setUserAnswer(savedAnswers[prev] || '')
   }
 
@@ -201,42 +199,32 @@ function MockInner() {
       fontFamily: "'DM Sans', sans-serif", textAlign: 'center',
     }}>
       <div style={{ fontSize: 72 }}>🎉</div>
-      <h1 style={{ color: '#f4f4f5', fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: '-0.03em' }}>
-        Mock Complete!
-      </h1>
+      <h1 style={{ color: '#f4f4f5', fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: '-0.03em' }}>Mock Complete!</h1>
       <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 15, margin: 0, maxWidth: 360, lineHeight: 1.6 }}>
         You completed all {count} questions for <strong style={{ color: '#818cf8' }}>{role}</strong> — {roundLabel}
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
-        <button onClick={() => router.push('/interview/mock-setup')}
-          style={{
-            padding: '14px 28px', borderRadius: 14, border: 'none',
-            background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
-            color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-            boxShadow: '0 0 30px rgba(99,102,241,0.25)',
-          }}>🔄 Practice Again</button>
-        <button onClick={() => router.push('/dashboard')}
-          style={{
-            padding: '14px 28px', borderRadius: 14,
-            border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
-            color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 600,
-            cursor: 'pointer', fontFamily: 'inherit',
-          }}>🏠 Dashboard</button>
+        <button onClick={() => router.push('/interview/mock-setup')} style={{
+          padding: '14px 28px', borderRadius: 14, border: 'none',
+          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+          color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+          boxShadow: '0 0 30px rgba(99,102,241,0.25)',
+        }}>🔄 Practice Again</button>
+        <button onClick={() => router.push('/dashboard')} style={{
+          padding: '14px 28px', borderRadius: 14,
+          border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
+          color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 600,
+          cursor: 'pointer', fontFamily: 'inherit',
+        }}>🏠 Dashboard</button>
       </div>
     </div>
   )
 
-  // ── Main screen ──
   return (
-    <div style={{
-      minHeight: '100vh', background: '#050507',
-      fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: '#f4f4f5',
-    }}>
-      {/* Background grid */}
+    <div style={{ minHeight: '100vh', background: '#050507', fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: '#f4f4f5' }}>
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        backgroundImage: `linear-gradient(rgba(99,102,241,0.02) 1px, transparent 1px),
-                          linear-gradient(90deg, rgba(99,102,241,0.02) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(rgba(99,102,241,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.02) 1px, transparent 1px)`,
         backgroundSize: '48px 48px',
       }} />
 
@@ -244,8 +232,7 @@ function MockInner() {
       <div style={{
         position: 'sticky', top: 0, zIndex: 50,
         background: 'rgba(5,5,7,0.96)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)',
-        padding: '14px 28px',
+        borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '14px 28px',
       }}>
         <div style={{ maxWidth: 780, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -261,15 +248,13 @@ function MockInner() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>{currentIndex + 1} / {count}</span>
-            <button onClick={() => router.push('/dashboard')}
-              style={{
-                padding: '6px 14px', borderRadius: 99,
-                border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
-                color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
-              }}>Exit</button>
+            <button onClick={() => router.push('/dashboard')} style={{
+              padding: '6px 14px', borderRadius: 99,
+              border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
+              color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+            }}>Exit</button>
           </div>
         </div>
-        {/* Progress bar */}
         <div style={{ maxWidth: 780, margin: '10px auto 0' }}>
           <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
@@ -283,7 +268,6 @@ function MockInner() {
 
       {/* Content */}
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '32px 24px 80px', position: 'relative', zIndex: 1 }}>
-
         {loading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 400, gap: 20 }}>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -295,220 +279,238 @@ function MockInner() {
           </div>
         ) : current ? (
           <div>
-            {/* ── Question card ── */}
+            {/* Question card */}
             <div style={{
               background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 22, padding: '32px', marginBottom: 16, position: 'relative', overflow: 'hidden',
             }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, #6366f1, transparent)' }} />
-
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px',
                   borderRadius: 99, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
                 }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                    Question {currentIndex + 1}
-                  </span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Question {currentIndex + 1}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {current.companies.map(c => (
                     <span key={c} style={{
                       fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 99,
                       background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.4)', letterSpacing: '0.04em',
+                      color: 'rgba(255,255,255,0.4)',
                     }}>🏢 {c}</span>
                   ))}
                 </div>
               </div>
-
               <p style={{ color: '#f4f4f5', fontSize: 21, fontWeight: 600, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
                 {current.question}
               </p>
             </div>
 
-            {/* ── Answer toggle ── */}
+            {/* Answer toggle */}
             <div style={{ marginBottom: 16 }}>
-              <button onClick={() => { setShowAnswer(p => !p); setExpandedStar(null); setShowStarBreakdown(false) }}
+              <button onClick={() => { setShowAnswer(p => !p); setExpandedStar(null); setShowStarGuide(false) }}
                 style={{
                   width: '100%', padding: '15px 20px', borderRadius: 16,
                   border: showAnswer ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.08)',
                   background: showAnswer ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.02)',
                   color: showAnswer ? '#818cf8' : 'rgba(255,255,255,0.5)',
                   fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  transition: 'all 0.2s',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between', transition: 'all 0.2s',
                 }}>
-                <span>💡 {showAnswer ? 'Hide Model Answer' : 'Show Detailed Answer Guide + Tips'}</span>
+                <span>💡 {showAnswer ? 'Hide Model Answer' : 'Show Model Answer'}</span>
                 <span style={{ fontSize: 12 }}>{showAnswer ? '▲' : '▼'}</span>
               </button>
 
               {showAnswer && (
                 <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-                  {/* ── STAR guide ── */}
-                  <div style={{
-                    padding: '12px 16px', borderRadius: 12,
-                    background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.15)',
-                    display: 'flex', alignItems: 'center', gap: 10,
-                  }}>
-                    <span style={{ fontSize: 16 }}>⭐</span>
-                    <div>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', margin: 0 }}>STAR Method Breakdown</p>
-                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
-                        Click each section to expand — use these as a guide to structure your answer
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* STAR accordion sections */}
-                  {STAR_CONFIG.map(({ key, label, color, bg, border, icon }) => {
-                    const isOpen = expandedStar === key
-                    const text = current.star[key as keyof StarAnswer]
-                    return (
-                      <div key={key} style={{
-                        borderRadius: 14, overflow: 'hidden',
-                        border: isOpen ? `1px solid ${border}` : '1px solid rgba(255,255,255,0.07)',
-                        transition: 'border 0.2s',
-                      }}>
-                        <button
-                          onClick={() => setExpandedStar(isOpen ? null : key)}
-                          style={{
-                            width: '100%', padding: '14px 18px',
-                            background: isOpen ? bg : 'rgba(255,255,255,0.02)',
-                            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                            display: 'flex', alignItems: 'center', gap: 12,
-                            transition: 'background 0.2s',
-                          }}
-                        >
-                          <span style={{ fontSize: 18, flexShrink: 0 }}>{icon}</span>
-                          <span style={{ flex: 1, textAlign: 'left', fontSize: 13, fontWeight: 700, color: isOpen ? color : '#a1a1aa', letterSpacing: '0.02em' }}>
-                            {label}
-                          </span>
-                          <span style={{ fontSize: 12, color: isOpen ? color : '#52525b' }}>{isOpen ? '▲' : '▼'}</span>
-                        </button>
-
-                        {isOpen && (
-                          <div style={{ padding: '0 18px 18px 18px', background: bg }}>
-                            <div style={{ width: '100%', height: 1, background: border, marginBottom: 14 }} />
-                            <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.75, margin: 0 }}>
-                              {text}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-
-                  {/* ── Expert Strategy Guide (elaboration) ── */}
-                  {current.example && current.example.elaboration?.length > 0 && (
+                  {/* ── MODEL ANSWER — main section ── */}
+                  {current.modelAnswer && (
                     <div style={{
-                      borderRadius: 16, overflow: 'hidden',
-                      border: '1px solid rgba(99,102,241,0.2)',
-                      background: 'rgba(99,102,241,0.03)',
+                      borderRadius: 18, overflow: 'hidden',
+                      border: '1px solid rgba(99,102,241,0.25)',
+                      background: 'rgba(10,10,20,0.6)',
                     }}>
-                      {/* Header — always visible */}
-                      <div style={{ padding: '18px 20px 16px' }}>
-                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12 }}>
-                          <span style={{ fontSize: 20, flexShrink: 0, marginTop: 1 }}>🧠</span>
-                          <div style={{ flex: 1 }}>
-                            <p style={{ fontSize: 13, fontWeight: 700, color: '#818cf8', margin: '0 0 4px', letterSpacing: '0.02em' }}>
-                              How to nail this answer
-                            </p>
-                            <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', margin: 0, lineHeight: 1.5 }}>
-                              When an interviewer asks this, they're evaluating more than just your answer — here's the strategic framework to stand out.
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Elaboration steps — always shown */}
-                        <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 14 }}>
-                          {current.example.elaboration.map((step, i) => (
-                            <div key={i} style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
-                              {/* Step number */}
-                              <div style={{
-                                flexShrink: 0, width: 26, height: 26, borderRadius: '50%',
-                                background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.3)',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                fontSize: 11, fontWeight: 800, color: '#818cf8', marginTop: 1,
-                              }}>{i + 1}</div>
-                              <div style={{ flex: 1 }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: '#e4e4e7', margin: '0 0 5px', lineHeight: 1.4 }}>
-                                  {step.title}
-                                </p>
-                                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', margin: 0, lineHeight: 1.7 }}>
-                                  {step.body}
-                                </p>
-                              </div>
-                            </div>
-                          ))}
+                      {/* Header */}
+                      <div style={{
+                        padding: '16px 20px 14px',
+                        background: 'rgba(99,102,241,0.08)',
+                        borderBottom: '1px solid rgba(99,102,241,0.15)',
+                        display: 'flex', alignItems: 'center', gap: 10,
+                      }}>
+                        <span style={{ fontSize: 18 }}>🎯</span>
+                        <div>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                            Model Answer
+                          </p>
+                          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
+                            How a strong candidate would answer this — use as a template, not a script
+                          </p>
                         </div>
                       </div>
 
-                      {/* STAR breakdown toggle button */}
-                      <div style={{ borderTop: '1px solid rgba(99,102,241,0.15)', padding: '0' }}>
-                        <button
-                          onClick={() => setShowStarBreakdown(p => !p)}
-                          style={{
-                            width: '100%', padding: '13px 20px',
-                            background: showStarBreakdown ? 'rgba(16,185,129,0.06)' : 'transparent',
-                            border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                            transition: 'background 0.2s',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ fontSize: 14 }}>💬</span>
-                            <span style={{ fontSize: 12, fontWeight: 700, color: showStarBreakdown ? '#10b981' : 'rgba(255,255,255,0.4)', letterSpacing: '0.04em' }}>
-                              See a sample answer broken down by STAR
-                            </span>
-                          </div>
-                          <span style={{ fontSize: 11, color: showStarBreakdown ? '#10b981' : '#52525b' }}>
-                            {showStarBreakdown ? '▲ Hide' : '▼ Show'}
-                          </span>
-                        </button>
+                      <div style={{ padding: '20px' }}>
 
-                        {/* STAR breakdown content */}
-                        {showStarBreakdown && (
-                          <div style={{ padding: '4px 20px 20px' }}>
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                              {[
-                                { key: 'situation', label: 'Situation', color: '#3b82f6', icon: '🎯' },
-                                { key: 'task',      label: 'Task',      color: '#8b5cf6', icon: '📋' },
-                                { key: 'action',    label: 'Action',    color: '#10b981', icon: '⚡' },
-                                { key: 'result',    label: 'Result',    color: '#f59e0b', icon: '🏆' },
-                              ].map(({ key, label, color, icon }) => (
-                                <div key={key}>
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                                    <span style={{ fontSize: 13 }}>{icon}</span>
-                                    <span style={{ fontSize: 11, fontWeight: 700, color, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-                                      {label}
-                                    </span>
-                                  </div>
-                                  <div style={{
-                                    padding: '11px 14px', borderRadius: 10,
-                                    background: 'rgba(255,255,255,0.03)', border: `1px solid ${color}18`,
-                                  }}>
-                                    <p style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.7, margin: 0 }}>
-                                      {current.example![key as keyof typeof current.example] as string}
-                                    </p>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
+                        {/* Situation & Task */}
+                        <div style={{ marginBottom: 20 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
                             <div style={{
-                              marginTop: 14, padding: '10px 14px', borderRadius: 10,
-                              background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.15)',
+                              padding: '3px 10px', borderRadius: 99,
+                              background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
                             }}>
-                              <p style={{ fontSize: 12, color: '#6ee7b7', lineHeight: 1.6, margin: 0 }}>
-                                💡 <strong>Remember:</strong> Replace with YOUR real experience — the structure is what matters, not copying this word for word.
-                              </p>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#60a5fa', letterSpacing: '0.08em' }}>🎯 SITUATION & TASK</span>
                             </div>
                           </div>
-                        )}
+                          <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.8, margin: 0, paddingLeft: 4 }}>
+                            {current.modelAnswer.situationTask}
+                          </p>
+                        </div>
+
+                        {/* Action steps */}
+                        <div style={{ marginBottom: 20 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+                            <div style={{
+                              padding: '3px 10px', borderRadius: 99,
+                              background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)',
+                            }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', letterSpacing: '0.08em' }}>⚡ ACTION</span>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                            {current.modelAnswer.actionSteps.map((step, i) => (
+                              <div key={i} style={{
+                                padding: '14px 16px', borderRadius: 12,
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.07)',
+                                borderLeft: '3px solid rgba(16,185,129,0.4)',
+                              }}>
+                                <p style={{ fontSize: 13, fontWeight: 700, color: '#34d399', margin: '0 0 8px', lineHeight: 1.4 }}>
+                                  {step.heading}
+                                </p>
+                                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.75 }}>
+                                  {step.content}
+                                </p>
+                                {step.bullets && step.bullets.length > 0 && (
+                                  <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                    {step.bullets.map((b, j) => (
+                                      <li key={j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                                        <span style={{ color: '#34d399', fontSize: 12, marginTop: 3, flexShrink: 0 }}>▸</span>
+                                        <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 1.6 }}>{b}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Result */}
+                        <div style={{ marginBottom: 20 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                            <div style={{
+                              padding: '3px 10px', borderRadius: 99,
+                              background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)',
+                            }}>
+                              <span style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', letterSpacing: '0.08em' }}>🏆 RESULT</span>
+                            </div>
+                          </div>
+                          <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.8, margin: 0, paddingLeft: 4 }}>
+                            {current.modelAnswer.result}
+                          </p>
+                        </div>
+
+                        {/* Why this answer wins */}
+                        <div style={{
+                          padding: '14px 16px', borderRadius: 12,
+                          background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)',
+                        }}>
+                          <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px' }}>
+                            ✨ Why This Answer Wins the Interview
+                          </p>
+                          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                            {current.modelAnswer.whyItWins.map((point, i) => (
+                              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                                <span style={{
+                                  flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+                                  background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.35)',
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontSize: 10, fontWeight: 800, color: '#818cf8',
+                                }}>{i + 1}</span>
+                                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, lineHeight: 1.6 }}>{point}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       </div>
                     </div>
                   )}
+
+                  {/* ── STAR Guide — collapsible ── */}
+                  <div style={{
+                    borderRadius: 14, overflow: 'hidden',
+                    border: showStarGuide ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                  }}>
+                    <button
+                      onClick={() => setShowStarGuide(p => !p)}
+                      style={{
+                        width: '100%', padding: '13px 18px',
+                        background: showStarGuide ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.02)',
+                        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        transition: 'background 0.2s',
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 15 }}>⭐</span>
+                        <span style={{ fontSize: 12, fontWeight: 700, color: showStarGuide ? '#818cf8' : 'rgba(255,255,255,0.35)', letterSpacing: '0.04em' }}>
+                          How to structure YOUR answer — STAR Guide
+                        </span>
+                      </div>
+                      <span style={{ fontSize: 11, color: showStarGuide ? '#818cf8' : '#52525b' }}>
+                        {showStarGuide ? '▲ Hide' : '▼ Show'}
+                      </span>
+                    </button>
+
+                    {showStarGuide && (
+                      <div style={{ padding: '4px 12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {STAR_CONFIG.map(({ key, label, color, bg, border, icon }) => {
+                          const isOpen = expandedStar === key
+                          const text = current.star[key as keyof StarAnswer]
+                          return (
+                            <div key={key} style={{
+                              borderRadius: 12, overflow: 'hidden',
+                              border: isOpen ? `1px solid ${border}` : '1px solid rgba(255,255,255,0.06)',
+                              transition: 'border 0.2s',
+                            }}>
+                              <button
+                                onClick={() => setExpandedStar(isOpen ? null : key)}
+                                style={{
+                                  width: '100%', padding: '12px 16px',
+                                  background: isOpen ? bg : 'rgba(255,255,255,0.02)',
+                                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                                  display: 'flex', alignItems: 'center', gap: 10, transition: 'background 0.2s',
+                                }}
+                              >
+                                <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
+                                <span style={{ flex: 1, textAlign: 'left', fontSize: 13, fontWeight: 700, color: isOpen ? color : '#a1a1aa' }}>
+                                  {label}
+                                </span>
+                                <span style={{ fontSize: 11, color: isOpen ? color : '#52525b' }}>{isOpen ? '▲' : '▼'}</span>
+                              </button>
+                              {isOpen && (
+                                <div style={{ padding: '0 16px 16px', background: bg }}>
+                                  <div style={{ width: '100%', height: 1, background: border, marginBottom: 12 }} />
+                                  <p style={{ color: '#e4e4e7', fontSize: 13, lineHeight: 1.75, margin: 0 }}>{text}</p>
+                                </div>
+                              )}
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
 
                   {/* Tips */}
                   {current.tips?.length > 0 && (
@@ -538,7 +540,7 @@ function MockInner() {
               )}
             </div>
 
-            {/* ── Your answer ── */}
+            {/* Your answer */}
             <div style={{
               background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
               borderRadius: 16, padding: '20px 22px', marginBottom: 20,
@@ -560,26 +562,24 @@ function MockInner() {
               />
             </div>
 
-            {/* ── Navigation ── */}
+            {/* Navigation */}
             <div style={{ display: 'flex', gap: 12 }}>
               {currentIndex > 0 && (
-                <button onClick={handlePrev}
-                  style={{
-                    padding: '14px 24px', borderRadius: 14,
-                    border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
-                    color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 500,
-                    cursor: 'pointer', fontFamily: 'inherit',
-                  }}>← Prev</button>
+                <button onClick={handlePrev} style={{
+                  padding: '14px 24px', borderRadius: 14,
+                  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
+                  color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 500,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                }}>← Prev</button>
               )}
-              <button onClick={handleNext} disabled={loadingNext}
-                style={{
-                  flex: 1, padding: '14px', borderRadius: 14, border: 'none',
-                  background: loadingNext ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                  color: '#fff', fontSize: 14, fontWeight: 700,
-                  cursor: loadingNext ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                  boxShadow: loadingNext ? 'none' : '0 0 24px rgba(99,102,241,0.2)',
-                }}>
+              <button onClick={handleNext} disabled={loadingNext} style={{
+                flex: 1, padding: '14px', borderRadius: 14, border: 'none',
+                background: loadingNext ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
+                color: '#fff', fontSize: 14, fontWeight: 700,
+                cursor: loadingNext ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                boxShadow: loadingNext ? 'none' : '0 0 24px rgba(99,102,241,0.2)',
+              }}>
                 {loadingNext
                   ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'pulse 0.8s infinite', display: 'inline-block' }} />Loading next…</>
                   : currentIndex + 1 >= count ? 'Finish ✓' : 'Next Question →'}
