@@ -24,39 +24,66 @@ function getCompanyTags(role: string): string[] {
   return shuffled.slice(0, Math.floor(Math.random() * 2) + 2)
 }
 
-interface StarAnswer {
+interface ModelAnswer {
   situation: string
   task: string
   action: string
   result: string
 }
 
-interface ActionStep {
-  heading: string
-  content: string
-  bullets?: string[]
-}
-
-interface ModelAnswer {
-  situationTask: string
-  actionSteps: ActionStep[]
-  result: string
-  whyItWins: string[]
-}
-
 interface QuestionData {
   question: string
-  star: StarAnswer
   modelAnswer: ModelAnswer | null
   tips: string[]
   companies: string[]
 }
 
-const STAR_CONFIG = [
-  { key: 'situation', label: 'S — Situation', color: '#3b82f6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)', icon: '🎯' },
-  { key: 'task',      label: 'T — Task',      color: '#8b5cf6', bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)', icon: '📋' },
-  { key: 'action',    label: 'A — Action',    color: '#10b981', bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)', icon: '⚡' },
-  { key: 'result',    label: 'R — Result',    color: '#f59e0b', bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)', icon: '🏆' },
+// Each STAR section config
+const STAR_SECTIONS = [
+  {
+    key: 'situation' as const,
+    label: 'Situation',
+    tag: 'S',
+    color: '#3b82f6',
+    bg: 'rgba(59,130,246,0.07)',
+    border: 'rgba(59,130,246,0.2)',
+    tagBg: 'rgba(59,130,246,0.12)',
+    icon: '🎯',
+    hint: 'Sets the scene — what was the context and what was at stake',
+  },
+  {
+    key: 'task' as const,
+    label: 'Task',
+    tag: 'T',
+    color: '#8b5cf6',
+    bg: 'rgba(139,92,246,0.07)',
+    border: 'rgba(139,92,246,0.2)',
+    tagBg: 'rgba(139,92,246,0.12)',
+    icon: '📋',
+    hint: 'YOUR specific responsibility — what was on you to own',
+  },
+  {
+    key: 'action' as const,
+    label: 'Action',
+    tag: 'A',
+    color: '#10b981',
+    bg: 'rgba(16,185,129,0.07)',
+    border: 'rgba(16,185,129,0.2)',
+    tagBg: 'rgba(16,185,129,0.12)',
+    icon: '⚡',
+    hint: 'The core of your answer — what you actually did, step by step',
+  },
+  {
+    key: 'result' as const,
+    label: 'Result',
+    tag: 'R',
+    color: '#f59e0b',
+    bg: 'rgba(245,158,11,0.07)',
+    border: 'rgba(245,158,11,0.2)',
+    tagBg: 'rgba(245,158,11,0.12)',
+    icon: '🏆',
+    hint: 'Quantified outcome + the lesson you took forward',
+  },
 ]
 
 function MockInner() {
@@ -76,8 +103,7 @@ function MockInner() {
   const [userAnswer,    setUserAnswer]    = useState('')
   const [savedAnswers,  setSavedAnswers]  = useState<Record<number, string>>({})
   const [done,          setDone]          = useState(false)
-  const [expandedStar,  setExpandedStar]  = useState<string | null>(null)
-  const [showStarGuide, setShowStarGuide] = useState(false)
+  const [expandedSection, setExpandedSection] = useState<string | null>('situation')
   const askedRef = useRef<string[]>([])
 
   const roundLabel = round === 'screening' ? 'Screening Call'
@@ -101,61 +127,28 @@ function MockInner() {
       const data = await res.json()
 
       const question = data.question || 'Tell me about a challenging project you worked on.'
-      const star: StarAnswer = data.star || {
-        situation: 'Set the context of your story — what was happening and why it mattered.',
-        task: 'Explain what YOUR specific responsibility was in this situation.',
-        action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
-        result: 'Share the outcome. Quantify the impact wherever possible.',
-      }
       const modelAnswer: ModelAnswer | null = data.modelAnswer || null
-      const tips: string[] = data.tips || [
-        'Use specific numbers and metrics in your result',
-        'Keep situation + task brief — spend most time on action',
-        'Practice out loud before your interview',
-      ]
+      const tips: string[] = data.tips || []
 
       askedRef.current.push(question)
       const companies = getCompanyTags(role)
       setQuestions(prev => {
         const updated = [...prev]
-        updated[index] = { question, star, modelAnswer, tips, companies }
+        updated[index] = { question, modelAnswer, tips, companies }
         return updated
       })
     } catch {
-      const fallback: QuestionData = {
-        question: 'Tell me about a challenging project you worked on.',
-        star: {
-          situation: 'Set the context of your story — what was happening and why it mattered.',
-          task: 'Explain what YOUR specific responsibility was in this situation.',
-          action: 'Walk through the specific steps you took. Be detailed about your thinking and decisions.',
-          result: 'Share the outcome. Quantify the impact wherever possible.',
-        },
-        modelAnswer: {
-          situationTask: "During my final year, our college quiz platform was crashing under exam load — 200+ students affected and the backend was entirely on SQLite with no concurrency handling. I was the backend lead, so this was fully on me to fix.",
-          actionSteps: [
-            {
-              heading: "Step 1: Profile before touching anything",
-              content: "I diagnosed three root causes: SQLite file-lock blocking concurrent writes, zero session caching (every request hit the DB), and no queue for simultaneous submissions causing race conditions.",
-              bullets: ["SQLite → MongoDB Atlas for concurrent write support", "Redis for session caching (sub-ms vs 80ms+ DB reads)", "Submission queue with retry logic to eliminate race conditions"]
-            },
-            {
-              heading: "Step 2: Migrate and deploy",
-              content: "Migrated to MongoDB Atlas, added Redis caching, built the submission queue, Dockerised the stack, and deployed on HuggingFace Spaces. Total: 3 weeks including testing.",
-            }
-          ],
-          result: "Zero crashes in the next 3 exam cycles. Load time: 8s → 1.5s. Now handles 500+ concurrent users. Lesson: always profile before optimising — assumptions about bottlenecks are usually wrong.",
-          whyItWins: [
-            "Real before/after numbers (8s → 1.5s, zero crashes) make the impact concrete",
-            "Diagnosis-first approach signals engineering maturity",
-            "Specific tech choices with reasoning (MongoDB for document model fit)",
-            "Live deployment link offer proves the project is real"
-          ]
-        },
-        tips: ['Use the STAR method', 'Be specific with numbers', 'Practice out loud'],
-        companies: getCompanyTags(role),
-      }
-      askedRef.current.push(fallback.question)
-      setQuestions(prev => { const u = [...prev]; u[index] = fallback; return u })
+      askedRef.current.push('Tell me about a challenging project.')
+      setQuestions(prev => {
+        const u = [...prev]
+        u[index] = {
+          question: 'Tell me about a challenging project you worked on.',
+          modelAnswer: null,
+          tips: [],
+          companies: getCompanyTags(role),
+        }
+        return u
+      })
     }
 
     setLoading(false)
@@ -170,8 +163,7 @@ function MockInner() {
     if (next >= count) { setDone(true); return }
     setCurrentIndex(next)
     setShowAnswer(false)
-    setExpandedStar(null)
-    setShowStarGuide(false)
+    setExpandedSection('situation')
     setUserAnswer(savedAnswers[next] || '')
     if (!questions[next]) fetchQuestion(next)
   }
@@ -182,8 +174,7 @@ function MockInner() {
     const prev = currentIndex - 1
     setCurrentIndex(prev)
     setShowAnswer(false)
-    setExpandedStar(null)
-    setShowStarGuide(false)
+    setExpandedSection('situation')
     setUserAnswer(savedAnswers[prev] || '')
   }
 
@@ -309,7 +300,11 @@ function MockInner() {
 
             {/* Answer toggle */}
             <div style={{ marginBottom: 16 }}>
-              <button onClick={() => { setShowAnswer(p => !p); setExpandedStar(null); setShowStarGuide(false) }}
+              <button
+                onClick={() => {
+                  setShowAnswer(p => !p)
+                  setExpandedSection('situation')
+                }}
                 style={{
                   width: '100%', padding: '15px 20px', borderRadius: 16,
                   border: showAnswer ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.08)',
@@ -322,204 +317,140 @@ function MockInner() {
                 <span style={{ fontSize: 12 }}>{showAnswer ? '▲' : '▼'}</span>
               </button>
 
-              {showAnswer && (
-                <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {showAnswer && current.modelAnswer && (
+                <div style={{ marginTop: 12 }}>
 
-                  {/* ── MODEL ANSWER — main section ── */}
-                  {current.modelAnswer && (
-                    <div style={{
-                      borderRadius: 18, overflow: 'hidden',
-                      border: '1px solid rgba(99,102,241,0.25)',
-                      background: 'rgba(10,10,20,0.6)',
-                    }}>
-                      {/* Header */}
-                      <div style={{
-                        padding: '16px 20px 14px',
-                        background: 'rgba(99,102,241,0.08)',
-                        borderBottom: '1px solid rgba(99,102,241,0.15)',
-                        display: 'flex', alignItems: 'center', gap: 10,
-                      }}>
-                        <span style={{ fontSize: 18 }}>🎯</span>
-                        <div>
-                          <p style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                            Model Answer
-                          </p>
-                          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
-                            How a strong candidate would answer this — use as a template, not a script
-                          </p>
-                        </div>
-                      </div>
-
-                      <div style={{ padding: '20px' }}>
-
-                        {/* Situation & Task */}
-                        <div style={{ marginBottom: 20 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                            <div style={{
-                              padding: '3px 10px', borderRadius: 99,
-                              background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.25)',
-                            }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#60a5fa', letterSpacing: '0.08em' }}>🎯 SITUATION & TASK</span>
-                            </div>
-                          </div>
-                          <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.8, margin: 0, paddingLeft: 4 }}>
-                            {current.modelAnswer.situationTask}
-                          </p>
-                        </div>
-
-                        {/* Action steps */}
-                        <div style={{ marginBottom: 20 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                            <div style={{
-                              padding: '3px 10px', borderRadius: 99,
-                              background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.25)',
-                            }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#34d399', letterSpacing: '0.08em' }}>⚡ ACTION</span>
-                            </div>
-                          </div>
-                          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-                            {current.modelAnswer.actionSteps.map((step, i) => (
-                              <div key={i} style={{
-                                padding: '14px 16px', borderRadius: 12,
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.07)',
-                                borderLeft: '3px solid rgba(16,185,129,0.4)',
-                              }}>
-                                <p style={{ fontSize: 13, fontWeight: 700, color: '#34d399', margin: '0 0 8px', lineHeight: 1.4 }}>
-                                  {step.heading}
-                                </p>
-                                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', margin: 0, lineHeight: 1.75 }}>
-                                  {step.content}
-                                </p>
-                                {step.bullets && step.bullets.length > 0 && (
-                                  <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                                    {step.bullets.map((b, j) => (
-                                      <li key={j} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                                        <span style={{ color: '#34d399', fontSize: 12, marginTop: 3, flexShrink: 0 }}>▸</span>
-                                        <span style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, lineHeight: 1.6 }}>{b}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Result */}
-                        <div style={{ marginBottom: 20 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                            <div style={{
-                              padding: '3px 10px', borderRadius: 99,
-                              background: 'rgba(245,158,11,0.12)', border: '1px solid rgba(245,158,11,0.25)',
-                            }}>
-                              <span style={{ fontSize: 10, fontWeight: 700, color: '#fbbf24', letterSpacing: '0.08em' }}>🏆 RESULT</span>
-                            </div>
-                          </div>
-                          <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.8, margin: 0, paddingLeft: 4 }}>
-                            {current.modelAnswer.result}
-                          </p>
-                        </div>
-
-                        {/* Why this answer wins */}
-                        <div style={{
-                          padding: '14px 16px', borderRadius: 12,
-                          background: 'rgba(99,102,241,0.06)', border: '1px solid rgba(99,102,241,0.2)',
-                        }}>
-                          <p style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px' }}>
-                            ✨ Why This Answer Wins the Interview
-                          </p>
-                          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {current.modelAnswer.whyItWins.map((point, i) => (
-                              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                                <span style={{
-                                  flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
-                                  background: 'rgba(99,102,241,0.2)', border: '1px solid rgba(99,102,241,0.35)',
-                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                  fontSize: 10, fontWeight: 800, color: '#818cf8',
-                                }}>{i + 1}</span>
-                                <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: 13, lineHeight: 1.6 }}>{point}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* ── STAR Guide — collapsible ── */}
+                  {/* Header */}
                   <div style={{
-                    borderRadius: 14, overflow: 'hidden',
-                    border: showStarGuide ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.07)',
+                    borderRadius: '16px 16px 0 0', padding: '14px 20px',
+                    background: 'rgba(99,102,241,0.08)',
+                    border: '1px solid rgba(99,102,241,0.2)',
+                    borderBottom: 'none',
+                    display: 'flex', alignItems: 'center', gap: 10,
                   }}>
-                    <button
-                      onClick={() => setShowStarGuide(p => !p)}
-                      style={{
-                        width: '100%', padding: '13px 18px',
-                        background: showStarGuide ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.02)',
-                        border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        transition: 'background 0.2s',
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 15 }}>⭐</span>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: showStarGuide ? '#818cf8' : 'rgba(255,255,255,0.35)', letterSpacing: '0.04em' }}>
-                          How to structure YOUR answer — STAR Guide
-                        </span>
-                      </div>
-                      <span style={{ fontSize: 11, color: showStarGuide ? '#818cf8' : '#52525b' }}>
-                        {showStarGuide ? '▲ Hide' : '▼ Show'}
-                      </span>
-                    </button>
+                    <span style={{ fontSize: 18 }}>🎯</span>
+                    <div>
+                      <p style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+                        Model Answer
+                      </p>
+                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
+                        A complete STAR response — use it as inspiration, not a script to memorise
+                      </p>
+                    </div>
+                  </div>
 
-                    {showStarGuide && (
-                      <div style={{ padding: '4px 12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {STAR_CONFIG.map(({ key, label, color, bg, border, icon }) => {
-                          const isOpen = expandedStar === key
-                          const text = current.star[key as keyof StarAnswer]
-                          return (
-                            <div key={key} style={{
-                              borderRadius: 12, overflow: 'hidden',
-                              border: isOpen ? `1px solid ${border}` : '1px solid rgba(255,255,255,0.06)',
-                              transition: 'border 0.2s',
+                  {/* STAR sections — accordion */}
+                  <div style={{
+                    border: '1px solid rgba(99,102,241,0.2)',
+                    borderTop: 'none',
+                    borderRadius: '0 0 16px 16px',
+                    overflow: 'hidden',
+                    background: 'rgba(10,10,20,0.5)',
+                  }}>
+                    {STAR_SECTIONS.map((section, idx) => {
+                      const isOpen = expandedSection === section.key
+                      const text = current.modelAnswer![section.key]
+                      // For the action field, preserve paragraph breaks
+                      const paragraphs = text.split('\n\n').filter(Boolean)
+
+                      return (
+                        <div key={section.key} style={{
+                          borderBottom: idx < STAR_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                        }}>
+                          {/* Section header */}
+                          <button
+                            onClick={() => setExpandedSection(isOpen ? null : section.key)}
+                            style={{
+                              width: '100%', padding: '14px 20px',
+                              background: isOpen ? section.bg : 'transparent',
+                              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                              display: 'flex', alignItems: 'center', gap: 12,
+                              transition: 'background 0.2s',
+                            }}
+                          >
+                            {/* STAR tag */}
+                            <div style={{
+                              flexShrink: 0, width: 28, height: 28, borderRadius: 8,
+                              background: isOpen ? section.tagBg : 'rgba(255,255,255,0.04)',
+                              border: `1px solid ${isOpen ? section.border : 'rgba(255,255,255,0.08)'}`,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontSize: 11, fontWeight: 800,
+                              color: isOpen ? section.color : 'rgba(255,255,255,0.3)',
+                              transition: 'all 0.2s',
                             }}>
-                              <button
-                                onClick={() => setExpandedStar(isOpen ? null : key)}
-                                style={{
-                                  width: '100%', padding: '12px 16px',
-                                  background: isOpen ? bg : 'rgba(255,255,255,0.02)',
-                                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                                  display: 'flex', alignItems: 'center', gap: 10, transition: 'background 0.2s',
-                                }}
-                              >
-                                <span style={{ fontSize: 16, flexShrink: 0 }}>{icon}</span>
-                                <span style={{ flex: 1, textAlign: 'left', fontSize: 13, fontWeight: 700, color: isOpen ? color : '#a1a1aa' }}>
-                                  {label}
+                              {section.tag}
+                            </div>
+
+                            <div style={{ flex: 1, textAlign: 'left' }}>
+                              <span style={{
+                                fontSize: 13, fontWeight: 700,
+                                color: isOpen ? section.color : 'rgba(255,255,255,0.55)',
+                                transition: 'color 0.2s',
+                              }}>
+                                {section.icon} {section.label}
+                              </span>
+                              {!isOpen && (
+                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
+                                  {section.hint}
                                 </span>
-                                <span style={{ fontSize: 11, color: isOpen ? color : '#52525b' }}>{isOpen ? '▲' : '▼'}</span>
-                              </button>
-                              {isOpen && (
-                                <div style={{ padding: '0 16px 16px', background: bg }}>
-                                  <div style={{ width: '100%', height: 1, background: border, marginBottom: 12 }} />
-                                  <p style={{ color: '#e4e4e7', fontSize: 13, lineHeight: 1.75, margin: 0 }}>{text}</p>
-                                </div>
                               )}
                             </div>
-                          )
-                        })}
-                      </div>
-                    )}
+
+                            <span style={{
+                              fontSize: 11,
+                              color: isOpen ? section.color : 'rgba(255,255,255,0.2)',
+                            }}>
+                              {isOpen ? '▲' : '▼'}
+                            </span>
+                          </button>
+
+                          {/* Section content */}
+                          {isOpen && (
+                            <div style={{
+                              padding: '0 20px 20px 20px',
+                              background: section.bg,
+                              borderTop: `1px solid ${section.border}`,
+                            }}>
+                              <div style={{
+                                marginTop: 14,
+                                paddingLeft: 12,
+                                borderLeft: `2px solid ${section.border}`,
+                              }}>
+                                {paragraphs.map((para, i) => (
+                                  <p key={i} style={{
+                                    color: '#e4e4e7',
+                                    fontSize: 14,
+                                    lineHeight: 1.85,
+                                    margin: i < paragraphs.length - 1 ? '0 0 14px 0' : 0,
+                                  }}>
+                                    {para.trim()}
+                                  </p>
+                                ))}
+                              </div>
+
+                              {/* Hint footer */}
+                              <p style={{
+                                marginTop: 12, marginBottom: 0,
+                                fontSize: 11, color: section.color, opacity: 0.6,
+                                fontStyle: 'italic',
+                              }}>
+                                💬 {section.hint}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
 
                   {/* Tips */}
                   {current.tips?.length > 0 && (
                     <div style={{
-                      borderRadius: 14, padding: '18px 20px',
+                      marginTop: 12, borderRadius: 14, padding: '16px 20px',
                       background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)',
                     }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 14px' }}>
-                        🎯 Tips & Tricks
+                      <p style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px' }}>
+                        🎯 Tips for this question
                       </p>
                       <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
                         {current.tips.map((tip, i) => (
