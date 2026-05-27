@@ -24,21 +24,37 @@ function getCompanyTags(role: string): string[] {
   return shuffled.slice(0, Math.floor(Math.random() * 2) + 2)
 }
 
-interface ModelAnswer {
+// ─── Types matching route.ts exactly ─────────────────────────────────────────
+interface StarAnswer {
   situation: string
   task: string
   action: string
   result: string
 }
 
+interface ActionStep {
+  heading: string
+  content: string
+  bullets?: string[]
+}
+
+interface TechnicalModelAnswer {
+  situationTask: string
+  actionSteps: ActionStep[]
+  result: string
+  whyItWins: string[]
+}
+
 interface QuestionData {
   question: string
-  modelAnswer: ModelAnswer | null
+  questionType: 'behavioral' | 'technical'
+  star: StarAnswer | null
+  modelAnswer: TechnicalModelAnswer | null
   tips: string[]
   companies: string[]
 }
 
-// Each STAR section config
+// ─── STAR section config ──────────────────────────────────────────────────────
 const STAR_SECTIONS = [
   {
     key: 'situation' as const,
@@ -86,6 +102,294 @@ const STAR_SECTIONS = [
   },
 ]
 
+// ─── Phase colors for technical action steps ──────────────────────────────────
+const PHASE_COLORS = [
+  { color: '#6366f1', bg: 'rgba(99,102,241,0.07)', border: 'rgba(99,102,241,0.2)', tagBg: 'rgba(99,102,241,0.12)' },
+  { color: '#10b981', bg: 'rgba(16,185,129,0.07)', border: 'rgba(16,185,129,0.2)', tagBg: 'rgba(16,185,129,0.12)' },
+  { color: '#f59e0b', bg: 'rgba(245,158,11,0.07)', border: 'rgba(245,158,11,0.2)', tagBg: 'rgba(245,158,11,0.12)' },
+  { color: '#ec4899', bg: 'rgba(236,72,153,0.07)', border: 'rgba(236,72,153,0.2)', tagBg: 'rgba(236,72,153,0.12)' },
+  { color: '#14b8a6', bg: 'rgba(20,184,166,0.07)', border: 'rgba(20,184,166,0.2)', tagBg: 'rgba(20,184,166,0.12)' },
+]
+
+// ─── Behavioral Model Answer (STAR accordion) ─────────────────────────────────
+function BehavioralAnswer({
+  star,
+  expandedSection,
+  setExpandedSection,
+}: {
+  star: StarAnswer
+  expandedSection: string | null
+  setExpandedSection: (k: string | null) => void
+}) {
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        borderRadius: '16px 16px 0 0', padding: '14px 20px',
+        background: 'rgba(99,102,241,0.08)',
+        border: '1px solid rgba(99,102,241,0.2)', borderBottom: 'none',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontSize: 18 }}>⭐</span>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            STAR Model Answer
+          </p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
+            Inspiration, not a script — adapt it to your own experience
+          </p>
+        </div>
+      </div>
+
+      {/* STAR accordion */}
+      <div style={{
+        border: '1px solid rgba(99,102,241,0.2)', borderTop: 'none',
+        borderRadius: '0 0 16px 16px', overflow: 'hidden',
+        background: 'rgba(10,10,20,0.5)',
+      }}>
+        {STAR_SECTIONS.map((section, idx) => {
+          const isOpen = expandedSection === section.key
+          const text = star[section.key]
+          const paragraphs = text.split('\n\n').filter(Boolean)
+          return (
+            <div key={section.key} style={{
+              borderBottom: idx < STAR_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+            }}>
+              <button
+                onClick={() => setExpandedSection(isOpen ? null : section.key)}
+                style={{
+                  width: '100%', padding: '14px 20px',
+                  background: isOpen ? section.bg : 'transparent',
+                  border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  transition: 'background 0.2s',
+                }}
+              >
+                <div style={{
+                  flexShrink: 0, width: 28, height: 28, borderRadius: 8,
+                  background: isOpen ? section.tagBg : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${isOpen ? section.border : 'rgba(255,255,255,0.08)'}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 11, fontWeight: 800,
+                  color: isOpen ? section.color : 'rgba(255,255,255,0.3)',
+                  transition: 'all 0.2s',
+                }}>
+                  {section.tag}
+                </div>
+                <div style={{ flex: 1, textAlign: 'left' }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: isOpen ? section.color : 'rgba(255,255,255,0.55)', transition: 'color 0.2s' }}>
+                    {section.icon} {section.label}
+                  </span>
+                  {!isOpen && (
+                    <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
+                      {section.hint}
+                    </span>
+                  )}
+                </div>
+                <span style={{ fontSize: 11, color: isOpen ? section.color : 'rgba(255,255,255,0.2)' }}>
+                  {isOpen ? '▲' : '▼'}
+                </span>
+              </button>
+
+              {isOpen && (
+                <div style={{ padding: '0 20px 20px 20px', background: section.bg, borderTop: `1px solid ${section.border}` }}>
+                  <div style={{ marginTop: 14, paddingLeft: 12, borderLeft: `2px solid ${section.border}` }}>
+                    {paragraphs.map((para, i) => (
+                      <p key={i} style={{
+                        color: '#e4e4e7', fontSize: 14, lineHeight: 1.85,
+                        margin: i < paragraphs.length - 1 ? '0 0 14px 0' : 0,
+                      }}>
+                        {para.trim()}
+                      </p>
+                    ))}
+                  </div>
+                  <p style={{ marginTop: 12, marginBottom: 0, fontSize: 11, color: section.color, opacity: 0.6, fontStyle: 'italic' }}>
+                    💬 {section.hint}
+                  </p>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// ─── Technical Model Answer ───────────────────────────────────────────────────
+function TechnicalAnswer({
+  modelAnswer,
+  expandedPhase,
+  setExpandedPhase,
+}: {
+  modelAnswer: TechnicalModelAnswer
+  expandedPhase: number | null
+  setExpandedPhase: (n: number | null) => void
+}) {
+  return (
+    <div>
+      {/* Header */}
+      <div style={{
+        borderRadius: '16px 16px 0 0', padding: '14px 20px',
+        background: 'rgba(16,185,129,0.07)',
+        border: '1px solid rgba(16,185,129,0.2)', borderBottom: 'none',
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <span style={{ fontSize: 18 }}>🔧</span>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 700, color: '#34d399', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+            Technical Model Answer
+          </p>
+          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
+            A structured breakdown of how a strong candidate would answer this
+          </p>
+        </div>
+      </div>
+
+      <div style={{
+        border: '1px solid rgba(16,185,129,0.2)', borderTop: 'none',
+        borderRadius: '0 0 16px 16px', overflow: 'hidden',
+        background: 'rgba(10,10,20,0.5)',
+      }}>
+
+        {/* Context block */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(16,185,129,0.04)' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#34d399', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 8px' }}>
+            📌 Context & Ownership
+          </p>
+          <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.8, margin: 0 }}>
+            {modelAnswer.situationTask}
+          </p>
+        </div>
+
+        {/* Action Steps — accordion */}
+        <div style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.1em', textTransform: 'uppercase', margin: 0, padding: '14px 20px 10px' }}>
+            ⚡ Approach & Steps
+          </p>
+          {modelAnswer.actionSteps.map((step, idx) => {
+            const pc = PHASE_COLORS[idx % PHASE_COLORS.length]
+            const isOpen = expandedPhase === idx
+            return (
+              <div key={idx} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                <button
+                  onClick={() => setExpandedPhase(isOpen ? null : idx)}
+                  style={{
+                    width: '100%', padding: '13px 20px',
+                    background: isOpen ? pc.bg : 'transparent',
+                    border: 'none', cursor: 'pointer', fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    transition: 'background 0.2s',
+                  }}
+                >
+                  <div style={{
+                    flexShrink: 0, width: 26, height: 26, borderRadius: 7,
+                    background: isOpen ? pc.tagBg : 'rgba(255,255,255,0.04)',
+                    border: `1px solid ${isOpen ? pc.border : 'rgba(255,255,255,0.08)'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 10, fontWeight: 800,
+                    color: isOpen ? pc.color : 'rgba(255,255,255,0.3)',
+                    transition: 'all 0.2s',
+                  }}>
+                    {idx + 1}
+                  </div>
+                  <span style={{
+                    flex: 1, textAlign: 'left', fontSize: 13, fontWeight: 600,
+                    color: isOpen ? pc.color : 'rgba(255,255,255,0.6)',
+                    transition: 'color 0.2s',
+                  }}>
+                    {step.heading}
+                  </span>
+                  <span style={{ fontSize: 11, color: isOpen ? pc.color : 'rgba(255,255,255,0.2)' }}>
+                    {isOpen ? '▲' : '▼'}
+                  </span>
+                </button>
+
+                {isOpen && (
+                  <div style={{ padding: '0 20px 18px 20px', background: pc.bg, borderTop: `1px solid ${pc.border}` }}>
+                    <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.85, margin: '14px 0 0', paddingLeft: 12, borderLeft: `2px solid ${pc.border}` }}>
+                      {step.content}
+                    </p>
+                    {step.bullets && step.bullets.length > 0 && (
+                      <ul style={{ margin: '12px 0 0 12px', padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 7 }}>
+                        {step.bullets.map((b, bi) => (
+                          <li key={bi} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                            <span style={{ color: pc.color, fontSize: 14, marginTop: 1, flexShrink: 0 }}>▸</span>
+                            <span style={{ color: '#a1a1aa', fontSize: 13, lineHeight: 1.6 }}>{b}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Result */}
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid rgba(255,255,255,0.05)', background: 'rgba(245,158,11,0.04)' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 8px' }}>
+            📊 Result & Impact
+          </p>
+          <p style={{ color: '#e4e4e7', fontSize: 14, lineHeight: 1.8, margin: 0 }}>
+            {modelAnswer.result}
+          </p>
+        </div>
+
+        {/* Why It Wins */}
+        <div style={{ padding: '16px 20px', background: 'rgba(99,102,241,0.04)' }}>
+          <p style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px' }}>
+            🏆 Why This Answer Wins
+          </p>
+          <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            {modelAnswer.whyItWins.map((w, i) => (
+              <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+                <span style={{
+                  flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+                  background: 'rgba(99,102,241,0.15)', border: '1px solid rgba(99,102,241,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 800, color: '#818cf8',
+                }}>{i + 1}</span>
+                <span style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>{w}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Tips block (shared) ──────────────────────────────────────────────────────
+function TipsBlock({ tips }: { tips: string[] }) {
+  if (!tips?.length) return null
+  return (
+    <div style={{
+      marginTop: 12, borderRadius: 14, padding: '16px 20px',
+      background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)',
+    }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px' }}>
+        🎯 Tips for this question
+      </p>
+      <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {tips.map((tip, i) => (
+          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <span style={{
+              flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
+              background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 10, fontWeight: 800, color: '#f59e0b',
+            }}>{i + 1}</span>
+            <span style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>{tip}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+// ─── Main component ───────────────────────────────────────────────────────────
 function MockInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -103,7 +407,10 @@ function MockInner() {
   const [userAnswer,    setUserAnswer]    = useState('')
   const [savedAnswers,  setSavedAnswers]  = useState<Record<number, string>>({})
   const [done,          setDone]          = useState(false)
+  // For behavioral STAR accordion
   const [expandedSection, setExpandedSection] = useState<string | null>('situation')
+  // For technical steps accordion
+  const [expandedPhase,   setExpandedPhase]   = useState<number | null>(0)
   const askedRef = useRef<string[]>([])
 
   const roundLabel = round === 'screening' ? 'Screening Call'
@@ -126,15 +433,17 @@ function MockInner() {
       })
       const data = await res.json()
 
-      const question = data.question || 'Tell me about a challenging project you worked on.'
-      const modelAnswer: ModelAnswer | null = data.modelAnswer || null
-      const tips: string[] = data.tips || []
+      const question                          = data.question    || 'Tell me about a challenging project you worked on.'
+      const questionType: 'behavioral' | 'technical' = data.questionType || 'technical'
+      const star: StarAnswer | null           = data.star        || null
+      const modelAnswer: TechnicalModelAnswer | null = data.modelAnswer || null
+      const tips: string[]                    = data.tips        || []
 
       askedRef.current.push(question)
       const companies = getCompanyTags(role)
       setQuestions(prev => {
         const updated = [...prev]
-        updated[index] = { question, modelAnswer, tips, companies }
+        updated[index] = { question, questionType, star, modelAnswer, tips, companies }
         return updated
       })
     } catch {
@@ -143,8 +452,8 @@ function MockInner() {
         const u = [...prev]
         u[index] = {
           question: 'Tell me about a challenging project you worked on.',
-          modelAnswer: null,
-          tips: [],
+          questionType: 'behavioral',
+          star: null, modelAnswer: null, tips: [],
           companies: getCompanyTags(role),
         }
         return u
@@ -157,13 +466,18 @@ function MockInner() {
 
   useEffect(() => { fetchQuestion(0) }, [])
 
+  function resetAnswerState() {
+    setShowAnswer(false)
+    setExpandedSection('situation')
+    setExpandedPhase(0)
+  }
+
   function handleNext() {
     if (userAnswer.trim()) setSavedAnswers(p => ({ ...p, [currentIndex]: userAnswer }))
     const next = currentIndex + 1
     if (next >= count) { setDone(true); return }
     setCurrentIndex(next)
-    setShowAnswer(false)
-    setExpandedSection('situation')
+    resetAnswerState()
     setUserAnswer(savedAnswers[next] || '')
     if (!questions[next]) fetchQuestion(next)
   }
@@ -173,8 +487,7 @@ function MockInner() {
     if (userAnswer.trim()) setSavedAnswers(p => ({ ...p, [currentIndex]: userAnswer }))
     const prev = currentIndex - 1
     setCurrentIndex(prev)
-    setShowAnswer(false)
-    setExpandedSection('situation')
+    resetAnswerState()
     setUserAnswer(savedAnswers[prev] || '')
   }
 
@@ -277,11 +590,28 @@ function MockInner() {
             }}>
               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: 'linear-gradient(90deg, transparent, #6366f1, transparent)' }} />
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, marginBottom: 20 }}>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px',
-                  borderRadius: 99, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
-                }}>
-                  <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Question {currentIndex + 1}</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px',
+                    borderRadius: 99, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
+                  }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>Question {currentIndex + 1}</span>
+                  </div>
+                  {/* Question type badge */}
+                  <div style={{
+                    display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px',
+                    borderRadius: 99,
+                    background: current.questionType === 'behavioral' ? 'rgba(139,92,246,0.08)' : 'rgba(16,185,129,0.08)',
+                    border: `1px solid ${current.questionType === 'behavioral' ? 'rgba(139,92,246,0.2)' : 'rgba(16,185,129,0.2)'}`,
+                  }}>
+                    <span style={{ fontSize: 10 }}>{current.questionType === 'behavioral' ? '⭐' : '🔧'}</span>
+                    <span style={{
+                      fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: current.questionType === 'behavioral' ? '#a78bfa' : '#34d399',
+                    }}>
+                      {current.questionType === 'behavioral' ? 'Behavioral' : 'Technical'}
+                    </span>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {current.companies.map(c => (
@@ -304,6 +634,7 @@ function MockInner() {
                 onClick={() => {
                   setShowAnswer(p => !p)
                   setExpandedSection('situation')
+                  setExpandedPhase(0)
                 }}
                 style={{
                   width: '100%', padding: '15px 20px', borderRadius: 16,
@@ -317,156 +648,28 @@ function MockInner() {
                 <span style={{ fontSize: 12 }}>{showAnswer ? '▲' : '▼'}</span>
               </button>
 
-              {showAnswer && current.modelAnswer && (
+              {showAnswer && (
                 <div style={{ marginTop: 12 }}>
-
-                  {/* Header */}
-                  <div style={{
-                    borderRadius: '16px 16px 0 0', padding: '14px 20px',
-                    background: 'rgba(99,102,241,0.08)',
-                    border: '1px solid rgba(99,102,241,0.2)',
-                    borderBottom: 'none',
-                    display: 'flex', alignItems: 'center', gap: 10,
-                  }}>
-                    <span style={{ fontSize: 18 }}>🎯</span>
-                    <div>
-                      <p style={{ fontSize: 12, fontWeight: 700, color: '#818cf8', margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-                        Model Answer
-                      </p>
-                      <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
-                        A complete STAR response — use it as inspiration, not a script to memorise
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* STAR sections — accordion */}
-                  <div style={{
-                    border: '1px solid rgba(99,102,241,0.2)',
-                    borderTop: 'none',
-                    borderRadius: '0 0 16px 16px',
-                    overflow: 'hidden',
-                    background: 'rgba(10,10,20,0.5)',
-                  }}>
-                    {STAR_SECTIONS.map((section, idx) => {
-                      const isOpen = expandedSection === section.key
-                      const text = current.modelAnswer![section.key]
-                      // For the action field, preserve paragraph breaks
-                      const paragraphs = text.split('\n\n').filter(Boolean)
-
-                      return (
-                        <div key={section.key} style={{
-                          borderBottom: idx < STAR_SECTIONS.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
-                        }}>
-                          {/* Section header */}
-                          <button
-                            onClick={() => setExpandedSection(isOpen ? null : section.key)}
-                            style={{
-                              width: '100%', padding: '14px 20px',
-                              background: isOpen ? section.bg : 'transparent',
-                              border: 'none', cursor: 'pointer', fontFamily: 'inherit',
-                              display: 'flex', alignItems: 'center', gap: 12,
-                              transition: 'background 0.2s',
-                            }}
-                          >
-                            {/* STAR tag */}
-                            <div style={{
-                              flexShrink: 0, width: 28, height: 28, borderRadius: 8,
-                              background: isOpen ? section.tagBg : 'rgba(255,255,255,0.04)',
-                              border: `1px solid ${isOpen ? section.border : 'rgba(255,255,255,0.08)'}`,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 11, fontWeight: 800,
-                              color: isOpen ? section.color : 'rgba(255,255,255,0.3)',
-                              transition: 'all 0.2s',
-                            }}>
-                              {section.tag}
-                            </div>
-
-                            <div style={{ flex: 1, textAlign: 'left' }}>
-                              <span style={{
-                                fontSize: 13, fontWeight: 700,
-                                color: isOpen ? section.color : 'rgba(255,255,255,0.55)',
-                                transition: 'color 0.2s',
-                              }}>
-                                {section.icon} {section.label}
-                              </span>
-                              {!isOpen && (
-                                <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)', marginLeft: 8 }}>
-                                  {section.hint}
-                                </span>
-                              )}
-                            </div>
-
-                            <span style={{
-                              fontSize: 11,
-                              color: isOpen ? section.color : 'rgba(255,255,255,0.2)',
-                            }}>
-                              {isOpen ? '▲' : '▼'}
-                            </span>
-                          </button>
-
-                          {/* Section content */}
-                          {isOpen && (
-                            <div style={{
-                              padding: '0 20px 20px 20px',
-                              background: section.bg,
-                              borderTop: `1px solid ${section.border}`,
-                            }}>
-                              <div style={{
-                                marginTop: 14,
-                                paddingLeft: 12,
-                                borderLeft: `2px solid ${section.border}`,
-                              }}>
-                                {paragraphs.map((para, i) => (
-                                  <p key={i} style={{
-                                    color: '#e4e4e7',
-                                    fontSize: 14,
-                                    lineHeight: 1.85,
-                                    margin: i < paragraphs.length - 1 ? '0 0 14px 0' : 0,
-                                  }}>
-                                    {para.trim()}
-                                  </p>
-                                ))}
-                              </div>
-
-                              {/* Hint footer */}
-                              <p style={{
-                                marginTop: 12, marginBottom: 0,
-                                fontSize: 11, color: section.color, opacity: 0.6,
-                                fontStyle: 'italic',
-                              }}>
-                                💬 {section.hint}
-                              </p>
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
-                  </div>
-
-                  {/* Tips */}
-                  {current.tips?.length > 0 && (
-                    <div style={{
-                      marginTop: 12, borderRadius: 14, padding: '16px 20px',
-                      background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)',
-                    }}>
-                      <p style={{ fontSize: 11, fontWeight: 700, color: '#f59e0b', letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px' }}>
-                        🎯 Tips for this question
-                      </p>
-                      <ul style={{ margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                        {current.tips.map((tip, i) => (
-                          <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                            <span style={{
-                              flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
-                              background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 10, fontWeight: 800, color: '#f59e0b',
-                            }}>{i + 1}</span>
-                            <span style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>{tip}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
+                  {/* ── Behavioral: STAR accordion ── */}
+                  {current.questionType === 'behavioral' && current.star && (
+                    <BehavioralAnswer
+                      star={current.star}
+                      expandedSection={expandedSection}
+                      setExpandedSection={setExpandedSection}
+                    />
                   )}
+
+                  {/* ── Technical: structured breakdown ── */}
+                  {current.questionType === 'technical' && current.modelAnswer && (
+                    <TechnicalAnswer
+                      modelAnswer={current.modelAnswer}
+                      expandedPhase={expandedPhase}
+                      setExpandedPhase={setExpandedPhase}
+                    />
+                  )}
+
+                  {/* Tips — shown for both types */}
+                  <TipsBlock tips={current.tips} />
                 </div>
               )}
             </div>
@@ -482,7 +685,11 @@ function MockInner() {
               <textarea
                 value={userAnswer}
                 onChange={e => setUserAnswer(e.target.value)}
-                placeholder="Type your answer here using the STAR structure — Situation, Task, Action, Result..."
+                placeholder={
+                  current.questionType === 'behavioral'
+                    ? 'Type your answer using STAR — Situation, Task, Action, Result…'
+                    : 'Type your answer — explain your approach, tools used, and outcome…'
+                }
                 rows={5}
                 style={{
                   width: '100%', background: 'transparent', border: 'none',
