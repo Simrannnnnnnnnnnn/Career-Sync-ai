@@ -47,9 +47,11 @@ interface ModelAnswer {
   whyItWins: string[]
 }
 
-// ─── Emergency fallback — only if ALL 3 AI providers fail ────────────────────
+// ─── Emergency fallback — only if ALL AI providers fail ──────────────────────
+// FIX 1: questionType added to EMERGENCY_FALLBACK
 const EMERGENCY_FALLBACK = {
   question: "How would you approach building a simple chatbot using a machine learning model, and what considerations would you keep in mind for its deployment?",
+  questionType: 'technical',
   star: {
     situation: "I was working on an internal support tool at my internship where the support team was getting flooded with repetitive FAQs — things like 'how do I reset my password' or 'what are your pricing tiers'. We had around 3,000 historical chat logs sitting unused. The goal was to automate 60-70% of these routine queries so the human agents could focus on escalations.",
     task: "I was responsible for the full pipeline — from deciding the architecture to deploying it. No one on the team had done RAG before, so every decision was mine to own and justify.",
@@ -57,7 +59,7 @@ const EMERGENCY_FALLBACK = {
 
 For the data pipeline, I cleaned the 3,000 chat logs, extracted the Q&A pairs, and chunked the documentation into 500-token segments with a 10% overlap to preserve context across chunk boundaries. I used text-embedding-3-small to convert these into vectors and stored them in ChromaDB.
 
-The runtime flow: user query → embed the query → cosine similarity search against ChromaDB → retrieve top 4 chunks → inject into system prompt with the instruction "answer only from this context, say I don't know if unsure" → stream response back via Server-Sent Events so the UI felt instant.
+The runtime flow: user query → embed the query → cosine similarity search against ChromaDB → retrieve top 4 chunks → inject into system prompt with the instruction "answer only from this context, say I don't know if unsure" → stream response back via Server-Sent Events so the UI felt instant instead of waiting for the full response.
 
 For session state I used Redis to store conversation history keyed by session_id. Each new message fetched the last 6 turns and prepended them to the prompt so the model understood pronouns and follow-up questions like "what's the price of that one?"
 
@@ -124,6 +126,7 @@ export async function POST(req: NextRequest) {
       ? `Already asked — DO NOT repeat or rephrase these:\n${askedQuestions.map((q: string, i: number) => `${i + 1}. ${q}`).join('\n')}`
       : ''
 
+    // FIX 2: questionType added to systemPrompt JSON schema
     const systemPrompt = `You are an expert interview coach generating a complete model answer that a strong candidate would give in a real interview.
 
 Generate for:
@@ -146,6 +149,8 @@ Think of it like document 5 format — phases like "Phase 1: Architecture Select
 JSON format (exact):
 {
   "question": "<specific realistic interview question for ${role} at ${round} round>",
+
+  "questionType": "<'behavioral' if the question asks about past experience, handling situations, teamwork, leadership, conflict, failure, success stories — i.e. 'Tell me about a time...'; OR 'technical' if the question asks how to build, design, explain, implement, solve a technical problem — i.e. 'How would you...' or 'Explain...' or 'Design...'>",
 
   "star": {
     "situation": "<3-5 sentences SPOKEN BY THE CANDIDATE in first person. Real project/company context, the actual problem, what was at stake, scale of the problem (users, data size, latency, cost). NOT coaching advice — this IS the answer to 'what was the situation'.>",
@@ -184,6 +189,7 @@ JSON format (exact):
 }
 
 Rules:
+- questionType MUST be either exactly "behavioral" or "technical" — nothing else
 - Everything in star and modelAnswer is first-person spoken answer — never coaching instructions
 - actionSteps must have 3-5 phases with real tool names and reasoning specific to ${role}
 - Include at least one moment of course-correction or unexpected finding in the action/steps
@@ -220,8 +226,10 @@ Rules:
       }
 
       if (parsed?.question && parsed?.star?.situation && parsed?.modelAnswer?.situationTask) {
+        // FIX 3: questionType now included in the response
         return NextResponse.json({
           question: parsed.question,
+          questionType: parsed.questionType || 'technical',
           star: parsed.star,
           modelAnswer: parsed.modelAnswer,
           tips: parsed.tips || [],
