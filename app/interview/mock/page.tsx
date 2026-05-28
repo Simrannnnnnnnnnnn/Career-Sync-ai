@@ -24,6 +24,61 @@ function getCompanyTags(role: string): string[] {
   return shuffled.slice(0, Math.floor(Math.random() * 2) + 2)
 }
 
+// ─── Client-side questionType detection (failsafe) ────────────────────────────
+// If AI returns wrong type, we detect from the question text itself
+function detectQuestionType(question: string, aiType: string): 'behavioral' | 'technical' {
+  const q = question.toLowerCase()
+
+  // Strong behavioral signals — these phrases almost always mean behavioral
+  const behavioralPhrases = [
+    'tell me about a time',
+    'describe a situation',
+    'give me an example',
+    'have you ever',
+    'walk me through a time',
+    'share an experience',
+    'describe a time',
+    'talk about a time',
+    'when you had to',
+    'when you were',
+    'how did you handle',
+    'how have you handled',
+    'what did you do when',
+  ]
+
+  // Strong technical signals — these almost always mean technical
+  const technicalPhrases = [
+    'what is your approach',
+    'how would you',
+    'how do you',
+    'explain how',
+    'explain the',
+    'what are the',
+    'describe how',
+    'walk me through how',
+    'what is the difference',
+    'how does',
+    'design a',
+    'implement a',
+    'write a',
+    'what is',
+    'why would you',
+    'when would you',
+  ]
+
+  const isBehavioral = behavioralPhrases.some(p => q.includes(p))
+  const isTechnical = technicalPhrases.some(p => q.startsWith(p) || q.includes(p))
+
+  // If we detect a clear behavioral signal → behavioral
+  if (isBehavioral) return 'behavioral'
+
+  // If we detect a clear technical signal → technical
+  if (isTechnical) return 'technical'
+
+  // Otherwise trust what AI returned (with 'technical' as default)
+  return (aiType === 'behavioral' || aiType === 'technical') ? aiType as 'behavioral' | 'technical' : 'technical'
+}
+
 // ─── Types matching route.ts exactly ─────────────────────────────────────────
 interface StarAnswer {
   situation: string
@@ -433,8 +488,12 @@ function MockInner() {
       })
       const data = await res.json()
 
-      const question                          = data.question    || 'Tell me about a challenging project you worked on.'
-      const questionType: 'behavioral' | 'technical' = data.questionType || 'technical'
+      const question = data.question || 'Tell me about a challenging project you worked on.'
+
+      // ── KEY FIX: Use detectQuestionType to override wrong AI responses ──
+      const rawType = data.questionType || 'technical'
+      const questionType = detectQuestionType(question, rawType)
+
       const star: StarAnswer | null           = data.star        || null
       const modelAnswer: TechnicalModelAnswer | null = data.modelAnswer || null
       const tips: string[]                    = data.tips        || []
@@ -661,6 +720,22 @@ function MockInner() {
 
                   {/* ── Technical: structured breakdown ── */}
                   {current.questionType === 'technical' && current.modelAnswer && (
+                    <TechnicalAnswer
+                      modelAnswer={current.modelAnswer}
+                      expandedPhase={expandedPhase}
+                      setExpandedPhase={setExpandedPhase}
+                    />
+                  )}
+
+                  {/* ── Fallback: if type detection and data mismatch ── */}
+                  {current.questionType === 'technical' && !current.modelAnswer && current.star && (
+                    <BehavioralAnswer
+                      star={current.star}
+                      expandedSection={expandedSection}
+                      setExpandedSection={setExpandedSection}
+                    />
+                  )}
+                  {current.questionType === 'behavioral' && !current.star && current.modelAnswer && (
                     <TechnicalAnswer
                       modelAnswer={current.modelAnswer}
                       expandedPhase={expandedPhase}
