@@ -52,41 +52,57 @@ function ReportInner() {
   const searchParams = useSearchParams()
   const router = useRouter()
 
-  const role = searchParams.get('role') || ''
-  const round = searchParams.get('round') || ''
+  const role       = searchParams.get('role')       || ''
+  const round      = searchParams.get('round')      || ''
   const difficulty = searchParams.get('difficulty') || ''
-  const rawData = searchParams.get('data') || ''
 
-  const [report, setReport] = useState<Report | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [report,    setReport]    = useState<Report | null>(null)
+  const [loading,   setLoading]   = useState(true)
+  const [error,     setError]     = useState('')
   const [expandedQ, setExpandedQ] = useState<number | null>(null)
 
   useEffect(() => {
     async function generateReport() {
       try {
-        const messages = JSON.parse(decodeURIComponent(rawData))
+        // FIX 3c: Read messages from sessionStorage — URL params overflow at ~2000 chars
+        // After 8 questions the serialized messages can be 4000–6000 chars, causing silent truncation
+        const raw = sessionStorage.getItem('interviewMessages')
+        if (!raw) {
+          setError('No interview data found. Please complete an interview session first.')
+          setLoading(false)
+          return
+        }
+
+        const messages = JSON.parse(raw)
+
         const res = await fetch('/api/interview/report', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ role, round, difficulty, messages }),
         })
         const data = await res.json()
-        if (data.error) { setError(data.error); setLoading(false); return }
+        if (data.error) {
+          setError(data.error)
+          setLoading(false)
+          return
+        }
         setReport(data.report)
+
+        // Clean up sessionStorage after successful report generation
+        sessionStorage.removeItem('interviewMessages')
       } catch (e) {
         setError('Failed to generate report. Please try again.')
       }
       setLoading(false)
     }
-    if (rawData) generateReport()
-    else { setError('No interview data found.'); setLoading(false) }
+
+    generateReport()
   }, [])
 
   const verdictColor = report?.verdict === 'Ready' ? '#10b981' : report?.verdict === 'Needs Practice' ? '#f59e0b' : '#ef4444'
-  const verdictBg = report?.verdict === 'Ready' ? 'rgba(16,185,129,0.1)' : report?.verdict === 'Needs Practice' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'
-  const roundLabel = round === 'hr' ? 'HR' : round === 'technical' ? 'Technical' : round === 'screening' ? 'Screening' : round === 'initial' ? 'Initial' : round === 'final' ? 'Final' : 'Analytical'
-  const diffLabel = difficulty === 'easy' ? 'Entry Level' : difficulty === 'medium' ? 'Mid Level' : 'Senior Level'
+  const verdictBg    = report?.verdict === 'Ready' ? 'rgba(16,185,129,0.1)' : report?.verdict === 'Needs Practice' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)'
+  const roundLabel   = round === 'hr' ? 'HR' : round === 'technical' ? 'Technical' : round === 'screening' ? 'Screening' : round === 'initial' ? 'Initial' : round === 'final' ? 'Final' : 'Analytical'
+  const diffLabel    = difficulty === 'easy' ? 'Entry Level' : difficulty === 'medium' ? 'Mid Level' : 'Senior Level'
 
   // ── Loading ──
   if (loading) return (
@@ -211,9 +227,9 @@ function ReportInner() {
           borderRadius: 20, padding: '28px 32px', marginBottom: 20,
           display: 'flex', justifyContent: 'space-around', flexWrap: 'wrap', gap: 20,
         }}>
-          <CircleScore score={report.technicalScore} label="Technical" color="#6366f1" />
-          <CircleScore score={report.communicationScore} label="Communication" color="#3b82f6" />
-          <CircleScore score={report.confidenceScore} label="Confidence" color="#10b981" />
+          <CircleScore score={report.technicalScore}      label="Technical"      color="#6366f1" />
+          <CircleScore score={report.communicationScore}  label="Communication"  color="#3b82f6" />
+          <CircleScore score={report.confidenceScore}     label="Confidence"     color="#10b981" />
         </div>
 
         {/* Strengths + Improvements */}
@@ -268,7 +284,6 @@ function ReportInner() {
               border: '1px solid rgba(255,255,255,0.06)',
               marginBottom: i < report.questionFeedback.length - 1 ? 12 : 0,
             }}>
-              {/* Question header — clickable */}
               <button
                 onClick={() => setExpandedQ(expandedQ === i ? null : i)}
                 style={{
@@ -290,7 +305,6 @@ function ReportInner() {
                 </span>
               </button>
 
-              {/* Expanded content */}
               {expandedQ === i && (
                 <div style={{ padding: '0 18px 18px', background: 'rgba(0,0,0,0.2)' }}>
                   <div style={{

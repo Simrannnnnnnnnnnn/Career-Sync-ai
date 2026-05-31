@@ -4,7 +4,6 @@ const HF_URL = `${process.env.HF_SPACE_URL}/chat`
 
 const MAX_QUESTIONS = 8
 
-// Rotating fallbacks — never repeat the same question
 const FALLBACK_QUESTIONS_BY_ROUND: Record<string, string[]> = {
   hr: [
     "Tell me about yourself and your background.",
@@ -62,10 +61,9 @@ async function callHFSpace(body: object, retries = 2): Promise<Response> {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
-        signal: AbortSignal.timeout(15000), // 15s timeout per attempt
+        signal: AbortSignal.timeout(15000),
       })
       if (res.ok) return res
-      // If 503 (HF Space sleeping), wait before retry
       if (res.status === 503 && attempt < retries - 1) {
         await new Promise(r => setTimeout(r, 3000))
         continue
@@ -93,42 +91,46 @@ export async function POST(req: NextRequest) {
     ).length
 
     if (questionCount >= MAX_QUESTIONS) {
-      return NextResponse.json({ reply: 'INTERVIEW_COMPLETE' })
+      // FIX 3b: Return exact string — session page does strict equality check
+      return NextResponse.json({ reply: '__INTERVIEW_COMPLETE__' })
     }
 
-    // Keep last 10 messages max
-    const recentMessages = (messages || []).slice(-10).map((m: any) => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
-      content: m.content,
-    }))
-
-    // Build asked-questions list so AI doesn't repeat
+    // FIX 1 (prompt): Build askedQuestions from the FULL messages array —
+    // not from recentMessages (which is sliced). If question 1 falls outside
+    // the last 10 messages, the AI would not know it was asked and repeat it.
     const askedQuestions = (messages || [])
       .filter((m: any) => m.role === 'assistant')
       .map((m: any, i: number) => `${i + 1}. ${m.content}`)
       .join('\n')
 
+    // Only trim context window for the actual conversation payload
+    const recentMessages = (messages || []).slice(-10).map((m: any) => ({
+      role: m.role === 'assistant' ? 'assistant' : 'user',
+      content: m.content,
+    }))
+
     const isOpening = questionCount === 0
 
+    // FIX 1 (prompt): Added "do NOT re-greet" and "no filler" rules
     const systemPrompt = `You are a professional ${round} interviewer conducting a mock interview for a ${role} position at ${difficulty} level.
 
 STRICT RULES:
 - Ask EXACTLY ONE interview question. Nothing more.
 - Do NOT number the question.
-- Do NOT give feedback, hints, or explanations.
-- Do NOT say "Great answer" or comment on their previous response.
-- Keep the question concise — 1-3 sentences max.
+- Do NOT give feedback, hints, explanations, or assessments.
+- Do NOT say "Great answer", "Interesting", "Sure!", "Absolutely!", or any filler response.
+- Keep the question concise — 1–3 sentences max.
 - Vary question types: behavioral, situational, technical, scenario-based.
-- CRITICAL: Do NOT repeat or rephrase any question already asked.
+- CRITICAL: Do NOT repeat, rephrase, or closely paraphrase any question already asked.
 ${isOpening
-  ? `- This is the opening. Start with a warm greeting and ask them to introduce themselves.`
-  : `- This is question ${questionCount + 1} of ${MAX_QUESTIONS}. Keep the conversation flowing naturally based on their last answer.`
+  ? `- This is the opening question. Greet the candidate warmly and ask them to introduce themselves. Keep it brief.`
+  : `- This is question ${questionCount + 1} of ${MAX_QUESTIONS}. Do NOT greet the candidate again — the interview is already in progress. Jump straight to the next question.`
 }
 ${questionCount === MAX_QUESTIONS - 1
   ? `- This is the FINAL question. Make it a strong closing question.`
   : ''}
 ${askedQuestions
-  ? `\nQuestions already asked (DO NOT repeat these):\n${askedQuestions}`
+  ? `\nQuestions already asked — do NOT repeat or rephrase any of these:\n${askedQuestions}`
   : ''}`
 
     try {
@@ -146,7 +148,6 @@ ${askedQuestions
       return NextResponse.json({ reply })
 
     } catch (hfError) {
-      // HF Space failed — use rotating fallback based on question index
       console.error('HF Space unreachable, using fallback:', hfError)
       const fallback = getFallbackQuestion(round, questionCount)
       return NextResponse.json({ reply: fallback })

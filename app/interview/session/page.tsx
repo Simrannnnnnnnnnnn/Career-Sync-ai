@@ -41,17 +41,16 @@ function InterviewSessionInner() {
 
   // ── Refs ──────────────────────────────────────────────────────────────────
   const correctionInProgressRef = useRef(false)
-  const videoRef       = useRef<HTMLVideoElement>(null)
-  const streamRef      = useRef<MediaStream | null>(null)
-  const recognitionRef = useRef<any>(null)
-  const mediaRecRef    = useRef<MediaRecorder | null>(null)
-  const recordedChunks = useRef<Blob[]>([])
-  const warningRef     = useRef(0)
-
-  // THE FIX FOR REPEATED QUESTIONS:
-  // messages state ke saath ek ref bhi rakhte hain
-  // fetchAIQuestion ref se padhega — koi stale closure nahi
-  const messagesRef = useRef<Message[]>([])
+  // FIX 3a: guard against double-submit
+  const submittingRef           = useRef(false)
+  const videoRef                = useRef<HTMLVideoElement>(null)
+  const streamRef               = useRef<MediaStream | null>(null)
+  const recognitionRef          = useRef<any>(null)
+  const mediaRecRef             = useRef<MediaRecorder | null>(null)
+  const recordedChunks          = useRef<Blob[]>([])
+  const warningRef              = useRef(0)
+  // Keep messages in a ref so async functions always read latest value (no stale closure)
+  const messagesRef             = useRef<Message[]>([])
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [messages,            setMessages]            = useState<Message[]>([])
@@ -73,8 +72,14 @@ function InterviewSessionInner() {
   const [aiBlocked,           setAiBlocked]           = useState(false)
   const [aiBlockMsg,          setAiBlockMsg]          = useState('')
 
-  // ── Sync messages state → ref (so fetchAIQuestion always reads fresh) ─────
+  // ── Sync messages state → ref ─────────────────────────────────────────────
   useEffect(() => { messagesRef.current = messages }, [messages])
+
+  // ── FIX 2c: Pre-load voices on mount so they're ready for first question ──
+  useEffect(() => {
+    window.speechSynthesis.getVoices()
+    window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices()
+  }, [])
 
   // ── Timer ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -94,12 +99,10 @@ function InterviewSessionInner() {
         audio: true,
       })
       streamRef.current = stream
-      // Attach immediately if video el already in DOM
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream
-        videoRef.current.play().catch(() => {})
-      }
-      // MediaRecorder with fallback
+      // FIX 4a: Do NOT set srcObject here — the session-screen video element
+      // hasn't mounted yet at this point. The useEffect below handles it once
+      // sessionStarted flips to true and the video element is in the DOM.
+
       const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
         ? 'video/webm;codecs=vp9,opus' : 'video/webm'
       const rec = new MediaRecorder(stream, { mimeType: mime })
@@ -112,9 +115,7 @@ function InterviewSessionInner() {
     }
   }
 
-  // THE FIX FOR CAMERA NOT SHOWING:
-  // Jab sessionStarted true hota hai, active session ka video element
-  // naya mount hota hai — isliye yahan dobara srcObject attach karte hain
+  // FIX 4a: Attach stream to video element only after session screen mounts
   useEffect(() => {
     if (sessionStarted && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current
@@ -233,10 +234,19 @@ function InterviewSessionInner() {
     }
   }, [sessionStarted, interviewDone])
 
-  // ── TTS ───────────────────────────────────────────────────────────────────
+  // ── FIX 2c: TTS with best-available voice selection ───────────────────────
   function speakText(text: string) {
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
+
+    // Pick the best available English voice — prefer en-IN, then any local English voice
+    const voices = window.speechSynthesis.getVoices()
+    const preferred =
+      voices.find(v => v.lang === 'en-IN') ||
+      voices.find(v => v.lang.startsWith('en') && v.localService) ||
+      voices.find(v => v.lang.startsWith('en'))
+    if (preferred) u.voice = preferred
+
     u.lang = 'en-IN'; u.rate = 0.88; u.pitch = 1.05
     u.onstart = () => setIsSpeaking(true)
     u.onend   = () => setIsSpeaking(false)
@@ -251,10 +261,14 @@ function InterviewSessionInner() {
     if (!SR) { alert('Please use Chrome for speech recognition.'); return }
     const rec = new SR()
     rec.lang = 'en-IN'; rec.continuous = false; rec.interimResults = false
+
     rec.onstart = () => setIsListening(true)
     rec.onend   = () => setIsListening(false)
-    
+
     rec.onresult = async (event: any) => {
+      // FIX 2a: Stop recognizer immediately to prevent it firing twice
+      rec.stop()
+
       if (correctionInProgressRef.current) return
       correctionInProgressRef.current = true
 
@@ -268,24 +282,27 @@ function InterviewSessionInner() {
         })
         const data = await res.json()
         setCorrectedTranscript(data.corrected || text)
-      } catch { setCorrectedTranscript(text) }
+      } catch {
+        // FIX 4b: On correction failure, fall back to raw transcript so Submit still appears
+        setCorrectedTranscript(text)
+      }
       setCorrecting(false)
       correctionInProgressRef.current = false
     }
+
     rec.onerror = () => {
       setIsListening(false)
       correctionInProgressRef.current = false
     }
-    
+
     recognitionRef.current = rec
     rec.start()
   }
 
   function stopListening() { recognitionRef.current?.stop(); setIsListening(false) }
 
-  // ── fetchAIQuestion — plain async fn, NOT useCallback ────────────────────
+  // ── fetchAIQuestion ───────────────────────────────────────────────────────
   // Receives msgs as argument — no stale closure possible
-  // This is the core fix for the repeated question bug
   async function fetchAIQuestion(msgs: Message[]) {
     setAiLoading(true)
     try {
@@ -297,20 +314,27 @@ function InterviewSessionInner() {
       const data = await res.json()
       const reply = (data.reply || '').trim()
 
-      if (reply.includes('INTERVIEW_COMPLETE')) {
+      // FIX 3b: Use exact string match instead of .includes() to avoid false positives
+      if (reply === '__INTERVIEW_COMPLETE__' || reply === 'INTERVIEW_COMPLETE') {
         setInterviewDone(true)
         setCurrentQuestion('Interview complete. Generating your performance report…')
-        speakText('Great effort. Your performance report is being generated.')
+        // FIX 2b: Small delay before speaking so UI renders first
+        setTimeout(() => speakText('Great effort. Your performance report is being generated.'), 150)
+
         setTimeout(() => {
-          stopCamera(); downloadRecording()
-          const reportData = encodeURIComponent(JSON.stringify(msgs))
+          stopCamera()
+          downloadRecording()
+          // FIX 3c: Store messages in sessionStorage instead of URL param
+          // URL params overflow at ~2000 chars — 8 questions easily exceeds that
+          sessionStorage.setItem('interviewMessages', JSON.stringify(msgs))
           router.push(
-            `/interview/report?data=${reportData}&role=${encodeURIComponent(role)}&round=${round}&difficulty=${difficulty}`
+            `/interview/report?role=${encodeURIComponent(role)}&round=${encodeURIComponent(round)}&difficulty=${encodeURIComponent(difficulty)}`
           )
         }, 3500)
       } else {
         setCurrentQuestion(reply)
-        speakText(reply)
+        // FIX 2b: 150ms delay before speaking — lets React flush state update first
+        setTimeout(() => speakText(reply), 150)
         setQuestionCount(p => p + 1)
         // Update BOTH ref and state together
         const next: Message[] = [...msgs, { role: 'assistant', content: reply }]
@@ -328,22 +352,28 @@ function InterviewSessionInner() {
     enterFullscreen()
     await startCamera()
     setSessionStarted(true)
-    // Pass empty array — first question
     await fetchAIQuestion([])
   }
 
   // ── Submit answer ─────────────────────────────────────────────────────────
-  // Read from messagesRef (not messages state) to guarantee latest value
   async function handleSubmitAnswer() {
+    // FIX 3a: Prevent double-submit race condition
+    if (submittingRef.current) return
+    submittingRef.current = true
+
+    // FIX 4b: Use whichever is available — corrected or raw transcript
     const answer = correctedTranscript.trim() || transcript.trim()
-    if (!answer) return
+    if (!answer) { submittingRef.current = false; return }
+
     const userMsg: Message = { role: 'user', content: answer }
-    // Build updated list from REF, not state
+    // Build updated list from REF, not state — guarantees latest value
     const updated: Message[] = [...messagesRef.current, userMsg]
     messagesRef.current = updated
     setMessages(updated)
     setTranscript(''); setCorrectedTranscript('')
     await fetchAIQuestion(updated)
+
+    submittingRef.current = false
   }
 
   useEffect(() => {
@@ -573,7 +603,7 @@ function InterviewSessionInner() {
           boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
           minHeight: 0,
         }}>
-          {/* video must always be in DOM so the ref is ready when srcObject is set */}
+          {/* FIX 4a: video is always in DOM — ref is always ready when srcObject is set via useEffect */}
           <video
             ref={videoRef}
             autoPlay
@@ -712,6 +742,7 @@ function InterviewSessionInner() {
               background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)',
               flexShrink: 0,
             }}>
+              {/* FIX 4b: Show transcript box if either transcript or correctedTranscript has content */}
               {(transcript || correcting) && (
                 <div style={{
                   background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)',
@@ -731,7 +762,7 @@ function InterviewSessionInner() {
                     )}
                   </div>
                   <textarea
-                    value={correcting ? '' : correctedTranscript}
+                    value={correcting ? '' : (correctedTranscript || transcript)}
                     onChange={e => setCorrectedTranscript(e.target.value)}
                     disabled={correcting}
                     placeholder={correcting ? 'Processing your speech…' : ''}
@@ -766,7 +797,8 @@ function InterviewSessionInner() {
                     : '🎤 Record Answer'}
                 </button>
 
-                {correctedTranscript && !isListening && !correcting && (
+                {/* FIX 4b: Show Submit if EITHER correctedTranscript OR transcript has content */}
+                {(correctedTranscript || transcript) && !isListening && !correcting && (
                   <button
                     onClick={handleSubmitAnswer}
                     disabled={aiLoading || isSpeaking}
