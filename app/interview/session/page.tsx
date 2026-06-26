@@ -41,15 +41,14 @@ function InterviewSessionInner() {
 
   // ── Refs ──────────────────────────────────────────────────────────────────
   const correctionInProgressRef = useRef(false)
-  // FIX 3a: guard against double-submit
   const submittingRef           = useRef(false)
   const videoRef                = useRef<HTMLVideoElement>(null)
   const streamRef               = useRef<MediaStream | null>(null)
   const recognitionRef          = useRef<any>(null)
+  const silenceTimerRef         = useRef<any>(null)
   const mediaRecRef             = useRef<MediaRecorder | null>(null)
   const recordedChunks          = useRef<Blob[]>([])
   const warningRef              = useRef(0)
-  // Keep messages in a ref so async functions always read latest value (no stale closure)
   const messagesRef             = useRef<Message[]>([])
 
   // ── State ─────────────────────────────────────────────────────────────────
@@ -71,11 +70,14 @@ function InterviewSessionInner() {
   const [warningMsg,          setWarningMsg]          = useState('')
   const [aiBlocked,           setAiBlocked]           = useState(false)
   const [aiBlockMsg,          setAiBlockMsg]          = useState('')
+  // FIX: Text answer mode
+  const [answerMode,          setAnswerMode]          = useState<'voice' | 'text'>('voice')
+  const [textAnswer,          setTextAnswer]          = useState('')
 
   // ── Sync messages state → ref ─────────────────────────────────────────────
   useEffect(() => { messagesRef.current = messages }, [messages])
 
-  // ── FIX 2c: Pre-load voices on mount so they're ready for first question ──
+  // ── Pre-load voices ───────────────────────────────────────────────────────
   useEffect(() => {
     window.speechSynthesis.getVoices()
     window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices()
@@ -99,10 +101,6 @@ function InterviewSessionInner() {
         audio: true,
       })
       streamRef.current = stream
-      // FIX 4a: Do NOT set srcObject here — the session-screen video element
-      // hasn't mounted yet at this point. The useEffect below handles it once
-      // sessionStarted flips to true and the video element is in the DOM.
-
       const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
         ? 'video/webm;codecs=vp9,opus' : 'video/webm'
       const rec = new MediaRecorder(stream, { mimeType: mime })
@@ -115,7 +113,6 @@ function InterviewSessionInner() {
     }
   }
 
-  // FIX 4a: Attach stream to video element only after session screen mounts
   useEffect(() => {
     if (sessionStarted && videoRef.current && streamRef.current) {
       videoRef.current.srcObject = streamRef.current
@@ -234,19 +231,16 @@ function InterviewSessionInner() {
     }
   }, [sessionStarted, interviewDone])
 
-  // ── FIX 2c: TTS with best-available voice selection ───────────────────────
+  // ── TTS ───────────────────────────────────────────────────────────────────
   function speakText(text: string) {
     window.speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(text)
-
-    // Pick the best available English voice — prefer en-IN, then any local English voice
     const voices = window.speechSynthesis.getVoices()
     const preferred =
       voices.find(v => v.lang === 'en-IN') ||
       voices.find(v => v.lang.startsWith('en') && v.localService) ||
       voices.find(v => v.lang.startsWith('en'))
     if (preferred) u.voice = preferred
-
     u.lang = 'en-IN'; u.rate = 0.88; u.pitch = 1.05
     u.onstart = () => setIsSpeaking(true)
     u.onend   = () => setIsSpeaking(false)
@@ -254,43 +248,76 @@ function InterviewSessionInner() {
     window.speechSynthesis.speak(u)
   }
 
-  // ── Speech recognition ────────────────────────────────────────────────────
+  // ── Speech Recognition — FIXED ────────────────────────────────────────────
+  // continuous: true  → keeps listening, doesn't cut off mid-sentence
+  // interimResults: true → shows live text while speaking
+  // silenceTimer → auto-processes after 2s of silence
   function startListening() {
     window.speechSynthesis.cancel(); setIsSpeaking(false)
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) { alert('Please use Chrome for speech recognition.'); return }
+
     const rec = new SR()
-    rec.lang = 'en-IN'; rec.continuous = false; rec.interimResults = false
+    rec.lang = 'en-IN'
+    rec.continuous = true
+    rec.interimResults = true
 
-    rec.onstart = () => setIsListening(true)
-    rec.onend   = () => setIsListening(false)
+    let finalTranscript = ''
 
-    rec.onresult = async (event: any) => {
-      // FIX 2a: Stop recognizer immediately to prevent it firing twice
-      rec.stop()
-
-      if (correctionInProgressRef.current) return
-      correctionInProgressRef.current = true
-
-      const text = event.results[0][0].transcript
-      setTranscript(text); setCorrecting(true)
-      try {
-        const res = await fetch('/api/interview/correct', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ transcript: text, role, round }),
-        })
-        const data = await res.json()
-        setCorrectedTranscript(data.corrected || text)
-      } catch {
-        // FIX 4b: On correction failure, fall back to raw transcript so Submit still appears
-        setCorrectedTranscript(text)
-      }
-      setCorrecting(false)
-      correctionInProgressRef.current = false
+    rec.onstart = () => {
+      setIsListening(true)
+      setTranscript('')
+      setCorrectedTranscript('')
+      finalTranscript = ''
     }
 
-    rec.onerror = () => {
+    rec.onend = () => { setIsListening(false) }
+
+    rec.onresult = async (event: any) => {
+      let interimTranscript = ''
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const t = event.results[i][0].transcript
+        if (event.results[i].isFinal) {
+          finalTranscript += t + ' '
+        } else {
+          interimTranscript += t
+        }
+      }
+
+      // Show live transcript while user is speaking
+      setTranscript((finalTranscript + interimTranscript).trim())
+
+      // Auto-process after 2 seconds of silence
+      clearTimeout(silenceTimerRef.current)
+      silenceTimerRef.current = setTimeout(async () => {
+        const fullText = finalTranscript.trim() || interimTranscript.trim()
+        if (!fullText) return
+
+        rec.stop()
+
+        if (correctionInProgressRef.current) return
+        correctionInProgressRef.current = true
+        setCorrecting(true)
+
+        try {
+          const res = await fetch('/api/interview/correct', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ transcript: fullText, role, round }),
+          })
+          const data = await res.json()
+          setCorrectedTranscript(data.corrected || fullText)
+        } catch {
+          setCorrectedTranscript(fullText)
+        }
+
+        setCorrecting(false)
+        correctionInProgressRef.current = false
+      }, 2000)
+    }
+
+    rec.onerror = (event: any) => {
+      console.error('Speech recognition error:', event.error)
       setIsListening(false)
       correctionInProgressRef.current = false
     }
@@ -299,10 +326,13 @@ function InterviewSessionInner() {
     rec.start()
   }
 
-  function stopListening() { recognitionRef.current?.stop(); setIsListening(false) }
+  function stopListening() {
+    clearTimeout(silenceTimerRef.current)
+    recognitionRef.current?.stop()
+    setIsListening(false)
+  }
 
   // ── fetchAIQuestion ───────────────────────────────────────────────────────
-  // Receives msgs as argument — no stale closure possible
   async function fetchAIQuestion(msgs: Message[]) {
     setAiLoading(true)
     try {
@@ -314,29 +344,24 @@ function InterviewSessionInner() {
       const data = await res.json()
       const reply = (data.reply || '').trim()
 
-      // FIX 3b: Use exact string match instead of .includes() to avoid false positives
       if (reply === '__INTERVIEW_COMPLETE__' || reply === 'INTERVIEW_COMPLETE') {
         setInterviewDone(true)
         setCurrentQuestion('Interview complete. Generating your performance report…')
-        // FIX 2b: Small delay before speaking so UI renders first
         setTimeout(() => speakText('Great effort. Your performance report is being generated.'), 150)
 
         setTimeout(() => {
           stopCamera()
           downloadRecording()
-          // FIX 3c: Store messages in sessionStorage instead of URL param
-          // URL params overflow at ~2000 chars — 8 questions easily exceeds that
-          localStorage.setItem('interviewMessages',JSON.stringify(msgs))
+          // FIX: localStorage instead of sessionStorage
+          localStorage.setItem('interviewMessages', JSON.stringify(msgs))
           router.push(
             `/interview/report?role=${encodeURIComponent(role)}&round=${encodeURIComponent(round)}&difficulty=${encodeURIComponent(difficulty)}`
           )
         }, 3500)
       } else {
         setCurrentQuestion(reply)
-        // FIX 2b: 150ms delay before speaking — lets React flush state update first
         setTimeout(() => speakText(reply), 150)
         setQuestionCount(p => p + 1)
-        // Update BOTH ref and state together
         const next: Message[] = [...msgs, { role: 'assistant', content: reply }]
         messagesRef.current = next
         setMessages(next)
@@ -355,24 +380,31 @@ function InterviewSessionInner() {
     await fetchAIQuestion([])
   }
 
-  // ── Submit answer ─────────────────────────────────────────────────────────
+  // ── Submit voice answer ───────────────────────────────────────────────────
   async function handleSubmitAnswer() {
-    // FIX 3a: Prevent double-submit race condition
     if (submittingRef.current) return
     submittingRef.current = true
-
-    // FIX 4b: Use whichever is available — corrected or raw transcript
     const answer = correctedTranscript.trim() || transcript.trim()
     if (!answer) { submittingRef.current = false; return }
-
     const userMsg: Message = { role: 'user', content: answer }
-    // Build updated list from REF, not state — guarantees latest value
     const updated: Message[] = [...messagesRef.current, userMsg]
     messagesRef.current = updated
     setMessages(updated)
     setTranscript(''); setCorrectedTranscript('')
     await fetchAIQuestion(updated)
+    submittingRef.current = false
+  }
 
+  // ── Submit text answer ────────────────────────────────────────────────────
+  async function handleSubmitTextAnswer() {
+    if (!textAnswer.trim() || submittingRef.current) return
+    submittingRef.current = true
+    const userMsg: Message = { role: 'user', content: textAnswer.trim() }
+    const updated: Message[] = [...messagesRef.current, userMsg]
+    messagesRef.current = updated
+    setMessages(updated)
+    setTextAnswer('')
+    await fetchAIQuestion(updated)
     submittingRef.current = false
   }
 
@@ -437,7 +469,7 @@ function InterviewSessionInner() {
             </p>
             {[
               { icon: '📹', title: 'Camera stays ON', sub: 'Your video and audio are recorded throughout the session.' },
-              { icon: '🎤', title: 'Speak your answers', sub: 'Use the mic button to capture your spoken response after each question.' },
+              { icon: '🎤', title: 'Voice or Text answers', sub: 'Use mic button to speak, or switch to text mode to type your answers.' },
               { icon: '⛶', title: 'Fullscreen enforced', sub: 'Session runs in fullscreen. Exiting will trigger a warning.' },
               { icon: '🔒', title: 'Strict AI guard', sub: 'Tab switches, copy-paste, devtools, and AI tools are all monitored.' },
               { icon: '⚠️', title: '3-strike system', sub: 'Three violations terminate the session immediately.' },
@@ -600,25 +632,16 @@ function InterviewSessionInner() {
           background: '#0a0a0c', border: '1px solid rgba(255,255,255,0.06)',
           borderRadius: 20, overflow: 'hidden', position: 'relative',
           display: 'flex', flexDirection: 'column',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-          minHeight: 0,
+          boxShadow: '0 8px 32px rgba(0,0,0,0.5)', minHeight: 0,
         }}>
-          {/* FIX 4a: video is always in DOM — ref is always ready when srcObject is set via useEffect */}
           <video
-            ref={videoRef}
-            autoPlay
-            muted
-            playsInline
+            ref={videoRef} autoPlay muted playsInline
             style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)', display: 'block' }}
           />
-
-          {/* Scanlines */}
           <div style={{
             position: 'absolute', inset: 0, pointerEvents: 'none',
             backgroundImage: 'repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.04) 2px, rgba(0,0,0,0.04) 4px)',
           }} />
-
-          {/* Corner brackets */}
           {[
             { top: 16,    left: 16,  borderTop:    '2px solid #10b981', borderLeft:   '2px solid #10b981' },
             { top: 16,    right: 16, borderTop:    '2px solid #10b981', borderRight:  '2px solid #10b981' },
@@ -626,7 +649,6 @@ function InterviewSessionInner() {
             { bottom: 16, right: 16, borderBottom: '2px solid #10b981', borderRight:  '2px solid #10b981' },
           ].map((s, i) => <div key={i} style={{ position: 'absolute', width: 24, height: 24, ...s }} />)}
 
-          {/* Proctoring badge */}
           <div style={{
             position: 'absolute', top: 20, left: 20,
             background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
@@ -634,12 +656,9 @@ function InterviewSessionInner() {
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
             <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981', animation: 'pulse 2s infinite' }} />
-            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#10b981', textTransform: 'uppercase' }}>
-              Proctoring
-            </span>
+            <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.1em', color: '#10b981', textTransform: 'uppercase' }}>Proctoring</span>
           </div>
 
-          {/* Question counter */}
           <div style={{
             position: 'absolute', top: 20, right: 20,
             background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(8px)',
@@ -649,7 +668,6 @@ function InterviewSessionInner() {
             Q {questionCount}
           </div>
 
-          {/* Status chips */}
           <div style={{ position: 'absolute', bottom: 20, left: 20, right: 20, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             {isSpeaking && (
               <div style={{
@@ -735,94 +753,162 @@ function InterviewSessionInner() {
             )}
           </div>
 
-          {/* Response area */}
+          {/* ── Response area ── */}
           {!interviewDone && (
             <div style={{
               borderRadius: 20, padding: '20px 24px',
               background: 'rgba(255,255,255,0.015)', border: '1px solid rgba(255,255,255,0.05)',
               flexShrink: 0,
             }}>
-              {/* FIX 4b: Show transcript box if either transcript or correctedTranscript has content */}
-              {(transcript || correcting) && (
-                <div style={{
-                  background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)',
-                  borderRadius: 14, padding: '16px 18px', marginBottom: 14,
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#10b981', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-                      ✓ Your Response
-                    </span>
-                    {correcting ? (
-                      <span style={{ fontSize: 11, color: '#eab308', display: 'flex', alignItems: 'center', gap: 5 }}>
-                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#eab308', display: 'inline-block', animation: 'pulse 1s infinite' }} />
-                        Polishing…
-                      </span>
-                    ) : (
-                      <span style={{ fontSize: 11, color: '#60a5fa', fontWeight: 500 }}>✨ AI-Corrected</span>
-                    )}
-                  </div>
-                  <textarea
-                    value={correcting ? '' : (correctedTranscript || transcript)}
-                    onChange={e => setCorrectedTranscript(e.target.value)}
-                    disabled={correcting}
-                    placeholder={correcting ? 'Processing your speech…' : ''}
-                    rows={3}
-                    style={{
-                      width: '100%', background: 'transparent', border: 'none',
-                      padding: 0, color: '#e4e4e7', fontSize: 14, lineHeight: 1.6,
-                      outline: 'none', resize: 'none', fontFamily: 'inherit',
-                      boxSizing: 'border-box', opacity: correcting ? 0.4 : 1,
-                    }}
-                  />
-                </div>
-              )}
 
-              <div style={{ display: 'flex', gap: 10 }}>
+              {/* Voice / Text toggle */}
+              <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
                 <button
-                  onClick={isListening ? stopListening : startListening}
-                  disabled={aiLoading || isSpeaking || correcting}
+                  onClick={() => { setAnswerMode('voice'); setTextAnswer('') }}
                   style={{
-                    flex: 1, padding: '14px 20px', borderRadius: 14,
-                    border: isListening ? '1.5px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.09)',
-                    background: isListening ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.03)',
-                    color: isListening ? '#ef4444' : (isSpeaking || correcting || aiLoading) ? 'rgba(255,255,255,0.2)' : '#e4e4e7',
-                    fontSize: 13, fontWeight: 600,
-                    cursor: (aiLoading || isSpeaking || correcting) ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s', fontFamily: 'inherit',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    flex: 1, padding: '8px', borderRadius: 10,
+                    background: answerMode === 'voice' ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: answerMode === 'voice' ? '#10b981' : 'rgba(255,255,255,0.4)',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    border: answerMode === 'voice' ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(255,255,255,0.06)',
                   }}
-                >
-                  {isListening
-                    ? <><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 0.8s infinite' }} /> Stop Recording</>
-                    : '🎤 Record Answer'}
-                </button>
-
-                {/* FIX 4b: Show Submit if EITHER correctedTranscript OR transcript has content */}
-                {(correctedTranscript || transcript) && !isListening && !correcting && (
-                  <button
-                    onClick={handleSubmitAnswer}
-                    disabled={aiLoading || isSpeaking}
-                    style={{
-                      padding: '14px 24px', borderRadius: 14, border: 'none',
-                      background: 'linear-gradient(135deg, #10b981, #059669)',
-                      color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0,
-                      cursor: (aiLoading || isSpeaking) ? 'not-allowed' : 'pointer',
-                      opacity: (aiLoading || isSpeaking) ? 0.4 : 1,
-                      fontFamily: 'inherit', boxShadow: '0 0 24px rgba(16,185,129,0.2)',
-                    }}
-                  >
-                    Submit →
-                  </button>
-                )}
+                >🎤 Voice Answer</button>
+                <button
+                  onClick={() => { setAnswerMode('text'); stopListening() }}
+                  style={{
+                    flex: 1, padding: '8px', borderRadius: 10,
+                    background: answerMode === 'text' ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.03)',
+                    color: answerMode === 'text' ? '#6366f1' : 'rgba(255,255,255,0.4)',
+                    fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+                    border: answerMode === 'text' ? '1px solid rgba(99,102,241,0.3)' : '1px solid rgba(255,255,255,0.06)',
+                  }}
+                >⌨️ Type Answer</button>
               </div>
 
-              <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.18)', fontSize: 11, margin: '12px 0 0', letterSpacing: '0.03em' }}>
-                {isSpeaking
-                  ? 'Wait for AI to finish speaking before recording your answer'
-                  : isListening
-                  ? 'Listening… speak clearly and at a steady pace'
-                  : 'Maintain eye contact with the camera while answering'}
-              </p>
+              {/* ── VOICE MODE ── */}
+              {answerMode === 'voice' && (
+                <>
+                  {(transcript || correcting) && (
+                    <div style={{
+                      background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(255,255,255,0.06)',
+                      borderRadius: 14, padding: '16px 18px', marginBottom: 14,
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                        <span style={{ fontSize: 10, fontWeight: 700, color: '#10b981', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                          ✓ Your Response
+                        </span>
+                        {correcting ? (
+                          <span style={{ fontSize: 11, color: '#eab308', display: 'flex', alignItems: 'center', gap: 5 }}>
+                            <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#eab308', display: 'inline-block', animation: 'pulse 1s infinite' }} />
+                            Polishing…
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 11, color: '#60a5fa', fontWeight: 500 }}>✨ AI-Corrected</span>
+                        )}
+                      </div>
+                      <textarea
+                        value={correcting ? '' : (correctedTranscript || transcript)}
+                        onChange={e => setCorrectedTranscript(e.target.value)}
+                        disabled={correcting}
+                        placeholder={correcting ? 'Processing your speech…' : ''}
+                        rows={3}
+                        style={{
+                          width: '100%', background: 'transparent', border: 'none',
+                          padding: 0, color: '#e4e4e7', fontSize: 14, lineHeight: 1.6,
+                          outline: 'none', resize: 'none', fontFamily: 'inherit',
+                          boxSizing: 'border-box', opacity: correcting ? 0.4 : 1,
+                        }}
+                      />
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <button
+                      onClick={isListening ? stopListening : startListening}
+                      disabled={aiLoading || isSpeaking || correcting}
+                      style={{
+                        flex: 1, padding: '14px 20px', borderRadius: 14,
+                        border: isListening ? '1.5px solid rgba(239,68,68,0.5)' : '1px solid rgba(255,255,255,0.09)',
+                        background: isListening ? 'rgba(239,68,68,0.07)' : 'rgba(255,255,255,0.03)',
+                        color: isListening ? '#ef4444' : (isSpeaking || correcting || aiLoading) ? 'rgba(255,255,255,0.2)' : '#e4e4e7',
+                        fontSize: 13, fontWeight: 600,
+                        cursor: (aiLoading || isSpeaking || correcting) ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s', fontFamily: 'inherit',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                      }}
+                    >
+                      {isListening
+                        ? <><span style={{ width: 8, height: 8, borderRadius: '50%', background: '#ef4444', animation: 'pulse 0.8s infinite' }} /> Stop Recording</>
+                        : '🎤 Record Answer'}
+                    </button>
+
+                    {(correctedTranscript || transcript) && !isListening && !correcting && (
+                      <button
+                        onClick={handleSubmitAnswer}
+                        disabled={aiLoading || isSpeaking}
+                        style={{
+                          padding: '14px 24px', borderRadius: 14, border: 'none',
+                          background: 'linear-gradient(135deg, #10b981, #059669)',
+                          color: '#fff', fontSize: 13, fontWeight: 700, flexShrink: 0,
+                          cursor: (aiLoading || isSpeaking) ? 'not-allowed' : 'pointer',
+                          opacity: (aiLoading || isSpeaking) ? 0.4 : 1,
+                          fontFamily: 'inherit', boxShadow: '0 0 24px rgba(16,185,129,0.2)',
+                        }}
+                      >
+                        Submit →
+                      </button>
+                    )}
+                  </div>
+
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.18)', fontSize: 11, margin: '12px 0 0', letterSpacing: '0.03em' }}>
+                    {isSpeaking
+                      ? 'Wait for AI to finish speaking before recording'
+                      : isListening
+                      ? 'Listening… speak clearly. Stops automatically after 2 sec of silence.'
+                      : 'Click Record, speak your answer, then Submit'}
+                  </p>
+                </>
+              )}
+
+              {/* ── TEXT MODE ── */}
+              {answerMode === 'text' && (
+                <>
+                  <textarea
+                    value={textAnswer}
+                    onChange={e => setTextAnswer(e.target.value)}
+                    disabled={aiLoading || isSpeaking}
+                    placeholder="Type your answer here…"
+                    rows={5}
+                    style={{
+                      width: '100%', background: 'rgba(0,0,0,0.3)',
+                      border: '1px solid rgba(99,102,241,0.3)', borderRadius: 14,
+                      padding: '14px 16px', color: '#e4e4e7', fontSize: 14, lineHeight: 1.6,
+                      outline: 'none', resize: 'none', fontFamily: 'inherit',
+                      boxSizing: 'border-box', marginBottom: 12,
+                    }}
+                  />
+                  <button
+                    onClick={handleSubmitTextAnswer}
+                    disabled={!textAnswer.trim() || aiLoading || isSpeaking}
+                    style={{
+                      width: '100%', padding: '14px', borderRadius: 14, border: 'none',
+                      background: textAnswer.trim() && !aiLoading && !isSpeaking
+                        ? 'linear-gradient(135deg, #6366f1, #4f46e5)'
+                        : 'rgba(255,255,255,0.05)',
+                      color: textAnswer.trim() && !aiLoading && !isSpeaking ? '#fff' : 'rgba(255,255,255,0.2)',
+                      fontSize: 13, fontWeight: 700,
+                      cursor: textAnswer.trim() && !aiLoading && !isSpeaking ? 'pointer' : 'not-allowed',
+                      fontFamily: 'inherit', transition: 'all 0.2s',
+                    }}
+                  >
+                    Submit Answer →
+                  </button>
+                  <p style={{ textAlign: 'center', color: 'rgba(255,255,255,0.18)', fontSize: 11, margin: '12px 0 0' }}>
+                    {isSpeaking ? 'Wait for AI to finish speaking' : 'Type your full answer then click Submit'}
+                  </p>
+                </>
+              )}
+
             </div>
           )}
         </div>

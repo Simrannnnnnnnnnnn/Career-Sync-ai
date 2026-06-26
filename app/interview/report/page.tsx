@@ -1,3 +1,4 @@
+
 'use client'
 
 import { useEffect, useState, Suspense } from 'react'
@@ -64,8 +65,8 @@ function ReportInner() {
   useEffect(() => {
     async function generateReport() {
       try {
-        // FIX 3c: Read messages from sessionStorage — URL params overflow at ~2000 chars
-        // After 8 questions the serialized messages can be 4000–6000 chars, causing silent truncation
+        // FIX: Use localStorage instead of sessionStorage
+        // sessionStorage can be cleared on redirect in some browsers/Vercel deployments
         const raw = localStorage.getItem('interviewMessages')
         if (!raw) {
           setError('No interview data found. Please complete an interview session first.')
@@ -88,7 +89,7 @@ function ReportInner() {
         }
         setReport(data.report)
 
-        // Clean up sessionStorage after successful report generation
+        // FIX: Clean up localStorage after successful report generation
         localStorage.removeItem('interviewMessages')
       } catch (e) {
         setError('Failed to generate report. Please try again.')
@@ -104,7 +105,6 @@ function ReportInner() {
   const roundLabel   = round === 'hr' ? 'HR' : round === 'technical' ? 'Technical' : round === 'screening' ? 'Screening' : round === 'initial' ? 'Initial' : round === 'final' ? 'Final' : 'Analytical'
   const diffLabel    = difficulty === 'easy' ? 'Entry Level' : difficulty === 'medium' ? 'Mid Level' : 'Senior Level'
 
-  // ── Loading ──
   if (loading) return (
     <div style={{
       minHeight: '100vh', background: '#050507',
@@ -124,7 +124,6 @@ function ReportInner() {
     </div>
   )
 
-  // ── Error ──
   if (error) return (
     <div style={{
       minHeight: '100vh', background: '#050507',
@@ -150,7 +149,6 @@ function ReportInner() {
       fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: '#f4f4f5',
       padding: '32px 24px 64px',
     }}>
-      {/* Background grid */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
         backgroundImage: `linear-gradient(rgba(16,185,129,0.02) 1px, transparent 1px),
@@ -202,7 +200,6 @@ function ReportInner() {
               {report.overallFeedback}
             </p>
           </div>
-          {/* Big score circle */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
             <svg width={100} height={100} style={{ transform: 'rotate(-90deg)' }}>
               <circle cx={50} cy={50} r={40} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={6} />
@@ -234,7 +231,6 @@ function ReportInner() {
 
         {/* Strengths + Improvements */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-          {/* Strengths */}
           <div style={{
             background: 'rgba(16,185,129,0.04)', border: '1px solid rgba(16,185,129,0.15)',
             borderRadius: 20, padding: '24px',
@@ -250,7 +246,6 @@ function ReportInner() {
               </div>
             ))}
           </div>
-          {/* Improvements */}
           <div style={{
             background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)',
             borderRadius: 20, padding: '24px',

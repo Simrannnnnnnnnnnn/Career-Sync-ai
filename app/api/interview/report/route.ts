@@ -82,16 +82,20 @@ ${transcript}
 
 Evaluate this interview and return the JSON report.`
 
+    // FIX: Inject systemPrompt as first message in array
+    // instead of passing as separate field — HF Space ignores separate systemPrompt field
     const response = await callHFSpace({
-      messages: [{ role: 'user', content: prompt }],
-      systemPrompt,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: prompt },
+      ],
       max_tokens: 2000,
     })
 
     const data = await response.json()
     const raw = data.reply || ''
 
-    // Robust JSON extraction
+    // Robust JSON extraction — try 3 methods
     let report: any = null
     try {
       report = JSON.parse(raw.trim())
@@ -117,14 +121,18 @@ Evaluate this interview and return the JSON report.`
       }
     }
 
-    // Validate required fields
+    // Validate + fill missing fields with safe defaults
     if (typeof report.overallScore !== 'number') report.overallScore = 60
     if (!report.verdict) {
       report.verdict = report.overallScore >= 70 ? 'Ready' : report.overallScore >= 45 ? 'Needs Practice' : 'Not Ready'
     }
-    if (!Array.isArray(report.strengths)) report.strengths = []
-    if (!Array.isArray(report.improvements)) report.improvements = []
+    if (typeof report.technicalScore !== 'number') report.technicalScore = 60
+    if (typeof report.communicationScore !== 'number') report.communicationScore = 60
+    if (typeof report.confidenceScore !== 'number') report.confidenceScore = 60
+    if (!Array.isArray(report.strengths)) report.strengths = ['Participated in the interview']
+    if (!Array.isArray(report.improvements)) report.improvements = ['Continue practicing']
     if (!Array.isArray(report.questionFeedback)) report.questionFeedback = []
+    if (!report.overallFeedback) report.overallFeedback = 'Interview completed. Keep practicing to improve your performance.'
 
     return NextResponse.json({ report })
 
