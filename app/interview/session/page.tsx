@@ -326,7 +326,7 @@ function InterviewSessionInner() {
           downloadRecording()
           // FIX 3c: Store messages in sessionStorage instead of URL param
           // URL params overflow at ~2000 chars — 8 questions easily exceeds that
-          sessionStorage.setItem('interviewMessages', JSON.stringify(msgs))
+          localStorage.setItem('interviewMessages',JSON.stringify(msgs))
           router.push(
             `/interview/report?role=${encodeURIComponent(role)}&round=${encodeURIComponent(round)}&difficulty=${encodeURIComponent(difficulty)}`
           )

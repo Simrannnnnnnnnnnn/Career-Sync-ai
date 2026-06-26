@@ -91,13 +91,9 @@ export async function POST(req: NextRequest) {
     ).length
 
     if (questionCount >= MAX_QUESTIONS) {
-      // FIX 3b: Return exact string — session page does strict equality check
       return NextResponse.json({ reply: '__INTERVIEW_COMPLETE__' })
     }
 
-    // FIX 1 (prompt): Build askedQuestions from the FULL messages array —
-    // not from recentMessages (which is sliced). If question 1 falls outside
-    // the last 10 messages, the AI would not know it was asked and repeat it.
     const askedQuestions = (messages || [])
       .filter((m: any) => m.role === 'assistant')
       .map((m: any, i: number) => `${i + 1}. ${m.content}`)
@@ -111,7 +107,6 @@ export async function POST(req: NextRequest) {
 
     const isOpening = questionCount === 0
 
-    // FIX 1 (prompt): Added "do NOT re-greet" and "no filler" rules
     const systemPrompt = `You are a professional ${round} interviewer conducting a mock interview for a ${role} position at ${difficulty} level.
 
 STRICT RULES:
@@ -134,9 +129,15 @@ ${askedQuestions
   : ''}`
 
     try {
+      // FIX: Inject systemPrompt as first message in the messages array
+      // instead of passing it as a separate field — ensures HF Space receives it properly
+      const messagesWithSystem = [
+        { role: 'system', content: systemPrompt },
+        ...recentMessages,
+      ]
+
       const response = await callHFSpace({
-        messages: recentMessages,
-        systemPrompt,
+        messages: messagesWithSystem,
         max_tokens: 200,
       })
 

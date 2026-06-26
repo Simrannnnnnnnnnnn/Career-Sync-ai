@@ -66,7 +66,7 @@ function ReportInner() {
       try {
         // FIX 3c: Read messages from sessionStorage — URL params overflow at ~2000 chars
         // After 8 questions the serialized messages can be 4000–6000 chars, causing silent truncation
-        const raw = sessionStorage.getItem('interviewMessages')
+        const raw = localStorage.getItem('interviewMessages')
         if (!raw) {
           setError('No interview data found. Please complete an interview session first.')
           setLoading(false)
@@ -89,7 +89,7 @@ function ReportInner() {
         setReport(data.report)
 
         // Clean up sessionStorage after successful report generation
-        sessionStorage.removeItem('interviewMessages')
+        localStorage.removeItem('interviewMessages')
       } catch (e) {
         setError('Failed to generate report. Please try again.')
       }
