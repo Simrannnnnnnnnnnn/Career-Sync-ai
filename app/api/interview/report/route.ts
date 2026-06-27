@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 
 // Self-contained — no lib/ai.ts dependency
-// Chain: Gemini Flash → Groq → Default report
+// Chain: Gemini Flash → Cerebras → Groq → Default report
 
 async function tryGemini(prompt: string): Promise<string> {
   const key = process.env.GEMINI_API_KEY
   if (!key) throw new Error('No Gemini key')
-
   const res = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`,
     {
@@ -29,13 +28,9 @@ async function tryGemini(prompt: string): Promise<string> {
 async function tryGroq(prompt: string): Promise<string> {
   const key = process.env.GROQ_API_KEY
   if (!key) throw new Error('No Groq key')
-
   const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       model: 'llama-3.3-70b-versatile',
       messages: [{ role: 'user', content: prompt }],
@@ -54,13 +49,9 @@ async function tryGroq(prompt: string): Promise<string> {
 async function tryCerebras(prompt: string): Promise<string> {
   const key = process.env.CEREBRAS_API_KEY
   if (!key) throw new Error('No Cerebras key')
-
   const res = await fetch('https://api.cerebras.ai/v1/chat/completions', {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${key}`,
-    },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       model: 'llama-3.3-70b',
       messages: [{ role: 'user', content: prompt }],
@@ -77,7 +68,6 @@ async function tryCerebras(prompt: string): Promise<string> {
 }
 
 function parseReport(raw: string): any {
-  // Try 3 JSON extraction methods
   const attempts = [
     () => JSON.parse(raw.trim()),
     () => JSON.parse(raw.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()),
@@ -93,13 +83,14 @@ function parseReport(raw: string): any {
   throw new Error('JSON parse failed')
 }
 
-function defaultReport() {
+function defaultReport(isTechnical: boolean) {
   return {
     overallScore: 65,
     verdict: 'Needs Practice',
     technicalScore: 65,
     communicationScore: 65,
     confidenceScore: 65,
+    ...(isTechnical ? { codeScore: 65 } : {}),
     strengths: [
       'Completed the full interview session',
       'Attempted all questions',
@@ -111,8 +102,7 @@ function defaultReport() {
       'Build confidence in responses',
     ],
     questionFeedback: [],
-    overallFeedback:
-      'You completed the interview session. Keep practicing regularly to improve your performance.',
+    overallFeedback: 'You completed the interview session. Keep practicing regularly to improve your performance.',
   }
 }
 
@@ -127,8 +117,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    const isTechnical = round === 'technical'
+
+    // ── Build transcript — mark coding answers clearly ────────────────────
     const transcript = messages
-      .map((m: any) => `${m.role === 'assistant' ? 'Interviewer' : 'Candidate'}: ${m.content}`)
+      .map((m: any) => {
+        const speaker = m.role === 'assistant' ? 'Interviewer' : 'Candidate'
+        // [CODE] prefix means candidate wrote actual code
+        const content = m.content.startsWith('[CODE]\n')
+          ? `[CANDIDATE SUBMITTED CODE]\n${m.content.replace('[CODE]\n', '')}`
+          : m.content
+        return `${speaker}: ${content}`
+      })
       .join('\n\n')
 
     const prompt = `You are an expert interview evaluator. Return ONLY raw JSON, no markdown, no backticks.
@@ -140,11 +140,17 @@ JSON Schema:
   "technicalScore": <0-100>,
   "communicationScore": <0-100>,
   "confidenceScore": <0-100>,
+  ${isTechnical ? '"codeScore": <0-100>,' : ''}
   "strengths": ["...", "...", "..."],
   "improvements": ["...", "...", "..."],
   "questionFeedback": [{"question": "...", "answerSummary": "...", "feedback": "..."}],
   "overallFeedback": "2-3 sentences"
 }
+
+${isTechnical ? `IMPORTANT: This is a technical interview with coding questions.
+- When you see [CANDIDATE SUBMITTED CODE], evaluate the actual code quality, correctness, and edge case handling.
+- codeScore should reflect overall code quality across all coding questions (0-100).
+- In questionFeedback for coding questions, mention specific code issues or strengths.` : ''}
 
 Interview: Role=${role}, Round=${round}, Level=${difficulty}
 
@@ -153,12 +159,12 @@ ${transcript}
 
 Return JSON only.`
 
-    // Try providers in chain
+    // ── Provider chain ────────────────────────────────────────────────────
     let raw = ''
     const providers = [
-      { name: 'Gemini', fn: () => tryGemini(prompt) },
+      { name: 'Gemini',   fn: () => tryGemini(prompt)   },
       { name: 'Cerebras', fn: () => tryCerebras(prompt) },
-      { name: 'Groq', fn: () => tryGroq(prompt) },
+      { name: 'Groq',     fn: () => tryGroq(prompt)     },
     ]
 
     for (const provider of providers) {
@@ -171,22 +177,21 @@ Return JSON only.`
       }
     }
 
-    // If all providers failed, return default report
     if (!raw) {
       console.error('[Report] All providers failed — returning default report')
-      return NextResponse.json({ report: defaultReport() })
+      return NextResponse.json({ report: defaultReport(isTechnical) })
     }
 
-    // Parse JSON
+    // ── Parse JSON ────────────────────────────────────────────────────────
     let report: any
     try {
       report = parseReport(raw)
     } catch {
       console.error('[Report] JSON parse failed, raw:', raw.slice(0, 200))
-      return NextResponse.json({ report: defaultReport() })
+      return NextResponse.json({ report: defaultReport(isTechnical) })
     }
 
-    // Safe defaults for missing fields
+    // ── Safe defaults ─────────────────────────────────────────────────────
     if (typeof report.overallScore !== 'number') report.overallScore = 65
     if (!['Ready', 'Needs Practice', 'Not Ready'].includes(report.verdict)) {
       report.verdict = report.overallScore >= 70 ? 'Ready' : report.overallScore >= 45 ? 'Needs Practice' : 'Not Ready'
@@ -194,6 +199,7 @@ Return JSON only.`
     if (typeof report.technicalScore !== 'number') report.technicalScore = 65
     if (typeof report.communicationScore !== 'number') report.communicationScore = 65
     if (typeof report.confidenceScore !== 'number') report.confidenceScore = 65
+    if (isTechnical && typeof report.codeScore !== 'number') report.codeScore = 65
     if (!Array.isArray(report.strengths) || report.strengths.length === 0)
       report.strengths = ['Completed the interview', 'Attempted all questions', 'Showed engagement']
     if (!Array.isArray(report.improvements) || report.improvements.length === 0)
@@ -205,7 +211,6 @@ Return JSON only.`
 
   } catch (error: any) {
     console.error('[Report] Unexpected error:', error.message)
-    // Never return 500 — always return something
-    return NextResponse.json({ report: defaultReport() })
+    return NextResponse.json({ report: defaultReport(false) })
   }
 }
