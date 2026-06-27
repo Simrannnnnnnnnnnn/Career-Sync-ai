@@ -1,59 +1,83 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { generateInterviewQuestion } from '@/lib/ai'
 
 const MAX_QUESTIONS = 8
 
-const FALLBACK_QUESTIONS_BY_ROUND: Record<string, string[]> = {
-  hr: [
-    "Tell me about yourself and your background.",
-    "Why are you interested in this role?",
-    "What's your greatest professional strength?",
-    "Describe a time you worked well in a team.",
-    "Where do you see yourself in 5 years?",
-    "How do you handle pressure or tight deadlines?",
-    "What motivates you in your work?",
-    "Tell me about a conflict at work and how you resolved it.",
-  ],
-  technical: [
-    "Walk me through a challenging technical problem you solved.",
-    "How do you approach debugging a complex issue?",
-    "Describe your experience with system design.",
-    "What's your process for code reviews?",
-    "Tell me about a project you're most proud of technically.",
-    "How do you stay updated with new technologies?",
-    "Describe a time you had to optimize performance in your code.",
-    "What's your approach to writing maintainable code?",
-  ],
-  analytical: [
-    "Walk me through how you would approach an unfamiliar problem.",
-    "Describe a time you used data to make a decision.",
-    "How do you prioritize when everything seems urgent?",
-    "Tell me about a time your initial solution didn't work.",
-    "How would you measure the success of a project?",
-    "Describe a situation where you had incomplete information.",
-    "How do you break down a complex problem into smaller parts?",
-    "Tell me about a time you identified a non-obvious root cause.",
-  ],
+const FALLBACK_QUESTIONS: Record<string, string[]> = {
+  hr: ["Tell me about yourself.", "Why are you interested in this role?", "What's your greatest strength?", "Describe teamwork experience.", "Where do you see yourself in 5 years?", "How do you handle pressure?", "What motivates you?", "Describe a conflict you resolved."],
+  technical: ["Walk me through a technical problem you solved.", "How do you debug complex issues?", "Describe your system design experience.", "What's your code review process?", "Tell me about your proudest project.", "How do you stay updated with tech?", "Describe a performance optimization you did.", "How do you write maintainable code?"],
+  analytical: ["How do you approach unfamiliar problems?", "Describe using data to make a decision.", "How do you prioritize urgent tasks?", "Tell me about a failed solution.", "How do you measure project success?", "Describe working with incomplete information.", "How do you break down complex problems?", "Tell me about finding a non-obvious root cause."],
 }
 
-const DEFAULT_FALLBACKS = [
-  "Can you walk me through your most recent project?",
-  "What's a challenge you overcame recently at work?",
-  "How do you approach learning something new?",
-  "Describe your preferred way of working in a team.",
-  "What's a skill you've been actively improving?",
-  "Tell me about a time you had to adapt quickly.",
-  "How do you handle feedback or criticism?",
-  "What does a productive workday look like for you?",
-]
+// ── Cerebras ──────────────────────────────────────────────────────────────────
+async function tryCerebras(systemPrompt: string, messages: any[], maxTokens: number): Promise<string> {
+  const key = process.env.CEREBRAS_API_KEY
+  if (!key) throw new Error('No Cerebras key')
+  const res = await fetch('https://api.cerebras.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b',
+      messages: [{ role: 'system', content: systemPrompt }, ...messages],
+      max_tokens: maxTokens,
+      temperature: 0.7,
+    }),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!res.ok) throw new Error(`Cerebras ${res.status}`)
+  const data = await res.json()
+  const text = data.choices?.[0]?.message?.content?.trim()
+  if (!text) throw new Error('Cerebras empty')
+  return text
+}
+
+// ── Groq ──────────────────────────────────────────────────────────────────────
+async function tryGroq(systemPrompt: string, messages: any[], maxTokens: number): Promise<string> {
+  const key = process.env.GROQ_API_KEY
+  if (!key) throw new Error('No Groq key')
+  const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
+    body: JSON.stringify({
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'system', content: systemPrompt }, ...messages],
+      max_tokens: maxTokens,
+      temperature: 0.7,
+    }),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!res.ok) throw new Error(`Groq ${res.status}`)
+  const data = await res.json()
+  const text = data.choices?.[0]?.message?.content?.trim()
+  if (!text) throw new Error('Groq empty')
+  return text
+}
+
+// ── HF Space — CORRECT FORMAT (systemPrompt as separate field) ─────────────
+async function tryHFSpace(systemPrompt: string, messages: any[], maxTokens: number): Promise<string> {
+  const url = process.env.HF_SPACE_URL
+  if (!url) throw new Error('No HF Space URL')
+  const res = await fetch(`${url}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      systemPrompt,   // ← HF Space expects this as separate field!
+      messages,
+      max_tokens: maxTokens,
+    }),
+    signal: AbortSignal.timeout(20000),
+  })
+  if (!res.ok) throw new Error(`HF Space ${res.status}`)
+  const data = await res.json()
+  const text = data.reply?.trim()
+  if (!text) throw new Error('HF Space empty')
+  return text
+}
 
 export async function POST(req: NextRequest) {
   try {
     const { role, round, difficulty, messages } = await req.json()
 
-    const questionCount = (messages || []).filter(
-      (m: any) => m.role === 'assistant'
-    ).length
+    const questionCount = (messages || []).filter((m: any) => m.role === 'assistant').length
 
     if (questionCount >= MAX_QUESTIONS) {
       return NextResponse.json({ reply: '__INTERVIEW_COMPLETE__' })
@@ -65,49 +89,43 @@ export async function POST(req: NextRequest) {
       .join('\n')
 
     const recentMessages = (messages || []).slice(-10).map((m: any) => ({
-      role: m.role as 'user' | 'assistant',
+      role: m.role === 'assistant' ? 'assistant' : 'user',
       content: m.content,
     }))
 
     const isOpening = questionCount === 0
 
-    const systemPrompt = `You are a professional ${round} interviewer conducting a mock interview for a ${role} position at ${difficulty} level.
+    const systemPrompt = `You are a professional ${round} interviewer for a ${role} position at ${difficulty} level.
+RULES:
+- Ask EXACTLY ONE question, nothing else.
+- No numbering, no feedback, no filler words.
+- Keep it concise — 1-3 sentences.
+${isOpening ? '- Greet warmly and ask candidate to introduce themselves.' : `- Question ${questionCount + 1} of ${MAX_QUESTIONS}. Jump straight to next question, no greeting.`}
+${questionCount === MAX_QUESTIONS - 1 ? '- This is the FINAL question. Make it strong.' : ''}
+${askedQuestions ? `\nDo NOT repeat these:\n${askedQuestions}` : ''}`
 
-STRICT RULES:
-- Ask EXACTLY ONE interview question. Nothing more.
-- Do NOT number the question.
-- Do NOT give feedback, hints, explanations, or assessments.
-- Do NOT say "Great answer", "Interesting", "Sure!", "Absolutely!", or any filler response.
-- Keep the question concise — 1–3 sentences max.
-- Vary question types: behavioral, situational, technical, scenario-based.
-- CRITICAL: Do NOT repeat, rephrase, or closely paraphrase any question already asked.
-${isOpening
-  ? `- This is the opening question. Greet the candidate warmly and ask them to introduce themselves.`
-  : `- This is question ${questionCount + 1} of ${MAX_QUESTIONS}. Do NOT greet again — jump straight to the next question.`
-}
-${questionCount === MAX_QUESTIONS - 1 ? `- This is the FINAL question. Make it a strong closing question.` : ''}
-${askedQuestions ? `\nQuestions already asked — do NOT repeat:\n${askedQuestions}` : ''}`
+    // Try providers in chain
+    const providers = [
+      { name: 'Cerebras', fn: () => tryCerebras(systemPrompt, recentMessages, 200) },
+      { name: 'Groq',     fn: () => tryGroq(systemPrompt, recentMessages, 200) },
+      { name: 'HFSpace',  fn: () => tryHFSpace(systemPrompt, recentMessages, 200) },
+    ]
 
-    try {
-      const reply = await generateInterviewQuestion({
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...recentMessages,
-        ],
-        maxTokens: 200,
-        temperature: 0.7,
-      })
-
-      return NextResponse.json({ reply: reply.trim() })
-
-    } catch (aiError) {
-      console.error('All AI providers failed, using fallback:', aiError)
-      const pool = FALLBACK_QUESTIONS_BY_ROUND[round] || DEFAULT_FALLBACKS
-      return NextResponse.json({ reply: pool[questionCount % pool.length] })
+    for (const provider of providers) {
+      try {
+        const reply = await provider.fn()
+        return NextResponse.json({ reply })
+      } catch (err: any) {
+        console.warn(`[Interview] ${provider.name} failed: ${err.message}`)
+      }
     }
 
-  } catch (error) {
-    console.error('Interview API error:', error)
-    return NextResponse.json({ reply: DEFAULT_FALLBACKS[0] }, { status: 200 })
+    // All failed — use fallback question
+    const pool = FALLBACK_QUESTIONS[round] || FALLBACK_QUESTIONS.hr
+    return NextResponse.json({ reply: pool[questionCount % pool.length] })
+
+  } catch (error: any) {
+    console.error('[Interview] Error:', error.message)
+    return NextResponse.json({ reply: "Tell me about yourself and your background." })
   }
 }
