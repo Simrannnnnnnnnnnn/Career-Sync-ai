@@ -9,11 +9,24 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: "var(--background)",
-        foreground: "var(--foreground)",
+        background: "var(--bg-base)",
+        foreground: "var(--text-primary)",
+        card: "var(--bg-card)",
+        border: "var(--border)",
+        accent: "var(--accent)",
+        muted: "var(--text-muted)",
+      },
+      borderRadius: {
+        card: "var(--radius-card)",
+        sm: "var(--radius-sm)",
+      },
+      fontFamily: {
+        sans: ["var(--font-geist-sans)", "Segoe UI", "sans-serif"],
+        mono: ["var(--font-geist-mono)", "monospace"],
       },
     },
   },
   plugins: [],
 };
+
 export default config;

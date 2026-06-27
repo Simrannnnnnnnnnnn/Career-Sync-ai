@@ -2,26 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* ─── DARK THEME (default) ─── */
+:root,
+[data-theme='dark'] {
+  --bg-base:        #09090b;
+  --bg-card:        #111113;
+  --bg-card-hover:  #18181b;
+  --bg-subtle:      #1c1c1f;
+  --bg-muted:       rgba(255,255,255,0.03);
+
+  --border:         rgba(255,255,255,0.07);
+  --border-strong:  rgba(255,255,255,0.12);
+
+  --text-primary:   #f4f4f5;
+  --text-secondary: #a1a1aa;
+  --text-muted:     #52525b;
+  --text-faint:     #3f3f46;
+
+  --accent:         #10b981;
+  --accent-bg:      rgba(16,185,129,0.08);
+  --accent-border:  rgba(16,185,129,0.22);
+  --accent-dim:     #052e16;
+
+  --blue:           #3b82f6;
+  --blue-bg:        rgba(59,130,246,0.08);
+  --purple:         #8b5cf6;
+  --purple-bg:      rgba(139,92,246,0.08);
+  --amber:          #f59e0b;
+  --amber-bg:       rgba(245,158,11,0.08);
+  --indigo:         #6366f1;
+  --indigo-bg:      rgba(99,102,241,0.08);
+  --coral:          #f97316;
+  --coral-bg:       rgba(249,115,22,0.08);
+
+  --shadow-card:    0 0 0 1px rgba(255,255,255,0.04);
+  --radius-card:    20px;
+  --radius-sm:      12px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* ─── LIGHT THEME ─── */
+[data-theme='light'] {
+  --bg-base:        #f8f9fa;
+  --bg-card:        #ffffff;
+  --bg-card-hover:  #f4f5f6;
+  --bg-subtle:      #f1f2f4;
+  --bg-muted:       rgba(0,0,0,0.025);
+
+  --border:         rgba(0,0,0,0.07);
+  --border-strong:  rgba(0,0,0,0.13);
+
+  --text-primary:   #0f0f11;
+  --text-secondary: #4b5563;
+  --text-muted:     #9ca3af;
+  --text-faint:     #d1d5db;
+
+  --accent:         #059669;
+  --accent-bg:      rgba(5,150,105,0.07);
+  --accent-border:  rgba(5,150,105,0.2);
+  --accent-dim:     #d1fae5;
+
+  --blue:           #2563eb;
+  --blue-bg:        rgba(37,99,235,0.07);
+  --purple:         #7c3aed;
+  --purple-bg:      rgba(124,58,237,0.07);
+  --amber:          #d97706;
+  --amber-bg:       rgba(217,119,6,0.07);
+  --indigo:         #4f46e5;
+  --indigo-bg:      rgba(79,70,229,0.07);
+  --coral:          #ea580c;
+  --coral-bg:       rgba(234,88,12,0.07);
+
+  --shadow-card:    0 1px 3px rgba(0,0,0,0.07), 0 0 0 1px rgba(0,0,0,0.05);
+  --radius-card:    20px;
+  --radius-sm:      12px;
+}
+
+/* ─── GLOBAL RESETS ─── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  transition: background 0.25s ease, color 0.2s ease;
+  min-height: 100vh;
 }
 
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+/* ─── SCROLLBAR ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 3px; }
+
+/* ─── FOCUS RING ─── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
+
+/* ─── SPIN ─── */
+@keyframes spin { to { transform: rotate(360deg) } }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+.animate-in { animation: fadeIn 0.3s ease forwards; }
