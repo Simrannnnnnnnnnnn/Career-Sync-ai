@@ -1,58 +1,43 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const HF_URL = `${process.env.HF_SPACE_URL}/chat`
+import { correctSpeech } from '@/lib/ai'
 
 export async function POST(req: NextRequest) {
-  let transcript = ''
-  let role = ''
-  let round = ''
-
   try {
-    const body = await req.json()
-    transcript = body.transcript || ''
-    role = body.role || ''
-    round = body.round || ''
-  } catch {
-    return NextResponse.json({ corrected: '' })
-  }
+    const { transcript, role, round } = await req.json()
 
-  if (!transcript?.trim()) {
-    return NextResponse.json({ corrected: transcript || '' })
-  }
+    if (!transcript?.trim()) {
+      return NextResponse.json({ corrected: '' })
+    }
 
-  const systemPrompt = `You are a speech-to-text correction assistant. The speaker is giving a ${round} interview for a ${role} position.
+    const systemPrompt = `You are a speech-to-text correction assistant for a ${round} interview for a ${role} position.
 
-YOUR ONLY JOB:
-- Fix mis-transcribed technical terms (e.g. "alga rhythm" → "algorithm", "cube earnest" → "Kubernetes", "react hooks" → "React Hooks")
-- Fix obvious grammar errors from speech (e.g. "I were working" → "I was working")
-- DO NOT add new content, ideas, or expand answers
-- DO NOT make the answer sound smarter or longer
-- DO NOT remove any content
-- Keep the speaker's original words and tone as much as possible
-- Return ONLY the corrected text — no explanation, no prefix, no quotes`
+Your job:
+- Fix grammar, spelling, and punctuation mistakes
+- Keep the meaning and words exactly the same
+- Do NOT add new content or change the answer
+- Do NOT give feedback or suggestions
+- Return ONLY the corrected text, nothing else`
 
-  try {
-    const response = await fetch(HF_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        messages: [{ role: 'user', content: transcript }],
-        systemPrompt,
-        max_tokens: 300,
-      }),
-      signal: AbortSignal.timeout(25000), // 25s — HF Space cold start handle karta hai
-    })
+    const userPrompt = `Correct this interview answer transcript:\n\n"${transcript}"`
 
-    if (!response.ok) {
+    try {
+      const corrected = await correctSpeech({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt },
+        ],
+        maxTokens: 300,
+        temperature: 0.2,
+      })
+
+      return NextResponse.json({ corrected: corrected.trim() })
+    } catch {
+      // If all providers fail, return original transcript
       return NextResponse.json({ corrected: transcript })
     }
 
-    const data = await response.json()
-    const corrected = data.reply?.trim() || transcript
-    return NextResponse.json({ corrected })
-
   } catch (error) {
-    console.error('Correction API error:', error)
-    return NextResponse.json({ corrected: transcript })
+    console.error('Correction error:', error)
+    return NextResponse.json({ corrected: '' }, { status: 500 })
   }
 }

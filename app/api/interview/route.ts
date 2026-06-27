@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-
-const HF_URL = `${process.env.HF_SPACE_URL}/chat`
+import { generateInterviewQuestion } from '@/lib/ai'
 
 const MAX_QUESTIONS = 8
 
@@ -48,40 +47,6 @@ const DEFAULT_FALLBACKS = [
   "What does a productive workday look like for you?",
 ]
 
-function getFallbackQuestion(round: string, usedFallbackIndex: number): string {
-  const pool = FALLBACK_QUESTIONS_BY_ROUND[round] || DEFAULT_FALLBACKS
-  return pool[usedFallbackIndex % pool.length]
-}
-
-async function callHFSpace(body: object, retries = 2): Promise<Response> {
-  let lastError: Error | null = null
-  for (let attempt = 0; attempt < retries; attempt++) {
-    try {
-      const res = await fetch(HF_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-        signal: AbortSignal.timeout(15000),
-      })
-      if (res.ok) return res
-      if (res.status === 503 && attempt < retries - 1) {
-        await new Promise(r => setTimeout(r, 3000))
-        continue
-      }
-      const errText = await res.text()
-      console.error(`HF Space error (attempt ${attempt + 1}):`, res.status, errText)
-      lastError = new Error(`HF Space returned ${res.status}: ${errText}`)
-    } catch (err: any) {
-      console.error(`HF Space fetch failed (attempt ${attempt + 1}):`, err.message)
-      lastError = err
-      if (attempt < retries - 1) {
-        await new Promise(r => setTimeout(r, 2000))
-      }
-    }
-  }
-  throw lastError || new Error('HF Space unreachable')
-}
-
 export async function POST(req: NextRequest) {
   try {
     const { role, round, difficulty, messages } = await req.json()
@@ -99,9 +64,8 @@ export async function POST(req: NextRequest) {
       .map((m: any, i: number) => `${i + 1}. ${m.content}`)
       .join('\n')
 
-    // Only trim context window for the actual conversation payload
     const recentMessages = (messages || []).slice(-10).map((m: any) => ({
-      role: m.role === 'assistant' ? 'assistant' : 'user',
+      role: m.role as 'user' | 'assistant',
       content: m.content,
     }))
 
@@ -118,47 +82,32 @@ STRICT RULES:
 - Vary question types: behavioral, situational, technical, scenario-based.
 - CRITICAL: Do NOT repeat, rephrase, or closely paraphrase any question already asked.
 ${isOpening
-  ? `- This is the opening question. Greet the candidate warmly and ask them to introduce themselves. Keep it brief.`
-  : `- This is question ${questionCount + 1} of ${MAX_QUESTIONS}. Do NOT greet the candidate again — the interview is already in progress. Jump straight to the next question.`
+  ? `- This is the opening question. Greet the candidate warmly and ask them to introduce themselves.`
+  : `- This is question ${questionCount + 1} of ${MAX_QUESTIONS}. Do NOT greet again — jump straight to the next question.`
 }
-${questionCount === MAX_QUESTIONS - 1
-  ? `- This is the FINAL question. Make it a strong closing question.`
-  : ''}
-${askedQuestions
-  ? `\nQuestions already asked — do NOT repeat or rephrase any of these:\n${askedQuestions}`
-  : ''}`
+${questionCount === MAX_QUESTIONS - 1 ? `- This is the FINAL question. Make it a strong closing question.` : ''}
+${askedQuestions ? `\nQuestions already asked — do NOT repeat:\n${askedQuestions}` : ''}`
 
     try {
-      // FIX: Inject systemPrompt as first message in the messages array
-      // instead of passing it as a separate field — ensures HF Space receives it properly
-      const messagesWithSystem = [
-        { role: 'system', content: systemPrompt },
-        ...recentMessages,
-      ]
-
-      const response = await callHFSpace({
-        messages: messagesWithSystem,
-        max_tokens: 200,
+      const reply = await generateInterviewQuestion({
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...recentMessages,
+        ],
+        maxTokens: 200,
+        temperature: 0.7,
       })
 
-      const data = await response.json()
-      const reply = data.reply?.trim()
+      return NextResponse.json({ reply: reply.trim() })
 
-      if (!reply) throw new Error('Empty reply from HF Space')
-
-      return NextResponse.json({ reply })
-
-    } catch (hfError) {
-      console.error('HF Space unreachable, using fallback:', hfError)
-      const fallback = getFallbackQuestion(round, questionCount)
-      return NextResponse.json({ reply: fallback })
+    } catch (aiError) {
+      console.error('All AI providers failed, using fallback:', aiError)
+      const pool = FALLBACK_QUESTIONS_BY_ROUND[round] || DEFAULT_FALLBACKS
+      return NextResponse.json({ reply: pool[questionCount % pool.length] })
     }
 
   } catch (error) {
     console.error('Interview API error:', error)
-    return NextResponse.json(
-      { reply: DEFAULT_FALLBACKS[0] },
-      { status: 200 }
-    )
+    return NextResponse.json({ reply: DEFAULT_FALLBACKS[0] }, { status: 200 })
   }
 }
