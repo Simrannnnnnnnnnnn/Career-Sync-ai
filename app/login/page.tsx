@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
-import { useTheme } from '@/components/ThemeProvider'
 
 const FEATURES = [
   { icon: '🎤', name: 'AI Interviews', desc: 'Live mock + real-time feedback', color: 'var(--blue)', bg: 'var(--blue-bg)' },
@@ -15,7 +14,6 @@ const FEATURES = [
 export default function LoginPage() {
   const supabase = createClient()
   const router = useRouter()
-  const { theme, toggle } = useTheme()
 
   const [isSignUp, setIsSignUp] = useState(false)
   const [email, setEmail] = useState('')
@@ -71,7 +69,11 @@ export default function LoginPage() {
           transition: background 0.25s ease, color 0.2s ease;
         }
 
-        .cs-blob { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }
+        /* Ambient blobs — subtle in both themes */
+        .cs-blob {
+          position: fixed; border-radius: 50%;
+          pointer-events: none; z-index: 0;
+        }
         .cs-blob-1 {
           width: 600px; height: 600px; top: -180px; left: -140px;
           background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 65%);
@@ -90,22 +92,6 @@ export default function LoginPage() {
           margin: 0 auto; position: relative; z-index: 1;
         }
 
-        /* ── TOP BAR (theme toggle) ── */
-        .cs-topbar {
-          position: fixed; top: 16px; right: 16px; z-index: 100;
-        }
-        .cs-theme-btn {
-          width: 40px; height: 40px; border-radius: 12px;
-          display: flex; align-items: center; justify-content: center;
-          background: var(--bg-card);
-          border: 1px solid var(--border-strong);
-          cursor: pointer; transition: all 0.2s;
-        }
-        .cs-theme-btn:hover {
-          background: var(--bg-subtle);
-          border-color: var(--accent);
-        }
-
         /* ── LEFT ── */
         .cs-left {
           flex: 1; padding: 52px 44px;
@@ -113,36 +99,50 @@ export default function LoginPage() {
           justify-content: center; gap: 32px;
         }
 
+        /* Live badge */
         .cs-badge {
           display: inline-flex; align-items: center; gap: 8px;
           padding: 6px 13px; border-radius: 99px; width: fit-content;
-          background: var(--accent-bg); border: 1px solid var(--accent-border);
+          background: var(--accent-bg);
+          border: 1px solid var(--accent-border);
         }
         .cs-badge-dot {
           width: 7px; height: 7px; border-radius: 50%;
-          background: var(--accent); box-shadow: 0 0 8px var(--accent);
+          background: var(--accent);
+          box-shadow: 0 0 8px var(--accent);
           animation: csBlink 2.2s ease-in-out infinite;
         }
         @keyframes csBlink { 0%,100%{opacity:1} 50%{opacity:0.35} }
         .cs-badge-txt {
           font-size: 10px; font-weight: 700;
-          letter-spacing: 0.12em; color: var(--accent); text-transform: uppercase;
+          letter-spacing: 0.12em; color: var(--accent);
+          text-transform: uppercase;
         }
 
+        /* Hero text */
         .cs-title {
           font-family: 'Syne', sans-serif;
           font-size: clamp(36px, 5vw, 56px);
-          font-weight: 800; letter-spacing: -0.04em;
-          line-height: 0.95; color: var(--text-primary);
+          font-weight: 800;
+          letter-spacing: -0.04em;
+          line-height: 0.95;
+          color: var(--text-primary);
           margin: 16px 0 10px;
         }
         .cs-tagline {
-          font-size: 13px; color: var(--text-muted);
-          font-weight: 500; letter-spacing: 0.01em;
-          line-height: 1.5; max-width: 340px;
+          font-size: 13px;
+          color: var(--text-muted);
+          font-weight: 500;
+          letter-spacing: 0.01em;
+          line-height: 1.5;
+          max-width: 340px;
         }
-        .cs-tagline strong { color: var(--text-secondary); font-weight: 600; }
+        .cs-tagline strong {
+          color: var(--text-secondary);
+          font-weight: 600;
+        }
 
+        /* Feature grid */
         .cs-feats {
           display: grid; grid-template-columns: 1fr 1fr;
           gap: 9px; margin-top: 8px;
@@ -150,7 +150,8 @@ export default function LoginPage() {
         .cs-feat {
           display: flex; align-items: center; gap: 11px;
           padding: 12px 14px; border-radius: 14px;
-          background: var(--bg-card); border: 1px solid var(--border);
+          background: var(--bg-card);
+          border: 1px solid var(--border);
           transition: border-color 0.2s, background 0.2s;
           box-shadow: var(--shadow-card);
         }
@@ -163,21 +164,30 @@ export default function LoginPage() {
           display: flex; align-items: center; justify-content: center;
           font-size: 16px; border: 1px solid var(--border);
         }
-        .cs-feat-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
-        .cs-feat-desc { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+        .cs-feat-name {
+          font-size: 12px; font-weight: 600;
+          color: var(--text-primary);
+        }
+        .cs-feat-desc {
+          font-size: 11px; color: var(--text-muted); margin-top: 1px;
+        }
 
         /* ── RIGHT ── */
         .cs-right {
           width: 400px; flex-shrink: 0;
-          background: var(--bg-card); border-left: 1px solid var(--border);
+          background: var(--bg-card);
+          border-left: 1px solid var(--border);
           display: flex; align-items: center;
           justify-content: center; padding: 40px 32px;
           box-shadow: var(--shadow-card);
         }
+
         .cs-form { width: 100%; }
 
+        /* Tabs */
         .cs-tabs {
-          display: flex; background: var(--bg-subtle);
+          display: flex;
+          background: var(--bg-subtle);
           border: 1px solid var(--border);
           border-radius: 12px; padding: 3px; margin-bottom: 22px;
         }
@@ -185,17 +195,21 @@ export default function LoginPage() {
           flex: 1; padding: 9px 0; border-radius: 9px; border: none;
           font-size: 12px; font-weight: 600; cursor: pointer;
           transition: all 0.2s; background: transparent;
-          color: var(--text-muted); font-family: 'DM Sans', sans-serif;
+          color: var(--text-muted);
+          font-family: 'DM Sans', sans-serif;
         }
         .cs-tab.active {
-          background: var(--accent-bg); color: var(--accent);
+          background: var(--accent-bg);
+          color: var(--accent);
           border: 1px solid var(--accent-border);
         }
 
+        /* Google btn */
         .cs-google {
           width: 100%; display: flex; align-items: center;
           justify-content: center; gap: 10px;
-          background: var(--bg-base); color: var(--text-primary);
+          background: var(--bg-base);
+          color: var(--text-primary);
           border: 1px solid var(--border-strong);
           border-radius: 12px; padding: 11px;
           font-size: 13px; font-weight: 600; cursor: pointer;
@@ -208,18 +222,28 @@ export default function LoginPage() {
           transform: translateY(-1px);
         }
 
-        .cs-div { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+        /* Divider */
+        .cs-div {
+          display: flex; align-items: center;
+          gap: 10px; margin-bottom: 16px;
+        }
         .cs-div-line { flex: 1; height: 1px; background: var(--border); }
-        .cs-div-txt { font-size: 10px; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.14em; }
+        .cs-div-txt {
+          font-size: 10px; color: var(--text-faint);
+          text-transform: uppercase; letter-spacing: 0.14em;
+        }
 
+        /* Inputs */
         .cs-field { margin-bottom: 12px; }
         .cs-label {
-          font-size: 10px; font-weight: 700; color: var(--text-muted);
-          display: block; margin-bottom: 6px;
-          letter-spacing: 0.08em; text-transform: uppercase;
+          font-size: 10px; font-weight: 700;
+          color: var(--text-muted); display: block;
+          margin-bottom: 6px; letter-spacing: 0.08em;
+          text-transform: uppercase;
         }
         .cs-input {
-          width: 100%; background: var(--bg-subtle);
+          width: 100%;
+          background: var(--bg-subtle);
           border: 1px solid var(--border);
           border-radius: 11px; padding: 10px 14px;
           font-size: 13px; color: var(--text-primary);
@@ -232,6 +256,7 @@ export default function LoginPage() {
         }
         .cs-input::placeholder { color: var(--text-faint); }
 
+        /* Alerts */
         .cs-error {
           font-size: 12px; color: #f87171;
           background: rgba(239,68,68,0.08);
@@ -241,21 +266,29 @@ export default function LoginPage() {
         }
         .cs-success {
           font-size: 12px; color: var(--accent);
-          background: var(--accent-bg); border: 1px solid var(--accent-border);
+          background: var(--accent-bg);
+          border: 1px solid var(--accent-border);
           border-radius: 10px; padding: 10px 13px;
           margin-bottom: 10px; text-align: center;
         }
 
+        /* CTA */
         .cs-cta {
           width: 100%; padding: 12px; margin-top: 4px;
-          background: var(--accent); border: none;
-          border-radius: 12px; color: #fff;
+          background: var(--accent);
+          border: none; border-radius: 12px; color: #fff;
           font-size: 14px; font-weight: 700; cursor: pointer;
           font-family: 'DM Sans', sans-serif;
+          box-shadow: 0 4px 20px var(--accent-bg);
           transition: all 0.2s;
-          display: flex; align-items: center; justify-content: center; gap: 8px;
+          display: flex; align-items: center;
+          justify-content: center; gap: 8px;
         }
-        .cs-cta:hover:not(:disabled) { opacity: 0.88; transform: translateY(-1px); }
+        .cs-cta:hover:not(:disabled) {
+          opacity: 0.9;
+          transform: translateY(-1px);
+          box-shadow: 0 8px 28px var(--accent-bg);
+        }
         .cs-cta:active:not(:disabled) { transform: translateY(0); }
         .cs-cta:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -273,10 +306,12 @@ export default function LoginPage() {
         }
         .cs-switch-btn {
           color: var(--accent); cursor: pointer; font-weight: 600;
-          background: none; border: none; font-family: inherit; font-size: inherit;
+          background: none; border: none;
+          font-family: inherit; font-size: inherit;
         }
         .cs-switch-btn:hover { text-decoration: underline; }
 
+        /* ── RESPONSIVE ── */
         @media (max-width: 768px) {
           .cs-inner { flex-direction: column; }
           .cs-left { padding: 32px 20px 20px; gap: 20px; }
@@ -288,37 +323,11 @@ export default function LoginPage() {
           .cs-feats { gap: 7px; }
           .cs-feat { padding: 10px 12px; }
         }
+
         @media (max-width: 380px) {
           .cs-feats { grid-template-columns: 1fr; }
         }
       `}</style>
-
-      {/* Theme toggle — fixed top right */}
-      <div className="cs-topbar">
-        <button
-          className="cs-theme-btn"
-          onClick={toggle}
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="5"/>
-              <line x1="12" y1="1" x2="12" y2="3"/>
-              <line x1="12" y1="21" x2="12" y2="23"/>
-              <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
-              <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-              <line x1="1" y1="12" x2="3" y2="12"/>
-              <line x1="21" y1="12" x2="23" y2="12"/>
-              <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
-              <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-            </svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 12.79A9 9 0 1111.21 3a7 7 0 009.79 9.79z"/>
-            </svg>
-          )}
-        </button>
-      </div>
 
       <div className="cs-root">
         <div className="cs-blob cs-blob-1" />
@@ -327,7 +336,7 @@ export default function LoginPage() {
 
         <div className="cs-inner">
 
-          {/* ── LEFT ── */}
+          {/* ── LEFT PANEL ── */}
           <div className="cs-left">
             <div>
               <div className="cs-badge">
@@ -357,10 +366,11 @@ export default function LoginPage() {
             </div>
           </div>
 
-          {/* ── RIGHT ── */}
+          {/* ── RIGHT PANEL ── */}
           <div className="cs-right">
             <div className="cs-form">
 
+              {/* Tabs */}
               <div className="cs-tabs">
                 <button
                   className={`cs-tab ${!isSignUp ? 'active' : ''}`}
@@ -376,6 +386,7 @@ export default function LoginPage() {
                 </button>
               </div>
 
+              {/* Google */}
               <button className="cs-google" onClick={handleGoogleLogin}>
                 <svg width="16" height="16" viewBox="0 0 48 48">
                   <path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.1 8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-4z"/>
@@ -395,7 +406,8 @@ export default function LoginPage() {
               <div className="cs-field">
                 <label className="cs-label">Email Address</label>
                 <input
-                  type="email" className="cs-input"
+                  type="email"
+                  className="cs-input"
                   placeholder="name@domain.com"
                   value={email}
                   onChange={e => setEmail(e.target.value)}
@@ -406,7 +418,8 @@ export default function LoginPage() {
               <div className="cs-field">
                 <label className="cs-label">Password</label>
                 <input
-                  type="password" className="cs-input"
+                  type="password"
+                  className="cs-input"
                   placeholder="••••••••••••"
                   value={password}
                   onChange={e => setPassword(e.target.value)}
@@ -417,7 +430,11 @@ export default function LoginPage() {
               {error && <div className="cs-error">⚠️ {error}</div>}
               {message && <div className="cs-success">✅ {message}</div>}
 
-              <button className="cs-cta" onClick={handleEmailAuth} disabled={loading}>
+              <button
+                className="cs-cta"
+                onClick={handleEmailAuth}
+                disabled={loading}
+              >
                 {loading ? (
                   <><div className="cs-spinner" /><span>Please wait...</span></>
                 ) : (
