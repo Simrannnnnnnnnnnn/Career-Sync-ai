@@ -87,14 +87,14 @@ function SpokenAnswer({ answer }: { answer: string }) {
     <div style={{
       borderRadius: 16,
       overflow: 'hidden',
-      border: '1px solid rgba(99,102,241,0.2)',
-      background: 'rgba(10,10,20,0.5)',
+      border: '1px solid var(--indigo-bg)',
+      background: 'var(--bg-subtle)',
     }}>
       {/* Header */}
       <div style={{
         padding: '14px 20px',
-        background: 'rgba(99,102,241,0.08)',
-        borderBottom: '1px solid rgba(99,102,241,0.15)',
+        background: 'var(--indigo-bg)',
+        borderBottom: '1px solid var(--indigo-bg)',
         display: 'flex',
         alignItems: 'center',
         gap: 10,
@@ -102,12 +102,12 @@ function SpokenAnswer({ answer }: { answer: string }) {
         <span style={{ fontSize: 18 }}>💬</span>
         <div>
           <p style={{
-            fontSize: 12, fontWeight: 700, color: '#818cf8',
+            fontSize: 12, fontWeight: 700, color: 'var(--indigo)',
             margin: 0, letterSpacing: '0.06em', textTransform: 'uppercase',
           }}>
             How a Strong Candidate Would Answer
           </p>
-          <p style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', margin: '2px 0 0' }}>
+          <p style={{ fontSize: 11, color: 'var(--text-faint)', margin: '2px 0 0' }}>
             Use this as inspiration — adapt it to your own experience
           </p>
         </div>
@@ -116,12 +116,12 @@ function SpokenAnswer({ answer }: { answer: string }) {
       {/* Answer body */}
       <div style={{ padding: '22px 24px' }}>
         <div style={{
-          borderLeft: '3px solid rgba(99,102,241,0.4)',
+          borderLeft: '3px solid var(--indigo)',
           paddingLeft: 18,
         }}>
           {paragraphs.map((para, i) => (
             <p key={i} style={{
-              color: '#e4e4e7',
+              color: 'var(--text-primary)',
               fontSize: 15,
               lineHeight: 1.9,
               margin: i < paragraphs.length - 1 ? '0 0 16px 0' : 0,
@@ -138,14 +138,14 @@ function SpokenAnswer({ answer }: { answer: string }) {
           marginTop: 18,
           padding: '10px 14px',
           borderRadius: 10,
-          background: 'rgba(99,102,241,0.06)',
-          border: '1px solid rgba(99,102,241,0.12)',
+          background: 'var(--indigo-bg)',
+          border: '1px solid var(--indigo-bg)',
         }}>
           <p style={{
-            fontSize: 11, color: 'rgba(255,255,255,0.35)',
+            fontSize: 11, color: 'var(--text-muted)',
             margin: 0, lineHeight: 1.6,
           }}>
-            💡 <strong style={{ color: 'rgba(255,255,255,0.5)' }}>Notice:</strong> Real project context, specific tools with reasons, actual numbers, and one honest mistake — that's what makes an answer memorable.
+            💡 <strong style={{ color: 'var(--text-secondary)' }}>Notice:</strong> Real project context, specific tools with reasons, actual numbers, and one honest mistake — that's what makes an answer memorable.
           </p>
         </div>
       </div>
@@ -159,10 +159,10 @@ function TipsBlock({ tips }: { tips: string[] }) {
   return (
     <div style={{
       marginTop: 12, borderRadius: 14, padding: '16px 20px',
-      background: 'rgba(245,158,11,0.05)', border: '1px solid rgba(245,158,11,0.15)',
+      background: 'var(--amber-bg)', border: '1px solid var(--amber-bg)',
     }}>
       <p style={{
-        fontSize: 11, fontWeight: 700, color: '#f59e0b',
+        fontSize: 11, fontWeight: 700, color: 'var(--amber)',
         letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px',
       }}>
         🎯 Tips for this question
@@ -172,11 +172,11 @@ function TipsBlock({ tips }: { tips: string[] }) {
           <li key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <span style={{
               flexShrink: 0, width: 20, height: 20, borderRadius: '50%',
-              background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.25)',
+              background: 'var(--amber-bg)', border: '1px solid var(--amber)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 800, color: '#f59e0b',
+              fontSize: 10, fontWeight: 800, color: 'var(--amber)',
             }}>{i + 1}</span>
-            <span style={{ color: '#d4d4d8', fontSize: 13, lineHeight: 1.6 }}>{tip}</span>
+            <span style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>{tip}</span>
           </li>
         ))}
       </ul>
@@ -284,30 +284,29 @@ function MockInner() {
   // ── Done screen ──────────────────────────────────────────────────────────────
   if (done) return (
     <div style={{
-      minHeight: '100vh', background: '#050507',
+      minHeight: '100vh', background: 'var(--bg-base)',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       justifyContent: 'center', gap: 24, padding: 32,
       fontFamily: "'DM Sans', sans-serif", textAlign: 'center',
     }}>
       <div style={{ fontSize: 72 }}>🎉</div>
-      <h1 style={{ color: '#f4f4f5', fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: '-0.03em' }}>
+      <h1 style={{ color: 'var(--text-primary)', fontSize: 28, fontWeight: 800, margin: 0, letterSpacing: '-0.03em' }}>
         Mock Complete!
       </h1>
-      <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: 15, margin: 0, maxWidth: 360, lineHeight: 1.6 }}>
+      <p style={{ color: 'var(--text-muted)', fontSize: 15, margin: 0, maxWidth: 360, lineHeight: 1.6 }}>
         You completed all {count} questions for{' '}
-        <strong style={{ color: '#818cf8' }}>{role}</strong> — {roundLabel}
+        <strong style={{ color: 'var(--indigo)' }}>{role}</strong> — {roundLabel}
       </p>
       <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center', marginTop: 8 }}>
         <button onClick={() => router.push('/interview/mock-setup')} style={{
           padding: '14px 28px', borderRadius: 14, border: 'none',
-          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+          background: 'var(--indigo)',
           color: '#fff', fontSize: 14, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
-          boxShadow: '0 0 30px rgba(99,102,241,0.25)',
         }}>🔄 Practice Again</button>
         <button onClick={() => router.push('/dashboard')} style={{
           padding: '14px 28px', borderRadius: 14,
-          border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
-          color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 600,
+          border: '1px solid var(--border-strong)', background: 'var(--bg-subtle)',
+          color: 'var(--text-secondary)', fontSize: 14, fontWeight: 600,
           cursor: 'pointer', fontFamily: 'inherit',
         }}>🏠 Dashboard</button>
       </div>
@@ -315,49 +314,49 @@ function MockInner() {
   )
 
   return (
-    <div style={{ minHeight: '100vh', background: '#050507', fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: '#f4f4f5' }}>
+    <div style={{ minHeight: '100vh', background: 'var(--bg-base)', fontFamily: "'DM Sans', 'Segoe UI', sans-serif", color: 'var(--text-primary)', transition: 'background 0.25s ease, color 0.2s ease' }}>
 
       {/* Grid background */}
       <div style={{
         position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
-        backgroundImage: `linear-gradient(rgba(99,102,241,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(99,102,241,0.02) 1px, transparent 1px)`,
+        backgroundImage: `linear-gradient(var(--bg-muted) 1px, transparent 1px), linear-gradient(90deg, var(--bg-muted) 1px, transparent 1px)`,
         backgroundSize: '48px 48px',
       }} />
 
       {/* Top bar */}
       <div style={{
         position: 'sticky', top: 0, zIndex: 50,
-        background: 'rgba(5,5,7,0.96)', backdropFilter: 'blur(12px)',
-        borderBottom: '1px solid rgba(255,255,255,0.05)', padding: '14px 28px',
+        background: 'var(--bg-card)', backdropFilter: 'blur(12px)',
+        borderBottom: '1px solid var(--border)', padding: '14px 28px',
       }}>
         <div style={{ maxWidth: 780, margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 6, padding: '4px 12px',
-              borderRadius: 99, background: 'rgba(99,102,241,0.1)', border: '1px solid rgba(99,102,241,0.25)',
+              borderRadius: 99, background: 'var(--indigo-bg)', border: '1px solid var(--indigo)',
             }}>
-              <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--indigo)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                 Mock · {roundLabel}
               </span>
             </div>
-            <span style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>{role} · {diffLabel}</span>
+            <span style={{ fontSize: 12, color: 'var(--text-faint)' }}>{role} · {diffLabel}</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span style={{ fontSize: 13, fontWeight: 700, color: '#818cf8' }}>{currentIndex + 1} / {count}</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--indigo)' }}>{currentIndex + 1} / {count}</span>
             <button onClick={() => router.push('/dashboard')} style={{
               padding: '6px 14px', borderRadius: 99,
-              border: '1px solid rgba(255,255,255,0.08)', background: 'transparent',
-              color: 'rgba(255,255,255,0.4)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
+              border: '1px solid var(--border)', background: 'transparent',
+              color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
             }}>Exit</button>
           </div>
         </div>
 
         {/* Progress bar */}
         <div style={{ maxWidth: 780, margin: '10px auto 0' }}>
-          <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 99, overflow: 'hidden' }}>
+          <div style={{ height: 3, background: 'var(--bg-subtle)', borderRadius: 99, overflow: 'hidden' }}>
             <div style={{
               height: '100%', borderRadius: 99,
-              background: 'linear-gradient(90deg, #6366f1, #818cf8)',
+              background: 'var(--indigo)',
               width: `${progress}%`, transition: 'width 0.4s ease',
             }} />
           </div>
@@ -373,12 +372,12 @@ function MockInner() {
             <div style={{ display: 'flex', gap: 8 }}>
               {[0, 1, 2].map(i => (
                 <div key={i} style={{
-                  width: 10, height: 10, borderRadius: '50%', background: '#6366f1',
+                  width: 10, height: 10, borderRadius: '50%', background: 'var(--indigo)',
                   animation: `bounce 0.9s ease-in-out ${i * 0.18}s infinite alternate`,
                 }} />
               ))}
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14, margin: 0 }}>Generating your question…</p>
+            <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>Generating your question…</p>
           </div>
 
         ) : current ? (
@@ -386,13 +385,13 @@ function MockInner() {
 
             {/* Question card */}
             <div style={{
-              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
               borderRadius: 22, padding: '32px', marginBottom: 16,
-              position: 'relative', overflow: 'hidden',
+              position: 'relative', overflow: 'hidden', boxShadow: 'var(--shadow-card)',
             }}>
               <div style={{
                 position: 'absolute', top: 0, left: 0, right: 0, height: 2,
-                background: 'linear-gradient(90deg, transparent, #6366f1, transparent)',
+                background: 'var(--indigo)',
               }} />
 
               {/* Badge row */}
@@ -400,22 +399,22 @@ function MockInner() {
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px',
-                    borderRadius: 99, background: 'rgba(99,102,241,0.08)', border: '1px solid rgba(99,102,241,0.2)',
+                    borderRadius: 99, background: 'var(--indigo-bg)', border: '1px solid var(--indigo)',
                   }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, color: '#818cf8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--indigo)', letterSpacing: '0.1em', textTransform: 'uppercase' }}>
                       Question {currentIndex + 1}
                     </span>
                   </div>
                   <div style={{
                     display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px',
                     borderRadius: 99,
-                    background: current.questionType === 'behavioral' ? 'rgba(139,92,246,0.08)' : 'rgba(16,185,129,0.08)',
-                    border: `1px solid ${current.questionType === 'behavioral' ? 'rgba(139,92,246,0.2)' : 'rgba(16,185,129,0.2)'}`,
+                    background: current.questionType === 'behavioral' ? 'var(--purple-bg)' : 'var(--accent-bg)',
+                    border: `1px solid ${current.questionType === 'behavioral' ? 'var(--purple)' : 'var(--accent)'}`,
                   }}>
                     <span style={{ fontSize: 10 }}>{current.questionType === 'behavioral' ? '⭐' : '🔧'}</span>
                     <span style={{
                       fontSize: 10, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase',
-                      color: current.questionType === 'behavioral' ? '#a78bfa' : '#34d399',
+                      color: current.questionType === 'behavioral' ? 'var(--purple)' : 'var(--accent)',
                     }}>
                       {current.questionType === 'behavioral' ? 'Behavioral' : 'Technical'}
                     </span>
@@ -427,15 +426,15 @@ function MockInner() {
                   {current.companies.map(c => (
                     <span key={c} style={{
                       fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 99,
-                      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-                      color: 'rgba(255,255,255,0.4)',
+                      background: 'var(--bg-subtle)', border: '1px solid var(--border)',
+                      color: 'var(--text-muted)',
                     }}>🏢 {c}</span>
                   ))}
                 </div>
               </div>
 
               {/* Question text */}
-              <p style={{ color: '#f4f4f5', fontSize: 21, fontWeight: 600, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
+              <p style={{ color: 'var(--text-primary)', fontSize: 21, fontWeight: 600, lineHeight: 1.6, margin: 0, letterSpacing: '-0.01em' }}>
                 {current.question}
               </p>
             </div>
@@ -446,9 +445,9 @@ function MockInner() {
                 onClick={() => setShowAnswer(p => !p)}
                 style={{
                   width: '100%', padding: '15px 20px', borderRadius: 16,
-                  border: showAnswer ? '1px solid rgba(99,102,241,0.35)' : '1px solid rgba(255,255,255,0.08)',
-                  background: showAnswer ? 'rgba(99,102,241,0.06)' : 'rgba(255,255,255,0.02)',
-                  color: showAnswer ? '#818cf8' : 'rgba(255,255,255,0.5)',
+                  border: showAnswer ? '1px solid var(--indigo)' : '1px solid var(--border)',
+                  background: showAnswer ? 'var(--indigo-bg)' : 'var(--bg-subtle)',
+                  color: showAnswer ? 'var(--indigo)' : 'var(--text-muted)',
                   fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                   transition: 'all 0.2s',
@@ -464,11 +463,11 @@ function MockInner() {
                   ) : (
                     <div style={{
                       borderRadius: 16, padding: '24px',
-                      background: 'rgba(255,255,255,0.02)',
-                      border: '1px solid rgba(255,255,255,0.07)',
+                      background: 'var(--bg-card)',
+                      border: '1px solid var(--border)',
                       textAlign: 'center',
                     }}>
-                      <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: 14, margin: 0 }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: 14, margin: 0 }}>
                         Answer not available for this question.
                       </p>
                     </div>
@@ -480,15 +479,15 @@ function MockInner() {
 
             {/* Your answer textarea */}
             <div style={{
-              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)',
+              background: 'var(--bg-card)', border: '1px solid var(--border)',
               borderRadius: 16, padding: '20px 22px', marginBottom: 20,
             }}>
               <p style={{
-                fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.3)',
+                fontSize: 10, fontWeight: 700, color: 'var(--text-muted)',
                 letterSpacing: '0.1em', textTransform: 'uppercase', margin: '0 0 12px',
               }}>
                 ✏️ Your Practice Answer{' '}
-                <span style={{ color: '#3f3f46', fontWeight: 400 }}>(optional — saved as you move)</span>
+                <span style={{ color: 'var(--text-faint)', fontWeight: 400 }}>(optional — saved as you move)</span>
               </p>
               <textarea
                 value={userAnswer}
@@ -501,7 +500,7 @@ function MockInner() {
                 rows={5}
                 style={{
                   width: '100%', background: 'transparent', border: 'none',
-                  color: '#e4e4e7', fontSize: 14, lineHeight: 1.7,
+                  color: 'var(--text-secondary)', fontSize: 14, lineHeight: 1.7,
                   outline: 'none', resize: 'vertical', fontFamily: 'inherit',
                   boxSizing: 'border-box', padding: 0,
                 }}
@@ -513,21 +512,20 @@ function MockInner() {
               {currentIndex > 0 && (
                 <button onClick={handlePrev} style={{
                   padding: '14px 24px', borderRadius: 14,
-                  border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.03)',
-                  color: 'rgba(255,255,255,0.5)', fontSize: 14, fontWeight: 500,
+                  border: '1px solid var(--border)', background: 'var(--bg-subtle)',
+                  color: 'var(--text-muted)', fontSize: 14, fontWeight: 500,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}>← Prev</button>
               )}
               <button onClick={handleNext} disabled={loadingNext} style={{
                 flex: 1, padding: '14px', borderRadius: 14, border: 'none',
-                background: loadingNext ? 'rgba(99,102,241,0.3)' : 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                color: '#fff', fontSize: 14, fontWeight: 700,
+                background: loadingNext ? 'var(--indigo-bg)' : 'var(--indigo)',
+                color: loadingNext ? 'var(--indigo)' : '#fff', fontSize: 14, fontWeight: 700,
                 cursor: loadingNext ? 'not-allowed' : 'pointer', fontFamily: 'inherit',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-                boxShadow: loadingNext ? 'none' : '0 0 24px rgba(99,102,241,0.2)',
               }}>
                 {loadingNext
-                  ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'pulse 0.8s infinite', display: 'inline-block' }} />Loading next…</>
+                  ? <><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'currentColor', animation: 'pulse 0.8s infinite', display: 'inline-block' }} />Loading next…</>
                   : currentIndex + 1 >= count ? 'Finish ✓' : 'Next Question →'
                 }
               </button>
@@ -540,7 +538,7 @@ function MockInner() {
       <style>{`
         @keyframes bounce { from { transform: translateY(0) } to { transform: translateY(-6px) } }
         @keyframes pulse  { 0%,100% { opacity: 1 } 50% { opacity: 0.3 } }
-        textarea::placeholder { color: rgba(255,255,255,0.15); }
+        textarea::placeholder { color: var(--text-faint); }
       `}</style>
     </div>
   )
@@ -548,7 +546,7 @@ function MockInner() {
 
 export default function MockPage() {
   return (
-    <Suspense fallback={<div style={{ background: '#050507', minHeight: '100vh' }} />}>
+    <Suspense fallback={<div style={{ background: 'var(--bg-base)', minHeight: '100vh' }} />}>
       <MockInner />
     </Suspense>
   )
