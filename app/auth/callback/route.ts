@@ -7,10 +7,12 @@ export async function GET(request: NextRequest) {
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || requestUrl.origin
 
   if (!code) {
-    return NextResponse.redirect(`${siteUrl}/login`)
+    const loginUrl = new URL('/login', siteUrl)
+    loginUrl.searchParams.set('error', 'missing_code')
+    return NextResponse.redirect(loginUrl)
   }
 
-  const response = NextResponse.redirect(`${siteUrl}/login`)
+  const response = NextResponse.redirect(new URL('/login', siteUrl))
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -33,25 +35,29 @@ export async function GET(request: NextRequest) {
 
   if (error) {
     console.error('Session exchange error:', error)
-    return NextResponse.redirect(`${siteUrl}/login?error=session_failed`)
+    const loginUrl = new URL('/login', siteUrl)
+    loginUrl.searchParams.set('error', 'session_failed')
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Get user
-  const { data: { user } } = await supabase.auth.getUser()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.redirect(`${siteUrl}/login?error=no_user`)
+    const loginUrl = new URL('/login', siteUrl)
+    loginUrl.searchParams.set('error', 'no_user')
+    return NextResponse.redirect(loginUrl)
   }
 
-  // Check onboarding status
   const { data: profile } = await supabase
     .from('profiles')
     .select('onboarding_complete')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   const destination = profile?.onboarding_complete ? '/dashboard' : '/onboarding'
-  response.headers.set('Location', `${siteUrl}${destination}`)
+  response.headers.set('Location', new URL(destination, siteUrl).toString())
 
   return response
 }
