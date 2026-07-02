@@ -32,40 +32,96 @@ export default function LoginPage() {
   }
 
   async function handleGithubLogin() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
-    })
-  }
+  setLoading(true)
+  setError('')
 
-  async function handleLinkedinLogin() {
-    await supabase.auth.signInWithOAuth({
-      provider: 'linkedin_oidc',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+  try {
+    console.log('🚀 Starting GitHub login...')
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: { 
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
     })
+
+    if (error) {
+      console.error('GitHub login error:', error)
+      setError(error.message)
+    }
+  } catch (err: any) {
+    console.error('Unexpected error:', err)
+    setError('GitHub login failed. Please try again.')
+  } finally {
+    setLoading(false)
   }
+}
+
+// Same for LinkedIn
+async function handleLinkedinLogin() {
+  setLoading(true)
+  setError('')
+
+  try {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'linkedin_oidc',
+      options: { 
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    })
+
+    if (error) {
+      console.error('LinkedIn login error:', error)
+      setError(error.message)
+    }
+  } catch (err: any) {
+    console.error('Unexpected error:', err)
+    setError('LinkedIn login failed. Please try again.')
+  } finally {
+    setLoading(false)
+  }
+}
 
   async function handleEmailAuth() {
     setLoading(true)
     setError('')
     setMessage('')
+
     if (!email || !password) {
       setError('Please enter both email and password.')
       setLoading(false)
       return
     }
+
     if (isSignUp) {
       const { error } = await supabase.auth.signUp({
-        email, password,
+        email,
+        password,
         options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
       })
-      if (error) setError(error.message)
-      else setMessage('Confirmation email sent! Please check your inbox.')
+
+      if (error) {
+        setError(error.message)
+      } else {
+        setMessage('Confirmation email sent! Please check your inbox.')
+      }
     } else {
-      const { error } = await supabase.auth.signInWithPassword({ email, password })
-      if (error) setError('Invalid email or password. Please try again.')
-      else router.push('/auth/callback?next=/dashboard')
+      const { data: { user }, error } = await supabase.auth.signInWithPassword({ email, password })
+
+      if (error) {
+        setError('Invalid email or password. Please try again.')
+      } else if (user?.id) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('onboarding_complete')
+          .eq('id', user.id)
+          .maybeSingle()
+
+        router.push(profile?.onboarding_complete ? '/dashboard' : '/onboarding')
+      } else {
+        router.push('/dashboard')
+      }
     }
+
     setLoading(false)
   }
 

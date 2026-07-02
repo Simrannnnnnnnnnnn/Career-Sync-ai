@@ -4,8 +4,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 export async function middleware(request: NextRequest) {
   const path = request.nextUrl.pathname
 
-  // Callback route ko middleware ke auth check se skip karo
-  // (session abhi-abhi set ho rahi hoti hai, isko galti se /login pe mat bhejo)
+  // Callback ko skip karo
   if (path.startsWith('/auth/callback')) {
     return NextResponse.next()
   }
@@ -21,7 +20,7 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) =>
+          cookiesToSet.forEach(({ name, value, options }) =>
             request.cookies.set(name, value)
           )
           supabaseResponse = NextResponse.next({ request })
@@ -37,6 +36,7 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
+  // Protected routes
   if (
     !user &&
     (path.startsWith('/dashboard') ||
@@ -49,6 +49,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
+  // Already logged in user ko login page pe mat bhejo
   if (user && path === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
