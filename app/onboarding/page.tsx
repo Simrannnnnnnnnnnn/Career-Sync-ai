@@ -176,7 +176,7 @@ export default function OnboardingPage() {
               </label>
               <input
                 type="text"
-                placeholder="Jaise: Simran Kaur"
+                placeholder="Full Name please"
                 value={formData.full_name}
                 onChange={e => setFormData(prev => ({ ...prev, full_name: e.target.value }))}
                 className="w-full rounded-xl px-4 py-3 text-sm transition-all duration-200 focus:outline-none"
@@ -270,7 +270,7 @@ export default function OnboardingPage() {
                 <div className="flex gap-2">
                   <input
                     type="text"
-                    placeholder="Jaise: Google, Microsoft..."
+                    placeholder="e.g: Google, Microsoft..."
                     value={companyInput}
                     onChange={e => setCompanyInput(e.target.value)}
                     onKeyDown={e => e.key === 'Enter' && addCompany()}
