@@ -3,13 +3,6 @@
 import { useState } from 'react'
 import Link from 'next/link'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LAYER 1 — 4 P's Questions (Broad, covers ALL career types)
-// Each option maps to a "profile type":
-//   A = Analytical  B = Builder  C = Connector  D = Creative
-//   E = Manager     F = Operator G = Entrepreneur H = Advisor
-// ─────────────────────────────────────────────────────────────────────────────
-
 type ProfileKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H'
 
 interface L1Option {
@@ -230,11 +223,6 @@ const layer1Sections: L1Section[] = [
   },
 ]
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LAYER 2 — Ikigai Depth Questions (Dynamic, profile-based)
-// Generated based on top 2 profiles from Layer 1
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface IkigaiQuestion {
   id: string
   q: string
@@ -245,7 +233,6 @@ function getIkigaiQuestions(topProfiles: ProfileKey[]): IkigaiQuestion[] {
   const primary = topProfiles[0]
   const secondary = topProfiles[1]
 
-  // Universal Ikigai questions but OPTIONS are tailored to top profile mix
   const profileLabels: Record<ProfileKey, string> = {
     A: 'Analytical',
     B: 'Builder / Engineer',
@@ -257,7 +244,6 @@ function getIkigaiQuestions(topProfiles: ProfileKey[]): IkigaiQuestion[] {
     H: 'Advisor',
   }
 
-  // Ikigai dimension 1: Mission (what does the world need from YOU)
   const missionOptions: Record<ProfileKey, string> = {
     A: 'Help organisations navigate complexity with sharp data and insights',
     B: 'Build the tools, products, and systems the world will rely on',
@@ -269,7 +255,6 @@ function getIkigaiQuestions(topProfiles: ProfileKey[]): IkigaiQuestion[] {
     H: 'Provide strategic wisdom and counsel to those who need guidance',
   }
 
-  // Ikigai dimension 2: Vocation (where the pay is)
   const vocationOptions: Record<ProfileKey, string> = {
     A: 'Finance, strategy, consulting, or data science roles',
     B: 'Software engineering, product management, or deep tech roles',
@@ -281,7 +266,6 @@ function getIkigaiQuestions(topProfiles: ProfileKey[]): IkigaiQuestion[] {
     H: 'Advisory, policy, research, or specialist consulting roles',
   }
 
-  // Ikigai dimension 3: Profession (what you do best)
   const professionOptions: Record<ProfileKey, string> = {
     A: 'Synthesise complex information into clear, actionable decisions',
     B: 'Design and build scalable technical systems or products',
@@ -331,10 +315,6 @@ function getIkigaiQuestions(topProfiles: ProfileKey[]): IkigaiQuestion[] {
   ]
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────────────────────────────────────
-
 const layer1Questions = layer1Sections.flatMap(s => s.questions.map(q => ({ ...q, section: s })))
 const LAYER1_TOTAL = layer1Questions.length
 
@@ -343,10 +323,6 @@ function computeTopProfiles(answers: { profile: ProfileKey }[]): ProfileKey[] {
   answers.forEach(a => { counts[a.profile] = (counts[a.profile] || 0) + 1 })
   return (Object.entries(counts).sort((a,b) => b[1]-a[1]).map(e => e[0]) as ProfileKey[])
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Tab & Style consts
-// ─────────────────────────────────────────────────────────────────────────────
 
 const TABS = [
   { id: 'linkedin',     label: '🔗 LinkedIn',   fullLabel: '🔗 LinkedIn Optimizer' },
@@ -363,23 +339,17 @@ const glass = {
 const inputClass =
   'w-full rounded-2xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition resize-none'
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Component
-// ─────────────────────────────────────────────────────────────────────────────
-
 export default function GrowthHub() {
   const [activeTab, setActiveTab] = useState('linkedin')
 
-  // LinkedIn
   const [headline, setHeadline] = useState('')
   const [about, setAbout]       = useState('')
   const [skills, setSkills]     = useState('')
   const [linkedinLoading, setLinkedinLoading] = useState(false)
   const [linkedinResult,  setLinkedinResult]  = useState<any>(null)
 
-  // Career Test — 2 layers
   const [testStarted,    setTestStarted]    = useState(false)
-  const [layer,          setLayer]          = useState<1|2>(1)           // which layer we're in
+  const [layer,          setLayer]          = useState<1|2>(1)
   const [currentQ,       setCurrentQ]       = useState(0)
   const [l1Answers,      setL1Answers]      = useState<{ profile: ProfileKey; text: string }[]>([])
   const [l2Answers,      setL2Answers]      = useState<string[]>([])
@@ -388,12 +358,10 @@ export default function GrowthHub() {
   const [testLoading,    setTestLoading]    = useState(false)
   const [testResult,     setTestResult]     = useState<any>(null)
 
-  // Roadmap
   const [roadmapCareer,  setRoadmapCareer]  = useState('')
   const [roadmapLoading, setRoadmapLoading] = useState(false)
   const [roadmapResult,  setRoadmapResult]  = useState<any>(null)
 
-  // ── LinkedIn ────────────────────────────────────────────────────────────────
   async function analyzeLinkedIn() {
     if (!headline && !about && !skills) return
     setLinkedinLoading(true); setLinkedinResult(null)
@@ -407,7 +375,6 @@ export default function GrowthHub() {
     finally { setLinkedinLoading(false) }
   }
 
-  // ── Career Test — option click handler ─────────────────────────────────────
   function handleOptionClick(idx: number) {
     setSelectedOption(idx)
 
@@ -415,7 +382,6 @@ export default function GrowthHub() {
       setSelectedOption(null)
 
       if (layer === 1) {
-        // Layer 1 answer
         const q = layer1Questions[currentQ]
         const chosen = q.options[idx]
         const newAnswers = [...l1Answers, chosen]
@@ -424,7 +390,6 @@ export default function GrowthHub() {
         if (currentQ + 1 < LAYER1_TOTAL) {
           setCurrentQ(currentQ + 1)
         } else {
-          // Layer 1 done — compute profiles → build Ikigai questions → go to layer 2
           const topProfiles = computeTopProfiles(newAnswers)
           const ikQs = getIkigaiQuestions(topProfiles)
           setIkigaiQuestions(ikQs)
@@ -432,7 +397,6 @@ export default function GrowthHub() {
           setLayer(2)
         }
       } else {
-        // Layer 2 answer
         const chosen = ikigaiQuestions[currentQ].options[idx]
         const newAnswers = [...l2Answers, chosen]
         setL2Answers(newAnswers)
@@ -476,7 +440,6 @@ export default function GrowthHub() {
     setSelectedOption(null); setLayer(1); setIkigaiQuestions([])
   }
 
-  // ── Roadmap ─────────────────────────────────────────────────────────────────
   async function generateRoadmap() {
     if (!roadmapCareer) return
     setRoadmapLoading(true); setRoadmapResult(null)
@@ -494,17 +457,14 @@ export default function GrowthHub() {
     setRoadmapCareer(careerTitle); setActiveTab('roadmap')
   }
 
-  // ── Derived state ────────────────────────────────────────────────────────────
   const isLayer1     = layer === 1
   const currentSection = isLayer1 ? layer1Questions[currentQ]?.section : null
   const totalForLayer  = isLayer1 ? LAYER1_TOTAL : ikigaiQuestions.length
   const overallDone    = isLayer1 ? currentQ : LAYER1_TOTAL + currentQ
   const overallTotal   = LAYER1_TOTAL + (ikigaiQuestions.length || 4)
 
-  // ─────────────────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen bg-[#09090b] text-white">
-      {/* Ambient blobs */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
@@ -516,7 +476,6 @@ export default function GrowthHub() {
 
       <div className="relative z-10 max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto px-5 md:px-10 pt-10 md:pt-16 pb-28">
 
-        {/* Header */}
         <div className="mb-8 md:mb-10">
           <Link href="/dashboard"
             className="inline-flex items-center gap-2 text-zinc-600 hover:text-zinc-300 text-xs font-medium mb-5 transition tracking-wide">
@@ -562,7 +521,6 @@ export default function GrowthHub() {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="flex gap-1 mb-8 p-1 rounded-2xl"
           style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
           {TABS.map((tab) => (
@@ -580,7 +538,6 @@ export default function GrowthHub() {
           ))}
         </div>
 
-        {/* ── LinkedIn Tab ──────────────────────────────────────────────────────── */}
         {activeTab === 'linkedin' && (
           <div className="space-y-4">
             <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
@@ -692,11 +649,9 @@ export default function GrowthHub() {
           </div>
         )}
 
-        {/* ── Career Test Tab ────────────────────────────────────────────────── */}
         {activeTab === 'career-test' && (
           <div className="max-w-2xl mx-auto">
 
-            {/* Landing */}
             {!testStarted && !testResult && (
               <div className="space-y-5">
                 <div className="relative rounded-3xl p-7 md:p-8 overflow-hidden text-center"
@@ -726,7 +681,6 @@ export default function GrowthHub() {
                   </div>
                 </div>
 
-                {/* 2-layer visual */}
                 <div className="rounded-2xl p-5 space-y-4"
                   style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase">How It Works</p>
@@ -770,11 +724,9 @@ export default function GrowthHub() {
               </div>
             )}
 
-            {/* Question screen */}
             {testStarted && !testResult && !testLoading && (
               <div className="space-y-5">
 
-                {/* Overall progress bar */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
@@ -797,9 +749,7 @@ export default function GrowthHub() {
                     </span>
                   </div>
 
-                  {/* Two-segment progress bar */}
                   <div className="flex gap-1">
-                    {/* Layer 1 segment */}
                     <div className="relative flex-none rounded-full overflow-hidden h-1"
                       style={{ width: `${(LAYER1_TOTAL / overallTotal) * 100}%`, background: 'rgba(255,255,255,0.05)' }}>
                       <div className="h-1 rounded-full transition-all duration-500 absolute top-0 left-0"
@@ -810,7 +760,6 @@ export default function GrowthHub() {
                           background: 'linear-gradient(90deg,#f97316,#10b981)',
                         }} />
                     </div>
-                    {/* Layer 2 segment */}
                     <div className="relative flex-1 rounded-full overflow-hidden h-1"
                       style={{ background: 'rgba(255,255,255,0.05)' }}>
                       <div className="h-1 rounded-full transition-all duration-500 absolute top-0 left-0"
@@ -823,7 +772,6 @@ export default function GrowthHub() {
                     </div>
                   </div>
 
-                  {/* Layer labels */}
                   <div className="flex justify-between mt-1">
                     <span className="text-[9px] text-zinc-700 font-semibold">4 P's Layer</span>
                     <span className="text-[9px] font-semibold" style={{ color: isLayer1 ? '#3f3f46' : '#8b5cf6' }}>
@@ -832,7 +780,6 @@ export default function GrowthHub() {
                   </div>
                 </div>
 
-                {/* Layer 1 section dots */}
                 {isLayer1 && (
                   <div className="flex gap-2">
                     {layer1Sections.map((s, si) => {
@@ -864,7 +811,6 @@ export default function GrowthHub() {
                   </div>
                 )}
 
-                {/* Ikigai layer transition banner */}
                 {!isLayer1 && (
                   <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
                     style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
@@ -878,7 +824,6 @@ export default function GrowthHub() {
                   </div>
                 )}
 
-                {/* Question card */}
                 <div className="rounded-2xl p-5 md:p-6"
                   style={{
                     background: isLayer1
@@ -922,7 +867,6 @@ export default function GrowthHub() {
               </div>
             )}
 
-            {/* Loading */}
             {testLoading && (
               <div className="text-center mt-20 space-y-5">
                 <div className="relative w-14 h-14 mx-auto">
@@ -938,7 +882,6 @@ export default function GrowthHub() {
               </div>
             )}
 
-            {/* Results */}
             {testResult && (
               <div className="space-y-4">
                 <div className="text-center mb-6">
@@ -1022,7 +965,6 @@ export default function GrowthHub() {
           </div>
         )}
 
-        {/* ── Roadmap Tab ────────────────────────────────────────────────────── */}
         {activeTab === 'roadmap' && (
           <div className="space-y-4">
             <div className="rounded-2xl px-4 py-3 flex items-start gap-3"

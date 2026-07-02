@@ -59,36 +59,41 @@ export default function CoverLetter() {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const inputClass = "w-full rounded-2xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none transition"
+  const inputClass = "w-full rounded-2xl px-4 py-3 text-sm focus:outline-none transition"
   const inputStyle = {
-    background: 'rgba(255,255,255,0.03)',
-    border: '1px solid rgba(255,255,255,0.08)',
+    background: 'var(--bg-muted)',
+    border: '1px solid var(--border)',
+    color: 'var(--text-primary)',
   }
-  const inputFocusStyle = "focus:ring-1 focus:ring-blue-500/50"
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white">
+    <div className="min-h-screen" style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
       <div className="max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto px-5 md:px-10 pt-10 md:pt-16 pb-28">
 
         {/* Header */}
         <div className="mb-8 md:mb-10">
           <Link href="/dashboard"
-            className="inline-flex items-center gap-2 text-zinc-500 hover:text-white text-sm mb-5 transition">
+            className="inline-flex items-center gap-2 text-sm mb-5 transition"
+            style={{ color: 'var(--text-muted)' }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)' }}
+          >
             ← Dashboard
           </Link>
 
           {/* Ambient title card */}
           <div className="relative rounded-3xl p-6 md:p-8 overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(249,115,22,0.1) 0%, rgba(239,68,68,0.06) 100%)',
-              border: '1px solid rgba(249,115,22,0.2)',
+              background: 'linear-gradient(135deg, var(--coral-bg) 0%, var(--coral-bg) 100%)',
+              border: '1px solid var(--accent-border)',
+              borderRadius: 'var(--radius-card)',
             }}
           >
             <div className="absolute top-0 right-0 w-40 h-40 rounded-full pointer-events-none"
-              style={{ background: '#f97316', filter: 'blur(60px)', opacity: 0.08, transform: 'translate(20%, -20%)' }} />
-            <p className="text-zinc-500 text-[10px] md:text-xs font-semibold tracking-widest uppercase mb-2">AI Powered</p>
+              style={{ background: 'var(--coral)', filter: 'blur(60px)', opacity: 0.08, transform: 'translate(20%, -20%)' }} />
+            <p className="text-[10px] md:text-xs font-semibold tracking-widest uppercase mb-2" style={{ color: 'var(--text-muted)' }}>AI Powered</p>
             <h1 className="text-2xl md:text-4xl font-black tracking-tight mb-1">Cover Letter ✍️</h1>
-            <p className="text-zinc-400 text-sm md:text-base">Tailored letters for any job — in seconds.</p>
+            <p className="text-sm md:text-base" style={{ color: 'var(--text-secondary)' }}>Tailored letters for any job — in seconds.</p>
           </div>
         </div>
 
@@ -98,30 +103,34 @@ export default function CoverLetter() {
           {/* Job Title + Company — 2 col on all screens */}
           <div className="grid grid-cols-2 gap-3 md:gap-4">
             <div>
-              <label className="text-zinc-500 text-xs font-semibold tracking-widest uppercase mb-2 block">Job Title</label>
+              <label className="text-xs font-semibold tracking-widest uppercase mb-2 block" style={{ color: 'var(--text-muted)' }}>Job Title</label>
               <input
                 type="text" value={jobTitle}
                 onChange={(e) => setJobTitle(e.target.value)}
                 placeholder="e.g. ML Engineer"
-                className={`${inputClass} ${inputFocusStyle}`}
+                className={inputClass}
                 style={inputStyle}
+                onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-bg)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
               />
             </div>
             <div>
-              <label className="text-zinc-500 text-xs font-semibold tracking-widest uppercase mb-2 block">Company</label>
+              <label className="text-xs font-semibold tracking-widest uppercase mb-2 block" style={{ color: 'var(--text-muted)' }}>Company</label>
               <input
                 type="text" value={company}
                 onChange={(e) => setCompany(e.target.value)}
                 placeholder="e.g. Google"
-                className={`${inputClass} ${inputFocusStyle}`}
+                className={inputClass}
                 style={inputStyle}
+                onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-bg)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
               />
             </div>
           </div>
 
           {/* Tone */}
           <div>
-            <label className="text-zinc-500 text-xs font-semibold tracking-widest uppercase mb-3 block">Tone</label>
+            <label className="text-xs font-semibold tracking-widest uppercase mb-3 block" style={{ color: 'var(--text-muted)' }}>Tone</label>
             <div className="flex gap-2">
               {[
                 { key: 'professional', label: '💼 Professional' },
@@ -131,13 +140,13 @@ export default function CoverLetter() {
                 <button key={t.key} onClick={() => setTone(t.key)}
                   className="px-3 md:px-4 py-2 rounded-xl text-xs md:text-sm font-medium transition"
                   style={tone === t.key ? {
-                    background: 'rgba(249,115,22,0.15)',
-                    border: '1px solid rgba(249,115,22,0.4)',
-                    color: '#fb923c',
+                    background: 'var(--coral-bg)',
+                    border: '1px solid var(--coral)',
+                    color: 'var(--coral)',
                   } : {
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    color: '#71717a',
+                    background: 'var(--bg-muted)',
+                    border: '1px solid var(--border)',
+                    color: 'var(--text-muted)',
                   }}>
                   {t.label}
                 </button>
@@ -150,25 +159,27 @@ export default function CoverLetter() {
 
             {/* Job Description */}
             <div>
-              <label className="text-zinc-500 text-xs font-semibold tracking-widest uppercase mb-2 block">
+              <label className="text-xs font-semibold tracking-widest uppercase mb-2 block" style={{ color: 'var(--text-muted)' }}>
                 Job Description
-                <span className="normal-case text-zinc-700 ml-1 font-normal">(optional)</span>
+                <span className="normal-case ml-1 font-normal" style={{ color: 'var(--text-faint)' }}>(optional)</span>
               </label>
               <textarea
                 value={jobDescription}
                 onChange={(e) => setJobDescription(e.target.value)}
                 rows={6}
                 placeholder="Paste the job description here..."
-                className={`${inputClass} ${inputFocusStyle} resize-none`}
+                className={`${inputClass} resize-none`}
                 style={inputStyle}
+                onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-bg)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
               />
             </div>
 
             {/* Resume */}
             <div>
-              <label className="text-zinc-500 text-xs font-semibold tracking-widest uppercase mb-2 block">
+              <label className="text-xs font-semibold tracking-widest uppercase mb-2 block" style={{ color: 'var(--text-muted)' }}>
                 Your Resume
-                <span className="normal-case text-zinc-700 ml-1 font-normal">(optional)</span>
+                <span className="normal-case ml-1 font-normal" style={{ color: 'var(--text-faint)' }}>(optional)</span>
               </label>
 
               {/* Upload zone */}
@@ -176,17 +187,17 @@ export default function CoverLetter() {
                 onClick={() => fileRef.current?.click()}
                 className="w-full rounded-2xl px-4 py-3 text-center cursor-pointer transition mb-2"
                 style={{
-                  background: 'rgba(255,255,255,0.02)',
-                  border: '1px dashed rgba(255,255,255,0.1)',
+                  background: 'var(--bg-muted)',
+                  border: '1px dashed var(--border-strong)',
                 }}
               >
                 <input ref={fileRef} type="file" accept=".pdf,.docx" onChange={handleResumeUpload} className="hidden" />
                 {parseLoading ? (
-                  <p className="text-zinc-500 text-xs">⏳ Parsing resume...</p>
+                  <p className="text-xs" style={{ color: 'var(--text-muted)' }}>⏳ Parsing resume...</p>
                 ) : fileName ? (
-                  <p className="text-green-400 text-xs">✅ {fileName}</p>
+                  <p className="text-xs" style={{ color: 'var(--accent)' }}>✅ {fileName}</p>
                 ) : (
-                  <p className="text-zinc-600 text-xs">📎 Upload PDF or DOCX</p>
+                  <p className="text-xs" style={{ color: 'var(--text-faint)' }}>📎 Upload PDF or DOCX</p>
                 )}
               </div>
 
@@ -195,8 +206,10 @@ export default function CoverLetter() {
                 onChange={(e) => setResume(e.target.value)}
                 rows={4}
                 placeholder="Or paste your skills here..."
-                className={`${inputClass} ${inputFocusStyle} resize-none`}
+                className={`${inputClass} resize-none`}
                 style={inputStyle}
+                onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px var(--accent-bg)' }}
+                onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.boxShadow = 'none' }}
               />
             </div>
           </div>
@@ -207,8 +220,9 @@ export default function CoverLetter() {
             disabled={loading || !jobTitle || !company}
             className="w-full font-semibold py-3.5 md:py-4 rounded-2xl transition text-sm md:text-base disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: loading ? 'rgba(249,115,22,0.3)' : 'linear-gradient(135deg, #f97316, #ef4444)',
-              boxShadow: loading ? 'none' : '0 0 30px rgba(249,115,22,0.2)',
+              background: loading ? 'var(--coral-bg)' : 'linear-gradient(135deg, var(--coral), #ef4444)',
+              boxShadow: loading ? 'none' : '0 0 30px var(--coral-bg)',
+              color: '#fff',
             }}
           >
             {loading ? (
@@ -223,27 +237,28 @@ export default function CoverLetter() {
           {result && (
             <div className="relative rounded-3xl p-5 md:p-7 overflow-hidden"
               style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border)',
+                borderRadius: 'var(--radius-card)',
               }}
             >
               <div className="absolute top-0 right-0 w-32 h-32 rounded-full pointer-events-none"
-                style={{ background: '#f97316', filter: 'blur(60px)', opacity: 0.05, transform: 'translate(20%, -20%)' }} />
+                style={{ background: 'var(--coral)', filter: 'blur(60px)', opacity: 0.05, transform: 'translate(20%, -20%)' }} />
 
               <div className="flex items-center justify-between mb-4">
-                <p className="text-zinc-500 text-xs font-semibold tracking-widest uppercase">Your Cover Letter</p>
+                <p className="text-xs font-semibold tracking-widest uppercase" style={{ color: 'var(--text-muted)' }}>Your Cover Letter</p>
                 <button onClick={copyToClipboard}
                   className="text-xs px-3 py-1.5 rounded-xl transition"
                   style={{
-                    background: copied ? 'rgba(16,185,129,0.1)' : 'rgba(249,115,22,0.1)',
-                    border: copied ? '1px solid rgba(16,185,129,0.3)' : '1px solid rgba(249,115,22,0.3)',
-                    color: copied ? '#10b981' : '#fb923c',
+                    background: copied ? 'var(--accent-bg)' : 'var(--coral-bg)',
+                    border: copied ? '1px solid var(--accent-border)' : '1px solid var(--coral)',
+                    color: copied ? 'var(--accent)' : 'var(--coral)',
                   }}>
                   {copied ? '✅ Copied!' : '📋 Copy'}
                 </button>
               </div>
 
-              <p className="text-zinc-300 text-sm md:text-base leading-relaxed whitespace-pre-wrap">{result}</p>
+              <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap" style={{ color: 'var(--text-secondary)' }}>{result}</p>
             </div>
           )}
 
