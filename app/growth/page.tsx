@@ -331,13 +331,13 @@ const TABS = [
 ]
 
 const glass = {
-  background: 'rgba(255,255,255,0.03)',
-  border: '1px solid rgba(255,255,255,0.08)',
+  background: 'var(--bg-card)',
+  border: '1px solid var(--border)',
   backdropFilter: 'blur(12px)',
 }
 
 const inputClass =
-  'w-full rounded-2xl px-4 py-3 text-white text-sm placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition resize-none'
+  'w-full rounded-2xl px-4 py-3 text-[color:var(--text-primary)] text-sm placeholder-[color:var(--text-faint)] focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition resize-none'
 
 export default function GrowthHub() {
   const [activeTab, setActiveTab] = useState('linkedin')
@@ -464,7 +464,7 @@ export default function GrowthHub() {
   const overallTotal   = LAYER1_TOTAL + (ikigaiQuestions.length || 4)
 
   return (
-    <div className="min-h-screen bg-[#09090b] text-white">
+    <div className="min-h-screen bg-[color:var(--bg-base)] text-[color:var(--text-primary)]">
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full"
           style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
@@ -478,7 +478,7 @@ export default function GrowthHub() {
 
         <div className="mb-8 md:mb-10">
           <Link href="/dashboard"
-            className="inline-flex items-center gap-2 text-zinc-600 hover:text-zinc-300 text-xs font-medium mb-5 transition tracking-wide">
+            className="inline-flex items-center gap-2 text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)] text-xs font-medium mb-5 transition tracking-wide">
             ← Back to Dashboard
           </Link>
 
@@ -494,13 +494,13 @@ export default function GrowthHub() {
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
                 <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-500/60">Career Sync AI</span>
-                <span className="text-zinc-800">·</span>
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-zinc-600">Growth Hub</span>
+                <span className="text-[color:var(--border-strong)]">·</span>
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[color:var(--text-muted)]">Growth Hub</span>
               </div>
               <h1 className="text-2xl md:text-[2.5rem] font-black tracking-tight leading-none mb-3">
                 Level Up <span className="text-emerald-400">Your Career</span> 🚀
               </h1>
-              <p className="text-zinc-500 text-sm md:text-base">
+              <p className="text-[color:var(--text-muted)] text-sm md:text-base">
                 LinkedIn optimizer · 4 P's career test · AI learning roadmap
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
@@ -513,7 +513,7 @@ export default function GrowthHub() {
                     }}>{p}</span>
                 ))}
                 <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold"
-                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: '#71717a' }}>
+                  style={{ background: 'var(--bg-muted)', border: '1px solid var(--border-strong)', color: '#71717a' }}>
                   ☯ Ikigai
                 </span>
               </div>
@@ -522,7 +522,7 @@ export default function GrowthHub() {
         </div>
 
         <div className="flex gap-1 mb-8 p-1 rounded-2xl"
-          style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
           {TABS.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="flex-1 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200"
@@ -543,25 +543,25 @@ export default function GrowthHub() {
             <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
               style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }}>
               <span className="text-emerald-400 mt-0.5 text-base">💡</span>
-              <p className="text-zinc-400 text-xs leading-relaxed">
+              <p className="text-[color:var(--text-secondary)] text-xs leading-relaxed">
                 Paste your LinkedIn sections below. AI will score your profile, rewrite your headline & about, and identify missing keywords recruiters search for.
               </p>
             </div>
 
             <div>
-              <label className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">LinkedIn Headline</label>
+              <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">LinkedIn Headline</label>
               <input type="text" value={headline} onChange={e => setHeadline(e.target.value)}
                 placeholder="e.g. ML Engineer | Python | Open to Work"
                 className={inputClass} style={glass} />
             </div>
             <div>
-              <label className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">About Section</label>
+              <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">About Section</label>
               <textarea value={about} onChange={e => setAbout(e.target.value)} rows={5}
                 placeholder="Paste your LinkedIn About section here..."
                 className={inputClass} style={glass} />
             </div>
             <div>
-              <label className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">Skills (comma separated)</label>
+              <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">Skills (comma separated)</label>
               <input type="text" value={skills} onChange={e => setSkills(e.target.value)}
                 placeholder="e.g. Python, Machine Learning, Flask, MongoDB"
                 className={inputClass} style={glass} />
@@ -585,15 +585,15 @@ export default function GrowthHub() {
             {linkedinResult && (
               <div className="space-y-3 mt-2">
                 <div className="rounded-2xl p-5" style={glass}>
-                  <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-3">Profile Score</p>
+                  <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">Profile Score</p>
                   <div className="flex items-end gap-2 mb-3">
                     <span className="text-5xl font-black"
                       style={{ color: linkedinResult.score>=70 ? '#10b981' : linkedinResult.score>=50 ? '#f59e0b' : '#ef4444' }}>
                       {linkedinResult.score}
                     </span>
-                    <span className="text-zinc-700 text-xl mb-1.5">/100</span>
+                    <span className="text-[color:var(--text-faint)] text-xl mb-1.5">/100</span>
                   </div>
-                  <div className="h-1 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                  <div className="h-1 rounded-full mb-3" style={{ background: 'var(--border)' }}>
                     <div className="h-1 rounded-full transition-all duration-700"
                       style={{
                         width: `${linkedinResult.score}%`,
@@ -604,23 +604,23 @@ export default function GrowthHub() {
                           : 'linear-gradient(90deg,#ef4444,#f87171)',
                       }} />
                   </div>
-                  <p className="text-zinc-400 text-sm">{linkedinResult.verdict}</p>
+                  <p className="text-[color:var(--text-secondary)] text-sm">{linkedinResult.verdict}</p>
                 </div>
                 {linkedinResult.improvedHeadline && (
                   <div className="rounded-2xl p-5" style={glass}>
-                    <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-2">✨ Improved Headline</p>
-                    <p className="text-white font-semibold text-sm leading-relaxed">{linkedinResult.improvedHeadline}</p>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2">✨ Improved Headline</p>
+                    <p className="text-[color:var(--text-primary)] font-semibold text-sm leading-relaxed">{linkedinResult.improvedHeadline}</p>
                   </div>
                 )}
                 {linkedinResult.improvedAbout && (
                   <div className="rounded-2xl p-5" style={glass}>
-                    <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-2">✨ Improved About</p>
-                    <p className="text-zinc-300 text-sm leading-relaxed">{linkedinResult.improvedAbout}</p>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2">✨ Improved About</p>
+                    <p className="text-[color:var(--text-secondary)] text-sm leading-relaxed">{linkedinResult.improvedAbout}</p>
                   </div>
                 )}
                 {linkedinResult.missingKeywords?.length > 0 && (
                   <div className="rounded-2xl p-5" style={glass}>
-                    <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-3">🔑 Missing Keywords</p>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">🔑 Missing Keywords</p>
                     <div className="flex flex-wrap gap-2">
                       {linkedinResult.missingKeywords.map((kw: string, i: number) => (
                         <span key={i} className="text-xs px-3 py-1.5 rounded-full font-medium"
@@ -633,12 +633,12 @@ export default function GrowthHub() {
                 )}
                 {linkedinResult.improvements?.length > 0 && (
                   <div className="rounded-2xl p-5" style={glass}>
-                    <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-3">📈 Action Items</p>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">📈 Action Items</p>
                     <ul className="space-y-2.5">
                       {linkedinResult.improvements.map((tip: string, i: number) => (
                         <li key={i} className="flex gap-3 text-sm">
                           <span className="text-emerald-500 font-bold mt-0.5 flex-shrink-0">→</span>
-                          <span className="text-zinc-300 leading-relaxed">{tip}</span>
+                          <span className="text-[color:var(--text-secondary)] leading-relaxed">{tip}</span>
                         </li>
                       ))}
                     </ul>
@@ -664,13 +664,13 @@ export default function GrowthHub() {
                   <div className="relative">
                     <div className="text-4xl mb-3">🧪</div>
                     <h2 className="text-xl md:text-2xl font-black mb-1">Career Path Test</h2>
-                    <p className="text-zinc-500 text-sm mb-1">
+                    <p className="text-[color:var(--text-muted)] text-sm mb-1">
                       2-layer system · {LAYER1_TOTAL} + 4 adaptive questions
                     </p>
-                    <p className="text-zinc-600 text-xs mb-2">
+                    <p className="text-[color:var(--text-muted)] text-xs mb-2">
                       Layer 1 covers all career types across 4 P's — analytical, creative, management, operations, social, and more.
                     </p>
-                    <p className="text-zinc-600 text-xs mb-6">
+                    <p className="text-[color:var(--text-muted)] text-xs mb-6">
                       Layer 2 unlocks personalised Ikigai questions based on YOUR specific profile pattern.
                     </p>
                     <button onClick={() => setTestStarted(true)}
@@ -682,16 +682,16 @@ export default function GrowthHub() {
                 </div>
 
                 <div className="rounded-2xl p-5 space-y-4"
-                  style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase">How It Works</p>
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase">How It Works</p>
                   <div className="flex gap-4 items-start">
                     <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black"
                       style={{ background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.25)', color: '#f97316' }}>
                       1
                     </div>
                     <div>
-                      <p className="text-white text-sm font-bold mb-0.5">Layer 1 — 4 P's Profiling ({LAYER1_TOTAL} questions)</p>
-                      <p className="text-zinc-500 text-xs leading-relaxed">
+                      <p className="text-[color:var(--text-primary)] text-sm font-bold mb-0.5">Layer 1 — 4 P's Profiling ({LAYER1_TOTAL} questions)</p>
+                      <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">
                         Broad questions across Passion, Proficiency, Pay, and Priorities. Options cover ALL career types — analytical, creative, management, operations, social, entrepreneurial, and more. No bias toward tech.
                       </p>
                     </div>
@@ -702,8 +702,8 @@ export default function GrowthHub() {
                       2
                     </div>
                     <div>
-                      <p className="text-white text-sm font-bold mb-0.5">Layer 2 — Personalised Ikigai (4 adaptive questions)</p>
-                      <p className="text-zinc-500 text-xs leading-relaxed">
+                      <p className="text-[color:var(--text-primary)] text-sm font-bold mb-0.5">Layer 2 — Personalised Ikigai (4 adaptive questions)</p>
+                      <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">
                         Based on your Layer 1 profile, the system generates Ikigai questions with options tailored to YOUR specific profile mix — not generic options. This finds your true career sweet spot.
                       </p>
                     </div>
@@ -715,9 +715,9 @@ export default function GrowthHub() {
                     <div key={s.id} className="rounded-2xl p-4"
                       style={{ background: s.accent, border: `1px solid ${s.border}` }}>
                       <div className="text-xl mb-2">{s.emoji}</div>
-                      <p className="font-bold text-sm text-white">{s.label}</p>
+                      <p className="font-bold text-sm text-[color:var(--text-primary)]">{s.label}</p>
                       <p className="text-xs mt-0.5" style={{ color: s.color }}>{s.subtitle}</p>
-                      <p className="text-zinc-600 text-xs mt-1">{s.questions.length} questions</p>
+                      <p className="text-[color:var(--text-muted)] text-xs mt-1">{s.questions.length} questions</p>
                     </div>
                   ))}
                 </div>
@@ -735,23 +735,23 @@ export default function GrowthHub() {
                           <span className="text-sm font-black" style={{ color: currentSection?.color }}>
                             {currentSection?.emoji} {currentSection?.label}
                           </span>
-                          <span className="text-zinc-700 text-xs">— {currentSection?.subtitle}</span>
+                          <span className="text-[color:var(--text-faint)] text-xs">— {currentSection?.subtitle}</span>
                         </>
                       ) : (
                         <>
                           <span className="text-sm font-black" style={{ color: '#8b5cf6' }}>☯ Ikigai</span>
-                          <span className="text-zinc-700 text-xs">— Depth questions</span>
+                          <span className="text-[color:var(--text-faint)] text-xs">— Depth questions</span>
                         </>
                       )}
                     </div>
-                    <span className="text-zinc-600 text-xs font-semibold">
+                    <span className="text-[color:var(--text-muted)] text-xs font-semibold">
                       {overallDone + 1} / {overallTotal}
                     </span>
                   </div>
 
                   <div className="flex gap-1">
                     <div className="relative flex-none rounded-full overflow-hidden h-1"
-                      style={{ width: `${(LAYER1_TOTAL / overallTotal) * 100}%`, background: 'rgba(255,255,255,0.05)' }}>
+                      style={{ width: `${(LAYER1_TOTAL / overallTotal) * 100}%`, background: 'var(--border)' }}>
                       <div className="h-1 rounded-full transition-all duration-500 absolute top-0 left-0"
                         style={{
                           width: isLayer1
@@ -761,7 +761,7 @@ export default function GrowthHub() {
                         }} />
                     </div>
                     <div className="relative flex-1 rounded-full overflow-hidden h-1"
-                      style={{ background: 'rgba(255,255,255,0.05)' }}>
+                      style={{ background: 'var(--border)' }}>
                       <div className="h-1 rounded-full transition-all duration-500 absolute top-0 left-0"
                         style={{
                           width: isLayer1
@@ -773,7 +773,7 @@ export default function GrowthHub() {
                   </div>
 
                   <div className="flex justify-between mt-1">
-                    <span className="text-[9px] text-zinc-700 font-semibold">4 P's Layer</span>
+                    <span className="text-[9px] text-[color:var(--text-faint)] font-semibold">4 P's Layer</span>
                     <span className="text-[9px] font-semibold" style={{ color: isLayer1 ? '#3f3f46' : '#8b5cf6' }}>
                       ☯ Ikigai Layer
                     </span>
@@ -796,7 +796,7 @@ export default function GrowthHub() {
                               {s.label}
                             </span>
                           </div>
-                          <div className="h-0.5 rounded-full" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                          <div className="h-0.5 rounded-full" style={{ background: 'var(--border)' }}>
                             <div className="h-0.5 rounded-full transition-all duration-500"
                               style={{
                                 width: isDone ? '100%' : isAct
@@ -817,7 +817,7 @@ export default function GrowthHub() {
                     <span className="text-lg">☯</span>
                     <div>
                       <p className="text-xs font-bold text-purple-300">Layer 2 — Personalised Ikigai Questions</p>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">
+                      <p className="text-[10px] text-[color:var(--text-muted)] mt-0.5">
                         These 4 questions are tailored to your profile from Layer 1.
                       </p>
                     </div>
@@ -848,10 +848,10 @@ export default function GrowthHub() {
                         style={{
                           background: selectedOption === i
                             ? isLayer1 ? currentSection?.accent : 'rgba(139,92,246,0.1)'
-                            : 'rgba(255,255,255,0.025)',
+                            : 'var(--bg-muted)',
                           border: selectedOption === i
                             ? `1px solid ${isLayer1 ? currentSection?.color : '#8b5cf6'}`
-                            : '1px solid rgba(255,255,255,0.06)',
+                            : '1px solid var(--border)',
                           color: selectedOption === i ? '#fff' : '#a1a1aa',
                           transform: selectedOption === i ? 'scale(1.01)' : 'scale(1)',
                         }}>
@@ -876,8 +876,8 @@ export default function GrowthHub() {
                     style={{ borderTopColor: '#3b82f6', animationDirection: 'reverse', animationDuration: '0.8s' }} />
                 </div>
                 <div>
-                  <p className="text-zinc-300 text-sm font-semibold mb-1">AI is mapping your career DNA</p>
-                  <p className="text-zinc-600 text-xs">Combining 4 P's profile + Ikigai depth analysis</p>
+                  <p className="text-[color:var(--text-secondary)] text-sm font-semibold mb-1">AI is mapping your career DNA</p>
+                  <p className="text-[color:var(--text-muted)] text-xs">Combining 4 P's profile + Ikigai depth analysis</p>
                 </div>
               </div>
             )}
@@ -885,15 +885,15 @@ export default function GrowthHub() {
             {testResult && (
               <div className="space-y-4">
                 <div className="text-center mb-6">
-                  <p className="text-zinc-600 text-xs tracking-widest uppercase mb-1">Your Ikigai × 4 P's Analysis</p>
+                  <p className="text-[color:var(--text-muted)] text-xs tracking-widest uppercase mb-1">Your Ikigai × 4 P's Analysis</p>
                   <h2 className="text-xl md:text-2xl font-black">🎯 Career Matches</h2>
                 </div>
 
                 {testResult.ikigaiSummary && (
                   <div className="rounded-2xl p-5"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-2">☯ Your Ikigai Profile</p>
-                    <p className="text-zinc-300 text-sm leading-relaxed">{testResult.ikigaiSummary}</p>
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2">☯ Your Ikigai Profile</p>
+                    <p className="text-[color:var(--text-secondary)] text-sm leading-relaxed">{testResult.ikigaiSummary}</p>
                   </div>
                 )}
 
@@ -904,7 +904,7 @@ export default function GrowthHub() {
                         style={{ background: s.accent, border: `1px solid ${s.border}` }}>
                         <div className="text-lg mb-1">{s.emoji}</div>
                         <p className="text-[10px] font-bold uppercase tracking-wider" style={{ color: s.color }}>{s.label}</p>
-                        <p className="text-white text-xs mt-1 font-semibold">{testResult.profileBreakdown[s.id] || '—'}</p>
+                        <p className="text-[color:var(--text-primary)] text-xs mt-1 font-semibold">{testResult.profileBreakdown[s.id] || '—'}</p>
                       </div>
                     ))}
                   </div>
@@ -912,10 +912,10 @@ export default function GrowthHub() {
 
                 {testResult.careers?.map((career: any, i: number) => (
                   <div key={i} className="rounded-2xl p-5"
-                    style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.07)' }}>
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                     <div className="flex items-start justify-between gap-3 mb-2">
                       <div>
-                        <p className="font-black text-white text-base">{career.title}</p>
+                        <p className="font-black text-[color:var(--text-primary)] text-base">{career.title}</p>
                         {career.ikigaiFit && (
                           <p className="text-xs mt-0.5" style={{ color: '#8b5cf6' }}>☯ {career.ikigaiFit}</p>
                         )}
@@ -925,7 +925,7 @@ export default function GrowthHub() {
                         {career.match}%
                       </span>
                     </div>
-                    <div className="h-1 rounded-full mb-3" style={{ background: 'rgba(255,255,255,0.05)' }}>
+                    <div className="h-1 rounded-full mb-3" style={{ background: 'var(--border)' }}>
                       <div className="h-1 rounded-full transition-all"
                         style={{
                           width: `${career.match}%`,
@@ -936,12 +936,12 @@ export default function GrowthHub() {
                             : 'linear-gradient(90deg,#f59e0b,#fbbf24)',
                         }} />
                     </div>
-                    <p className="text-zinc-500 text-xs leading-relaxed mb-3">{career.reason}</p>
+                    <p className="text-[color:var(--text-muted)] text-xs leading-relaxed mb-3">{career.reason}</p>
                     {career.strengths && (
                       <div className="flex flex-wrap gap-1.5 mb-3">
                         {career.strengths.map((s: string, j: number) => (
                           <span key={j} className="text-[10px] px-2 py-1 rounded-full"
-                            style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: '#71717a' }}>
+                            style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', color: '#71717a' }}>
                             {s}
                           </span>
                         ))}
@@ -956,8 +956,8 @@ export default function GrowthHub() {
                 ))}
 
                 <button onClick={resetTest}
-                  className="w-full py-3 rounded-2xl text-sm text-zinc-600 hover:text-zinc-400 transition font-medium"
-                  style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                  className="w-full py-3 rounded-2xl text-sm text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)] transition font-medium"
+                  style={{ border: '1px solid var(--border)' }}>
                   🔄 Retake Test
                 </button>
               </div>
@@ -970,12 +970,12 @@ export default function GrowthHub() {
             <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
               style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.1)' }}>
               <span className="text-emerald-400 mt-0.5">🗺️</span>
-              <p className="text-zinc-500 text-xs leading-relaxed">
+              <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">
                 Enter your target career and AI will generate a phased, resource-backed learning roadmap.
               </p>
             </div>
             <div>
-              <label className="text-zinc-600 text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">Target Career</label>
+              <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">Target Career</label>
               <input type="text" value={roadmapCareer} onChange={e => setRoadmapCareer(e.target.value)}
                 placeholder="e.g. HR Manager, Operations Lead, Data Analyst, UX Designer"
                 className={inputClass} style={glass} />
@@ -999,7 +999,7 @@ export default function GrowthHub() {
               <div className="space-y-3 mt-2">
                 <div className="flex items-center justify-between mb-1">
                   <h2 className="text-lg md:text-xl font-black">{roadmapResult.title}</h2>
-                  <span className="text-zinc-600 text-xs font-semibold">⏱ {roadmapResult.totalMonths} months</span>
+                  <span className="text-[color:var(--text-muted)] text-xs font-semibold">⏱ {roadmapResult.totalMonths} months</span>
                 </div>
                 <div className="relative">
                   {roadmapResult.phases?.map((phase: any, i: number) => (
@@ -1014,16 +1014,16 @@ export default function GrowthHub() {
                         )}
                       </div>
                       <div className="flex-1 rounded-2xl p-4 space-y-3 mb-1"
-                        style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}>
+                        style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
                         <div>
                           <div className="flex items-center justify-between mb-0.5">
-                            <p className="font-bold text-white text-sm">{phase.title}</p>
-                            <span className="text-zinc-600 text-xs">{phase.duration}</span>
+                            <p className="font-bold text-[color:var(--text-primary)] text-sm">{phase.title}</p>
+                            <span className="text-[color:var(--text-muted)] text-xs">{phase.duration}</span>
                           </div>
                           <p className="text-emerald-400 text-xs">🎯 {phase.goal}</p>
                         </div>
                         <div>
-                          <p className="text-zinc-700 text-[9px] font-bold tracking-[0.15em] uppercase mb-2">Topics</p>
+                          <p className="text-[color:var(--text-faint)] text-[9px] font-bold tracking-[0.15em] uppercase mb-2">Topics</p>
                           <div className="flex flex-wrap gap-1.5">
                             {phase.topics?.map((topic: string, j: number) => (
                               <span key={j} className="text-[10px] px-2.5 py-1 rounded-full font-medium"
@@ -1034,13 +1034,13 @@ export default function GrowthHub() {
                           </div>
                         </div>
                         <div>
-                          <p className="text-zinc-700 text-[9px] font-bold tracking-[0.15em] uppercase mb-2">Resources</p>
+                          <p className="text-[color:var(--text-faint)] text-[9px] font-bold tracking-[0.15em] uppercase mb-2">Resources</p>
                           <ul className="space-y-1.5">
                             {phase.resources?.map((res: any, j: number) => (
                               <li key={j} className="flex items-center gap-2 text-xs">
                                 <span className="flex-shrink-0">{res.free ? '🆓' : '💰'}</span>
-                                <span className="text-zinc-300 font-medium">{res.name}</span>
-                                <span className="text-zinc-700">— {res.type}</span>
+                                <span className="text-[color:var(--text-secondary)] font-medium">{res.name}</span>
+                                <span className="text-[color:var(--text-faint)]">— {res.type}</span>
                               </li>
                             ))}
                           </ul>
@@ -1050,8 +1050,8 @@ export default function GrowthHub() {
                   ))}
                 </div>
                 <button onClick={() => { setRoadmapResult(null); setRoadmapCareer('') }}
-                  className="w-full py-3 rounded-2xl text-sm text-zinc-600 hover:text-zinc-400 transition font-medium"
-                  style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                  className="w-full py-3 rounded-2xl text-sm text-[color:var(--text-muted)] hover:text-[color:var(--text-secondary)] transition font-medium"
+                  style={{ border: '1px solid var(--border)' }}>
                   🔄 Generate Another Roadmap
                 </button>
               </div>
