@@ -34,10 +34,10 @@ const layer1Sections: L1Section[] = [
     label: 'Passion',
     emoji: '🔥',
     subtitle: 'What you love',
-    color: '#f97316',
-    glow: 'rgba(249,115,22,0.15)',
-    border: 'rgba(249,115,22,0.25)',
-    accent: 'rgba(249,115,22,0.08)',
+    color: 'var(--coral)',
+    glow: 'color-mix(in srgb, var(--coral) 15%, transparent)',
+    border: 'color-mix(in srgb, var(--coral) 25%, transparent)',
+    accent: 'var(--coral-bg)',
     questions: [
       {
         id: 'p1',
@@ -82,10 +82,10 @@ const layer1Sections: L1Section[] = [
     label: 'Proficiency',
     emoji: '⚡',
     subtitle: 'What you\'re good at',
-    color: '#8b5cf6',
-    glow: 'rgba(139,92,246,0.15)',
-    border: 'rgba(139,92,246,0.25)',
-    accent: 'rgba(139,92,246,0.08)',
+    color: 'var(--purple)',
+    glow: 'color-mix(in srgb, var(--purple) 15%, transparent)',
+    border: 'color-mix(in srgb, var(--purple) 25%, transparent)',
+    accent: 'var(--purple-bg)',
     questions: [
       {
         id: 'pr1',
@@ -130,10 +130,10 @@ const layer1Sections: L1Section[] = [
     label: 'Pay',
     emoji: '💰',
     subtitle: 'What the world pays for',
-    color: '#10b981',
-    glow: 'rgba(16,185,129,0.15)',
-    border: 'rgba(16,185,129,0.25)',
-    accent: 'rgba(16,185,129,0.08)',
+    color: 'var(--accent)',
+    glow: 'color-mix(in srgb, var(--accent) 15%, transparent)',
+    border: 'color-mix(in srgb, var(--accent) 25%, transparent)',
+    accent: 'var(--accent-bg)',
     questions: [
       {
         id: 'pay1',
@@ -178,10 +178,10 @@ const layer1Sections: L1Section[] = [
     label: 'Priorities',
     emoji: '🎯',
     subtitle: 'What the world needs',
-    color: '#3b82f6',
-    glow: 'rgba(59,130,246,0.15)',
-    border: 'rgba(59,130,246,0.25)',
-    accent: 'rgba(59,130,246,0.08)',
+    color: 'var(--blue)',
+    glow: 'color-mix(in srgb, var(--blue) 15%, transparent)',
+    border: 'color-mix(in srgb, var(--blue) 25%, transparent)',
+    accent: 'var(--blue-bg)',
     questions: [
       {
         id: 'pri1',
@@ -337,7 +337,7 @@ const glass = {
 }
 
 const inputClass =
-  'w-full rounded-2xl px-4 py-3 text-[color:var(--text-primary)] text-sm placeholder-[color:var(--text-faint)] focus:outline-none focus:ring-1 focus:ring-emerald-500/50 transition resize-none'
+  'w-full rounded-2xl px-4 py-3 text-[color:var(--text-primary)] text-sm placeholder-[color:var(--text-faint)] focus:outline-none focus:ring-1 transition resize-none'
 
 export default function GrowthHub() {
   const [activeTab, setActiveTab] = useState('linkedin')
@@ -467,11 +467,11 @@ export default function GrowthHub() {
     <div className="min-h-screen bg-[color:var(--bg-base)] text-[color:var(--text-primary)]">
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 70%)' }} />
         <div className="absolute bottom-[10%] right-[-5%] w-[400px] h-[400px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(139,92,246,0.05) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--purple) 5%, transparent) 0%, transparent 70%)' }} />
         <div className="absolute top-[40%] left-[40%] w-[300px] h-[300px] rounded-full"
-          style={{ background: 'radial-gradient(circle, rgba(59,130,246,0.04) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--blue) 4%, transparent) 0%, transparent 70%)' }} />
       </div>
 
       <div className="relative z-10 max-w-xl md:max-w-3xl lg:max-w-4xl mx-auto px-5 md:px-10 pt-10 md:pt-16 pb-28">
@@ -484,36 +484,41 @@ export default function GrowthHub() {
 
           <div className="relative rounded-3xl p-6 md:p-8 overflow-hidden"
             style={{
-              background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(9,9,11,0) 60%)',
-              border: '1px solid rgba(16,185,129,0.15)',
+              background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 8%, transparent) 0%, transparent 60%)',
+              border: '1px solid color-mix(in srgb, var(--accent) 15%, transparent)',
             }}>
             <div className="absolute -top-16 -right-16 w-48 h-48 rounded-full pointer-events-none"
-              style={{ background: 'rgba(16,185,129,0.12)', filter: 'blur(40px)' }} />
+              style={{ background: 'color-mix(in srgb, var(--accent) 12%, transparent)', filter: 'blur(40px)' }} />
             <div className="absolute -bottom-8 -left-8 w-32 h-32 rounded-full pointer-events-none"
-              style={{ background: 'rgba(59,130,246,0.08)', filter: 'blur(30px)' }} />
+              style={{ background: 'color-mix(in srgb, var(--blue) 8%, transparent)', filter: 'blur(30px)' }} />
             <div className="relative">
               <div className="flex items-center gap-2 mb-3">
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-emerald-500/60">Career Sync AI</span>
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: 'color-mix(in srgb, var(--accent) 60%, transparent)' }}>Career Sync AI</span>
                 <span className="text-[color:var(--border-strong)]">·</span>
                 <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[color:var(--text-muted)]">Growth Hub</span>
               </div>
               <h1 className="text-2xl md:text-[2.5rem] font-black tracking-tight leading-none mb-3">
-                Level Up <span className="text-emerald-400">Your Career</span> 🚀
+                Level Up <span style={{ color: 'var(--accent)' }}>Your Career</span> 🚀
               </h1>
               <p className="text-[color:var(--text-muted)] text-sm md:text-base">
                 LinkedIn optimizer · 4 P's career test · AI learning roadmap
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
-                {['🔥 Passion', '⚡ Proficiency', '💰 Pay', '🎯 Priorities'].map((p, i) => (
+                {[
+                  { label: '🔥 Passion', bg: 'var(--coral-bg)', color: 'var(--coral)' },
+                  { label: '⚡ Proficiency', bg: 'var(--purple-bg)', color: 'var(--purple)' },
+                  { label: '💰 Pay', bg: 'var(--accent-bg)', color: 'var(--accent)' },
+                  { label: '🎯 Priorities', bg: 'var(--blue-bg)', color: 'var(--blue)' },
+                ].map((p, i) => (
                   <span key={i} className="text-[10px] px-2.5 py-1 rounded-full font-semibold"
                     style={{
-                      background: ['rgba(249,115,22,0.1)','rgba(139,92,246,0.1)','rgba(16,185,129,0.1)','rgba(59,130,246,0.1)'][i],
-                      border: `1px solid ${['rgba(249,115,22,0.2)','rgba(139,92,246,0.2)','rgba(16,185,129,0.2)','rgba(59,130,246,0.2)'][i]}`,
-                      color: ['#fb923c','#a78bfa','#34d399','#60a5fa'][i],
-                    }}>{p}</span>
+                      background: p.bg,
+                      border: `1px solid color-mix(in srgb, ${p.color} 20%, transparent)`,
+                      color: p.color,
+                    }}>{p.label}</span>
                 ))}
                 <span className="text-[10px] px-2.5 py-1 rounded-full font-semibold"
-                  style={{ background: 'var(--bg-muted)', border: '1px solid var(--border-strong)', color: '#71717a' }}>
+                  style={{ background: 'var(--bg-muted)', border: '1px solid var(--border-strong)', color: 'var(--text-muted)' }}>
                   ☯ Ikigai
                 </span>
               </div>
@@ -527,11 +532,11 @@ export default function GrowthHub() {
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
               className="flex-1 py-2.5 rounded-xl text-xs md:text-sm font-semibold transition-all duration-200"
               style={activeTab === tab.id ? {
-                background: 'rgba(16,185,129,0.12)',
-                border: '1px solid rgba(16,185,129,0.25)',
-                color: '#10b981',
-                boxShadow: '0 0 20px rgba(16,185,129,0.08) inset',
-              } : { color: '#52525b', border: '1px solid transparent' }}>
+                background: 'var(--accent-bg)',
+                border: '1px solid var(--accent-border)',
+                color: 'var(--accent)',
+                boxShadow: '0 0 20px var(--accent-bg) inset',
+              } : { color: 'var(--text-muted)', border: '1px solid transparent' }}>
               <span className="hidden md:inline">{tab.fullLabel}</span>
               <span className="md:hidden">{tab.label}</span>
             </button>
@@ -541,8 +546,8 @@ export default function GrowthHub() {
         {activeTab === 'linkedin' && (
           <div className="space-y-4">
             <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
-              style={{ background: 'rgba(16,185,129,0.06)', border: '1px solid rgba(16,185,129,0.12)' }}>
-              <span className="text-emerald-400 mt-0.5 text-base">💡</span>
+              style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}>
+              <span style={{ color: 'var(--accent)' }} className="mt-0.5 text-base">💡</span>
               <p className="text-[color:var(--text-secondary)] text-xs leading-relaxed">
                 Paste your LinkedIn sections below. AI will score your profile, rewrite your headline & about, and identify missing keywords recruiters search for.
               </p>
@@ -571,12 +576,13 @@ export default function GrowthHub() {
               disabled={linkedinLoading || (!headline && !about && !skills)}
               className="w-full font-bold py-3.5 rounded-2xl transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed"
               style={{
-                background: linkedinLoading ? 'rgba(16,185,129,0.15)' : 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                boxShadow: linkedinLoading ? 'none' : '0 0 40px rgba(16,185,129,0.2)',
+                background: linkedinLoading ? 'var(--accent-bg)' : `linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 80%, black) 100%)`,
+                color: '#fff',
+                boxShadow: linkedinLoading ? 'none' : '0 0 40px var(--accent-bg)',
               }}>
               {linkedinLoading
                 ? <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-emerald-300/30 border-t-emerald-300 rounded-full animate-spin" />
+                    <span className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid color-mix(in srgb, var(--accent) 30%, transparent)', borderTopColor: 'var(--accent)' }} />
                     Analyzing your profile...
                   </span>
                 : '🔍 Analyze LinkedIn Profile'}
@@ -588,7 +594,7 @@ export default function GrowthHub() {
                   <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">Profile Score</p>
                   <div className="flex items-end gap-2 mb-3">
                     <span className="text-5xl font-black"
-                      style={{ color: linkedinResult.score>=70 ? '#10b981' : linkedinResult.score>=50 ? '#f59e0b' : '#ef4444' }}>
+                      style={{ color: linkedinResult.score>=70 ? 'var(--accent)' : linkedinResult.score>=50 ? 'var(--amber)' : '#ef4444' }}>
                       {linkedinResult.score}
                     </span>
                     <span className="text-[color:var(--text-faint)] text-xl mb-1.5">/100</span>
@@ -598,9 +604,9 @@ export default function GrowthHub() {
                       style={{
                         width: `${linkedinResult.score}%`,
                         background: linkedinResult.score>=70
-                          ? 'linear-gradient(90deg,#10b981,#34d399)'
+                          ? 'linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, white))'
                           : linkedinResult.score>=50
-                          ? 'linear-gradient(90deg,#f59e0b,#fbbf24)'
+                          ? 'linear-gradient(90deg, var(--amber), color-mix(in srgb, var(--amber) 60%, white))'
                           : 'linear-gradient(90deg,#ef4444,#f87171)',
                       }} />
                   </div>
@@ -637,7 +643,7 @@ export default function GrowthHub() {
                     <ul className="space-y-2.5">
                       {linkedinResult.improvements.map((tip: string, i: number) => (
                         <li key={i} className="flex gap-3 text-sm">
-                          <span className="text-emerald-500 font-bold mt-0.5 flex-shrink-0">→</span>
+                          <span style={{ color: 'var(--accent)' }} className="font-bold mt-0.5 flex-shrink-0">→</span>
                           <span className="text-[color:var(--text-secondary)] leading-relaxed">{tip}</span>
                         </li>
                       ))}
@@ -656,11 +662,11 @@ export default function GrowthHub() {
               <div className="space-y-5">
                 <div className="relative rounded-3xl p-7 md:p-8 overflow-hidden text-center"
                   style={{
-                    background: 'linear-gradient(135deg, rgba(139,92,246,0.1) 0%, rgba(59,130,246,0.06) 100%)',
-                    border: '1px solid rgba(139,92,246,0.2)',
+                    background: 'linear-gradient(135deg, color-mix(in srgb, var(--purple) 10%, transparent) 0%, color-mix(in srgb, var(--blue) 6%, transparent) 100%)',
+                    border: '1px solid color-mix(in srgb, var(--purple) 20%, transparent)',
                   }}>
                   <div className="absolute -top-12 -right-12 w-36 h-36 rounded-full pointer-events-none"
-                    style={{ background: 'rgba(139,92,246,0.15)', filter: 'blur(35px)' }} />
+                    style={{ background: 'color-mix(in srgb, var(--purple) 15%, transparent)', filter: 'blur(35px)' }} />
                   <div className="relative">
                     <div className="text-4xl mb-3">🧪</div>
                     <h2 className="text-xl md:text-2xl font-black mb-1">Career Path Test</h2>
@@ -675,7 +681,7 @@ export default function GrowthHub() {
                     </p>
                     <button onClick={() => setTestStarted(true)}
                       className="font-bold px-8 py-3 rounded-2xl transition-all text-sm"
-                      style={{ background: 'linear-gradient(135deg,#8b5cf6,#6366f1)', boxShadow: '0 0 30px rgba(139,92,246,0.25)' }}>
+                      style={{ background: 'linear-gradient(135deg, var(--purple), var(--indigo))', color: '#fff', boxShadow: '0 0 30px color-mix(in srgb, var(--purple) 25%, transparent)' }}>
                       Start the Test →
                     </button>
                   </div>
@@ -686,7 +692,7 @@ export default function GrowthHub() {
                   <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase">How It Works</p>
                   <div className="flex gap-4 items-start">
                     <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black"
-                      style={{ background: 'rgba(249,115,22,0.15)', border: '1px solid rgba(249,115,22,0.25)', color: '#f97316' }}>
+                      style={{ background: 'var(--coral-bg)', border: '1px solid color-mix(in srgb, var(--coral) 25%, transparent)', color: 'var(--coral)' }}>
                       1
                     </div>
                     <div>
@@ -698,7 +704,7 @@ export default function GrowthHub() {
                   </div>
                   <div className="flex gap-4 items-start">
                     <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black"
-                      style={{ background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.25)', color: '#8b5cf6' }}>
+                      style={{ background: 'var(--purple-bg)', border: '1px solid color-mix(in srgb, var(--purple) 25%, transparent)', color: 'var(--purple)' }}>
                       2
                     </div>
                     <div>
@@ -739,7 +745,7 @@ export default function GrowthHub() {
                         </>
                       ) : (
                         <>
-                          <span className="text-sm font-black" style={{ color: '#8b5cf6' }}>☯ Ikigai</span>
+                          <span className="text-sm font-black" style={{ color: 'var(--purple)' }}>☯ Ikigai</span>
                           <span className="text-[color:var(--text-faint)] text-xs">— Depth questions</span>
                         </>
                       )}
@@ -757,7 +763,7 @@ export default function GrowthHub() {
                           width: isLayer1
                             ? `${(currentQ / LAYER1_TOTAL) * 100}%`
                             : '100%',
-                          background: 'linear-gradient(90deg,#f97316,#10b981)',
+                          background: 'linear-gradient(90deg, var(--coral), var(--accent))',
                         }} />
                     </div>
                     <div className="relative flex-1 rounded-full overflow-hidden h-1"
@@ -767,14 +773,14 @@ export default function GrowthHub() {
                           width: isLayer1
                             ? '0%'
                             : `${(currentQ / (ikigaiQuestions.length || 4)) * 100}%`,
-                          background: 'linear-gradient(90deg,#8b5cf6,#6366f1)',
+                          background: 'linear-gradient(90deg, var(--purple), var(--indigo))',
                         }} />
                     </div>
                   </div>
 
                   <div className="flex justify-between mt-1">
                     <span className="text-[9px] text-[color:var(--text-faint)] font-semibold">4 P's Layer</span>
-                    <span className="text-[9px] font-semibold" style={{ color: isLayer1 ? '#3f3f46' : '#8b5cf6' }}>
+                    <span className="text-[9px] font-semibold" style={{ color: isLayer1 ? 'var(--text-faint)' : 'var(--purple)' }}>
                       ☯ Ikigai Layer
                     </span>
                   </div>
@@ -792,7 +798,7 @@ export default function GrowthHub() {
                           <div className="flex items-center gap-1 mb-1">
                             <span style={{ opacity: isAct || isDone ? 1 : 0.3 }} className="text-xs">{s.emoji}</span>
                             <span className="text-[9px] font-bold tracking-wider uppercase"
-                              style={{ color: isAct ? s.color : isDone ? '#3f3f46' : '#27272a' }}>
+                              style={{ color: isAct ? s.color : 'var(--text-faint)' }}>
                               {s.label}
                             </span>
                           </div>
@@ -813,10 +819,10 @@ export default function GrowthHub() {
 
                 {!isLayer1 && (
                   <div className="rounded-2xl px-4 py-3 flex items-center gap-3"
-                    style={{ background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)' }}>
+                    style={{ background: 'color-mix(in srgb, var(--purple) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--purple) 20%, transparent)' }}>
                     <span className="text-lg">☯</span>
                     <div>
-                      <p className="text-xs font-bold text-purple-300">Layer 2 — Personalised Ikigai Questions</p>
+                      <p className="text-xs font-bold" style={{ color: 'var(--purple)' }}>Layer 2 — Personalised Ikigai Questions</p>
                       <p className="text-[10px] text-[color:var(--text-muted)] mt-0.5">
                         These 4 questions are tailored to your profile from Layer 1.
                       </p>
@@ -827,11 +833,11 @@ export default function GrowthHub() {
                 <div className="rounded-2xl p-5 md:p-6"
                   style={{
                     background: isLayer1
-                      ? `linear-gradient(135deg, ${currentSection?.accent} 0%, rgba(9,9,11,0) 100%)`
-                      : 'linear-gradient(135deg, rgba(139,92,246,0.08) 0%, rgba(9,9,11,0) 100%)',
+                      ? `linear-gradient(135deg, ${currentSection?.accent} 0%, transparent 100%)`
+                      : 'linear-gradient(135deg, color-mix(in srgb, var(--purple) 8%, transparent) 0%, transparent 100%)',
                     border: isLayer1
                       ? `1px solid ${currentSection?.border}`
-                      : '1px solid rgba(139,92,246,0.2)',
+                      : '1px solid color-mix(in srgb, var(--purple) 20%, transparent)',
                   }}>
                   <p className="text-base md:text-lg font-bold mb-5 leading-relaxed">
                     {isLayer1
@@ -847,16 +853,16 @@ export default function GrowthHub() {
                         className="w-full text-left px-4 py-3.5 rounded-xl text-sm transition-all duration-200 font-medium"
                         style={{
                           background: selectedOption === i
-                            ? isLayer1 ? currentSection?.accent : 'rgba(139,92,246,0.1)'
+                            ? isLayer1 ? currentSection?.accent : 'color-mix(in srgb, var(--purple) 10%, transparent)'
                             : 'var(--bg-muted)',
                           border: selectedOption === i
-                            ? `1px solid ${isLayer1 ? currentSection?.color : '#8b5cf6'}`
+                            ? `1px solid ${isLayer1 ? currentSection?.color : 'var(--purple)'}`
                             : '1px solid var(--border)',
-                          color: selectedOption === i ? '#fff' : '#a1a1aa',
+                          color: selectedOption === i ? '#fff' : 'var(--text-muted)',
                           transform: selectedOption === i ? 'scale(1.01)' : 'scale(1)',
                         }}>
                         <span className="text-xs font-black mr-3"
-                          style={{ color: selectedOption === i ? (isLayer1 ? currentSection?.color : '#8b5cf6') : '#3f3f46' }}>
+                          style={{ color: selectedOption === i ? (isLayer1 ? currentSection?.color : 'var(--purple)') : 'var(--text-faint)' }}>
                           {String.fromCharCode(65 + i)}
                         </span>
                         {opt}
@@ -870,10 +876,10 @@ export default function GrowthHub() {
             {testLoading && (
               <div className="text-center mt-20 space-y-5">
                 <div className="relative w-14 h-14 mx-auto">
-                  <div className="absolute inset-0 rounded-full border-2 border-purple-900 animate-spin"
-                    style={{ borderTopColor: '#8b5cf6' }} />
-                  <div className="absolute inset-2 rounded-full border-2 border-blue-900 animate-spin"
-                    style={{ borderTopColor: '#3b82f6', animationDirection: 'reverse', animationDuration: '0.8s' }} />
+                  <div className="absolute inset-0 rounded-full animate-spin"
+                    style={{ border: '2px solid color-mix(in srgb, var(--purple) 30%, transparent)', borderTopColor: 'var(--purple)' }} />
+                  <div className="absolute inset-2 rounded-full animate-spin"
+                    style={{ border: '2px solid color-mix(in srgb, var(--blue) 30%, transparent)', borderTopColor: 'var(--blue)', animationDirection: 'reverse', animationDuration: '0.8s' }} />
                 </div>
                 <div>
                   <p className="text-[color:var(--text-secondary)] text-sm font-semibold mb-1">AI is mapping your career DNA</p>
@@ -917,11 +923,11 @@ export default function GrowthHub() {
                       <div>
                         <p className="font-black text-[color:var(--text-primary)] text-base">{career.title}</p>
                         {career.ikigaiFit && (
-                          <p className="text-xs mt-0.5" style={{ color: '#8b5cf6' }}>☯ {career.ikigaiFit}</p>
+                          <p className="text-xs mt-0.5" style={{ color: 'var(--purple)' }}>☯ {career.ikigaiFit}</p>
                         )}
                       </div>
                       <span className="font-black text-lg flex-shrink-0"
-                        style={{ color: career.match>=80 ? '#10b981' : career.match>=60 ? '#8b5cf6' : '#f59e0b' }}>
+                        style={{ color: career.match>=80 ? 'var(--accent)' : career.match>=60 ? 'var(--purple)' : 'var(--amber)' }}>
                         {career.match}%
                       </span>
                     </div>
@@ -930,10 +936,10 @@ export default function GrowthHub() {
                         style={{
                           width: `${career.match}%`,
                           background: career.match>=80
-                            ? 'linear-gradient(90deg,#10b981,#34d399)'
+                            ? 'linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 60%, white))'
                             : career.match>=60
-                            ? 'linear-gradient(90deg,#8b5cf6,#a78bfa)'
-                            : 'linear-gradient(90deg,#f59e0b,#fbbf24)',
+                            ? 'linear-gradient(90deg, var(--purple), color-mix(in srgb, var(--purple) 60%, white))'
+                            : 'linear-gradient(90deg, var(--amber), color-mix(in srgb, var(--amber) 60%, white))',
                         }} />
                     </div>
                     <p className="text-[color:var(--text-muted)] text-xs leading-relaxed mb-3">{career.reason}</p>
@@ -941,7 +947,7 @@ export default function GrowthHub() {
                       <div className="flex flex-wrap gap-1.5 mb-3">
                         {career.strengths.map((s: string, j: number) => (
                           <span key={j} className="text-[10px] px-2 py-1 rounded-full"
-                            style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', color: '#71717a' }}>
+                            style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
                             {s}
                           </span>
                         ))}
@@ -949,7 +955,7 @@ export default function GrowthHub() {
                     )}
                     <button onClick={() => handleBuildRoadmap(career.title)}
                       className="text-xs px-3.5 py-1.5 rounded-xl font-semibold transition-all"
-                      style={{ background: 'rgba(16,185,129,0.1)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
+                      style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}>
                       🗺️ Build Roadmap →
                     </button>
                   </div>
@@ -968,8 +974,8 @@ export default function GrowthHub() {
         {activeTab === 'roadmap' && (
           <div className="space-y-4">
             <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
-              style={{ background: 'rgba(16,185,129,0.05)', border: '1px solid rgba(16,185,129,0.1)' }}>
-              <span className="text-emerald-400 mt-0.5">🗺️</span>
+              style={{ background: 'color-mix(in srgb, var(--accent) 5%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 10%, transparent)' }}>
+              <span style={{ color: 'var(--accent)' }} className="mt-0.5">🗺️</span>
               <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">
                 Enter your target career and AI will generate a phased, resource-backed learning roadmap.
               </p>
@@ -984,12 +990,13 @@ export default function GrowthHub() {
               disabled={roadmapLoading || !roadmapCareer}
               className="w-full font-bold py-3.5 rounded-2xl transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed"
               style={{
-                background: roadmapLoading ? 'rgba(16,185,129,0.12)' : 'linear-gradient(135deg,#10b981 0%,#059669 100%)',
-                boxShadow: roadmapLoading ? 'none' : '0 0 40px rgba(16,185,129,0.18)',
+                background: roadmapLoading ? 'var(--accent-bg)' : `linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 80%, black) 100%)`,
+                color: '#fff',
+                boxShadow: roadmapLoading ? 'none' : '0 0 40px var(--accent-bg)',
               }}>
               {roadmapLoading
                 ? <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-emerald-300/30 border-t-emerald-300 rounded-full animate-spin" />
+                    <span className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid color-mix(in srgb, var(--accent) 30%, transparent)', borderTopColor: 'var(--accent)' }} />
                     Building your roadmap...
                   </span>
                 : '🗺️ Generate Learning Roadmap'}
@@ -1006,11 +1013,11 @@ export default function GrowthHub() {
                     <div key={i} className="flex gap-4 mb-3">
                       <div className="flex flex-col items-center flex-shrink-0">
                         <div className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm flex-shrink-0"
-                          style={{ background: 'rgba(16,185,129,0.15)', border: '1px solid rgba(16,185,129,0.25)', color: '#10b981' }}>
+                          style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)', color: 'var(--accent)' }}>
                           {phase.phase}
                         </div>
                         {i < roadmapResult.phases.length - 1 && (
-                          <div className="w-px flex-1 mt-2" style={{ background: 'rgba(16,185,129,0.15)', minHeight: '24px' }} />
+                          <div className="w-px flex-1 mt-2" style={{ background: 'color-mix(in srgb, var(--accent) 15%, transparent)', minHeight: '24px' }} />
                         )}
                       </div>
                       <div className="flex-1 rounded-2xl p-4 space-y-3 mb-1"
@@ -1020,14 +1027,14 @@ export default function GrowthHub() {
                             <p className="font-bold text-[color:var(--text-primary)] text-sm">{phase.title}</p>
                             <span className="text-[color:var(--text-muted)] text-xs">{phase.duration}</span>
                           </div>
-                          <p className="text-emerald-400 text-xs">🎯 {phase.goal}</p>
+                          <p className="text-xs" style={{ color: 'var(--accent)' }}>🎯 {phase.goal}</p>
                         </div>
                         <div>
                           <p className="text-[color:var(--text-faint)] text-[9px] font-bold tracking-[0.15em] uppercase mb-2">Topics</p>
                           <div className="flex flex-wrap gap-1.5">
                             {phase.topics?.map((topic: string, j: number) => (
                               <span key={j} className="text-[10px] px-2.5 py-1 rounded-full font-medium"
-                                style={{ background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.15)', color: '#34d399' }}>
+                                style={{ background: 'var(--accent-bg)', border: '1px solid color-mix(in srgb, var(--accent) 15%, transparent)', color: 'var(--accent)' }}>
                                 {topic}
                               </span>
                             ))}
