@@ -44,6 +44,7 @@ export default function OnboardingPage() {
     target_companies: [] as string[],
     linkedin_url: '',
     github_url: '',
+    stackoverflow_url: '',
     portfolio_url: '',
     resume_url: '',
   })
@@ -73,6 +74,7 @@ export default function OnboardingPage() {
           target_companies: profile.target_companies || [],
           linkedin_url: profile.linkedin_url || '',
           github_url: profile.github_url || '',
+          stackoverflow_url: profile.stackoverflow_url || '',
           portfolio_url: profile.portfolio_url || '',
           resume_url: profile.resume_url || '',
         })
@@ -344,6 +346,23 @@ export default function OnboardingPage() {
                   onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
                 />
                 {linkErrors.github_url && <p className="text-[11px] mt-1" style={{ color: '#f43f5e' }}>{linkErrors.github_url}</p>}
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold mb-1.5 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--amber)"><path d="M17.36 20.2v-4.15h1.38V21.6H5.65v-5.55h1.38v4.15h10.33zM8.36 14.66l.29-1.36 6.8 1.44-.29 1.35-6.8-1.43zm.93-3.36l.59-1.26 6.31 2.95-.59 1.26-6.31-2.95zm1.79-3.19l.9-1.06 5.38 4.53-.9 1.06-5.38-4.53zM13.66 4.5l4.53 3.77-.88 1.06L12.78 5.56 13.66 4.5zM9.55 17.87h6.9v1.38h-6.9v-1.38zM11.7 2.16l1.14-.79 3.06 4.42-1.14.79-3.06-4.42z"/></svg>
+                  StackOverflow Profile
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://stackoverflow.com/users/12345/yourname"
+                  value={form.stackoverflow_url}
+                  onChange={e => setForm(f => ({ ...f, stackoverflow_url: e.target.value }))}
+                  className="w-full rounded-xl px-4 py-2.5 text-sm transition-all duration-200 focus:outline-none"
+                  style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--blue)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                />
               </div>
 
               <div>
