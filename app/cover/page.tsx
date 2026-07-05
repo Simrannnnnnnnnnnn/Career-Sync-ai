@@ -220,7 +220,7 @@ export default function CoverLetter() {
             disabled={loading || !jobTitle || !company}
             className="w-full font-semibold py-3.5 md:py-4 rounded-2xl transition text-sm md:text-base disabled:opacity-40 disabled:cursor-not-allowed"
             style={{
-              background: loading ? 'var(--coral-bg)' : 'linear-gradient(135deg, var(--coral), #ef4444)',
+              background: loading ? 'var(--coral-bg)' : `linear-gradient(135deg, var(--coral), color-mix(in srgb, var(--coral) 70%, red))`,
               boxShadow: loading ? 'none' : '0 0 30px var(--coral-bg)',
               color: '#fff',
             }}

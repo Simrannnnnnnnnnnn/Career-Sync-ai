@@ -194,7 +194,7 @@ export default function JobTracker() {
             <button
               onClick={() => router.push('/roadmap')}
               className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all duration-300 hover:scale-[1.02]"
-              style={{ background: `linear-gradient(90deg, var(--accent), #059669)`, color: '#fff', boxShadow: '0 4px 14px var(--accent-bg)' }}
+              style={{ background: `linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black))`, color: '#fff', boxShadow: '0 4px 14px var(--accent-bg)' }}
             >
               <span>View Career Roadmap</span>
               <span className="text-xs">⚡</span>
