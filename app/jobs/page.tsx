@@ -5,18 +5,18 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
 const COLS = [
-  { id: 'applied',   label: 'Applied',   dot: 'bg-emerald-500',   text: 'text-emerald-400',   border: 'border-emerald-500/20',   glow: 'shadow-[0_0_15px_rgba(16,185,129,0.15)]' },
-  { id: 'interview', label: 'Interview', dot: 'bg-purple-500',  text: 'text-purple-400',  border: 'border-purple-500/20',  glow: 'shadow-[0_0_15px_rgba(168,85,247,0.15)]' },
-  { id: 'offer',     label: 'Offer',     dot: 'bg-blue-500',    text: 'text-blue-400',    border: 'border-blue-500/20',    glow: 'shadow-[0_0_15px_rgba(59,130,246,0.15)]' },
-  { id: 'rejected',  label: 'Rejected',  dot: 'bg-[color:var(--text-faint)]',    text: 'text-[color:var(--text-secondary)]',    border: 'border-[color:var(--text-faint)]',    glow: 'shadow-none' },
+  { id: 'applied',   label: 'Applied',   color: 'var(--accent)', bg: 'var(--accent-bg)', border: 'var(--accent-border)' },
+  { id: 'interview', label: 'Interview', color: 'var(--purple)', bg: 'var(--purple-bg)', border: 'var(--purple-bg)' },
+  { id: 'offer',     label: 'Offer',     color: 'var(--blue)',   bg: 'var(--blue-bg)',   border: 'var(--blue-bg)' },
+  { id: 'rejected',  label: 'Rejected',  color: 'var(--text-faint)', bg: 'var(--bg-subtle)', border: 'var(--border)' },
 ]
 
-const TYPE_COLORS: Record<string, string> = {
-  'Full-time':  'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20',
-  'Remote':     'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20',
-  'Internship': 'bg-pink-500/10 text-pink-400 border border-pink-500/20',
-  'Contract':   'bg-amber-500/10 text-amber-400 border border-amber-500/20',
-  'Hybrid':     'bg-purple-500/10 text-purple-400 border border-purple-500/20',
+const TYPE_COLORS: Record<string, { color: string; bg: string }> = {
+  'Full-time':  { color: 'var(--accent)', bg: 'var(--accent-bg)' },
+  'Remote':     { color: 'var(--blue)', bg: 'var(--blue-bg)' },
+  'Internship': { color: 'var(--coral)', bg: 'var(--coral-bg)' },
+  'Contract':   { color: 'var(--amber)', bg: 'var(--amber-bg)' },
+  'Hybrid':     { color: 'var(--purple)', bg: 'var(--purple-bg)' },
 }
 
 type Job = {
@@ -82,7 +82,7 @@ export default function JobTracker() {
   }
 
   async function saveJob() {
-    if (!form.title || !form.company) return alert('Title aur Company zaroori hai!')
+    if (!form.title || !form.company) return alert('Title and Company are required!')
     setSaving(true)
     if (editJob) {
       await fetch('/api/job-tracker', {
@@ -103,7 +103,7 @@ export default function JobTracker() {
   }
 
   async function deleteJob(id: string) {
-    if (!confirm('Delete karna chahte ho?')) return
+    if (!confirm('Are you sure you want to delete this?')) return
     await fetch('/api/job-tracker', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
@@ -122,51 +122,79 @@ export default function JobTracker() {
   }
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-base)] text-[color:var(--text-primary)] p-4 md:p-8 selection:bg-emerald-500/30 selection:text-emerald-200 antialiased">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div
+      className="min-h-screen p-4 md:p-8 antialiased relative"
+      style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+    >
+      <div className="max-w-6xl mx-auto space-y-8 relative z-10">
 
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none -z-10" />
-        <div className="absolute top-20 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+        <div
+          className="absolute top-0 left-1/4 w-96 h-96 rounded-full pointer-events-none -z-10"
+          style={{ background: 'var(--accent-bg)', filter: 'blur(120px)' }}
+        />
+        <div
+          className="absolute top-20 right-1/4 w-96 h-96 rounded-full pointer-events-none -z-10"
+          style={{ background: 'var(--purple-bg)', filter: 'blur(120px)' }}
+        />
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[color:var(--border)] pb-6">
+        <div
+          className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6"
+          style={{ borderBottom: '1px solid var(--border)' }}
+        >
           <div>
-            <h1 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-[color:var(--text-primary)] via-[color:var(--text-primary)] to-[color:var(--text-secondary)] bg-clip-text text-transparent">
+            <h1 className="text-3xl font-extrabold tracking-tight" style={{ color: 'var(--text-primary)' }}>
               Job Tracker
             </h1>
-            <p className="text-[color:var(--text-secondary)] text-sm mt-1">Apni application pipeline optimize karein</p>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
+              Optimize your application pipeline
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button
               onClick={() => router.push('/dashboard')}
-              className="text-[color:var(--text-secondary)] hover:text-white text-sm border border-[color:var(--border)] bg-[color:var(--bg-card)] backdrop-blur-md px-4 py-2.5 rounded-xl transition-all duration-200"
+              className="text-sm px-4 py-2.5 rounded-xl transition-all duration-200"
+              style={{ color: 'var(--text-secondary)', background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+              onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)' }}
+              onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)' }}
             >
               ← Dashboard
             </button>
             <button
               onClick={openAdd}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 shadow-lg shadow-emerald-600/20 hover:shadow-emerald-500/30 hover:-translate-y-0.5 active:translate-y-0"
+              className="px-5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+              style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 4px 14px var(--accent-bg)' }}
             >
               + Add Application
             </button>
           </div>
         </div>
 
-        <div className="relative overflow-hidden rounded-2xl border border-emerald-500/20 bg-gradient-to-br from-zinc-900/90 to-emerald-950/20 p-6 shadow-xl backdrop-blur-md">
-          <div className="absolute -right-16 -top-16 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div
+          className="relative overflow-hidden rounded-2xl p-6"
+          style={{ border: '1px solid var(--accent-border)', background: 'var(--bg-card)', boxShadow: 'var(--shadow-card)' }}
+        >
+          <div
+            className="absolute -right-16 -top-16 w-48 h-48 rounded-full pointer-events-none"
+            style={{ background: 'var(--accent-bg)', filter: 'blur(60px)' }}
+          />
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
             <div className="space-y-2">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium text-emerald-400 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Growth Analytics
+              <span
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full"
+                style={{ color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}
+              >
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} /> Growth Analytics
               </span>
-              <h2 className="text-xl font-bold text-white">Aapki Career Raftaar</h2>
-              <p className="text-sm text-[color:var(--text-secondary)] max-w-xl">
-                Total <span className="text-emerald-400 font-semibold">{jobs.length} jobs</span> track ho rahe hain. Lagatar apply karte rahein aur metrics monitor karein.
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Career Momentum</h2>
+              <p className="text-sm max-w-xl" style={{ color: 'var(--text-secondary)' }}>
+                You're tracking a total of <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{jobs.length} jobs</span>. Keep applying consistently and monitor your metrics.
               </p>
             </div>
-            
-            <button 
+
+            <button
               onClick={() => router.push('/roadmap')}
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-medium text-sm transition-all duration-300 shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:scale-[1.02]"
+              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all duration-300 hover:scale-[1.02]"
+              style={{ background: `linear-gradient(90deg, var(--accent), #059669)`, color: '#fff', boxShadow: '0 4px 14px var(--accent-bg)' }}
             >
               <span>View Career Roadmap</span>
               <span className="text-xs">⚡</span>
@@ -175,17 +203,23 @@ export default function JobTracker() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
+
           <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
             {COLS.map(col => {
               const count = jobs.filter(j => j.status === col.id).length
               return (
-                <div key={col.id} className="group bg-[color:var(--bg-card)] backdrop-blur-md rounded-2xl border border-[color:var(--border)] p-4 transition-all duration-300 hover:border-[color:var(--border-strong)]">
-                  <div className={`text-3xl font-extrabold tracking-tight ${col.text}`}>
+                <div
+                  key={col.id}
+                  className="group rounded-2xl p-4 transition-all duration-300"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                  onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-strong)' }}
+                  onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                >
+                  <div className="text-3xl font-extrabold tracking-tight" style={{ color: col.color }}>
                     {count}
                   </div>
-                  <div className="text-[color:var(--text-muted)] text-xs font-medium mt-2 flex items-center gap-1.5">
-                    <span className={`w-1.5 h-1.5 rounded-full ${col.dot}`} />
+                  <div className="text-xs font-medium mt-2 flex items-center gap-1.5" style={{ color: 'var(--text-muted)' }}>
+                    <span className="w-1.5 h-1.5 rounded-full" style={{ background: col.color }} />
                     {col.label}
                   </div>
                 </div>
@@ -193,23 +227,37 @@ export default function JobTracker() {
             })}
           </div>
 
-          <div className="bg-gradient-to-br from-zinc-900/90 to-purple-950/20 border border-purple-500/20 rounded-2xl p-5 backdrop-blur-md flex flex-col justify-between">
+          <div
+            className="rounded-2xl p-5 flex flex-col justify-between"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--purple-bg)' }}
+          >
             <div>
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold text-purple-300 tracking-wide uppercase">Evaluate Skills</h3>
-                <span className="text-[10px] bg-purple-500/10 text-purple-400 border border-purple-500/20 rounded-full px-2 py-0.5 font-medium">Quick Test</span>
+                <h3 className="text-sm font-semibold tracking-wide uppercase" style={{ color: 'var(--purple)' }}>Evaluate Skills</h3>
+                <span
+                  className="text-[10px] rounded-full px-2 py-0.5 font-medium"
+                  style={{ background: 'var(--purple-bg)', color: 'var(--purple)', border: '1px solid var(--purple-bg)' }}
+                >
+                  Quick Test
+                </span>
               </div>
-              <p className="text-xs text-[color:var(--text-secondary)] mb-4 leading-relaxed">
-                Apni technical competence aur industry alignment check karne ke liye career test dein.
+              <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Take a career test to check your technical competence and industry alignment.
               </p>
             </div>
             <div className="space-y-3">
-              <div className="w-full bg-[color:var(--bg-subtle)] rounded-full h-1.5 overflow-hidden">
-                <div className="bg-purple-500 h-full rounded-full w-[65%] transition-all duration-500 shadow-[0_0_8px_rgba(168,85,247,0.5)]" />
+              <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
+                <div
+                  className="h-full rounded-full w-[65%] transition-all duration-500"
+                  style={{ background: 'var(--purple)', boxShadow: '0 0 8px var(--purple-bg)' }}
+                />
               </div>
-              <button 
+              <button
                 onClick={() => router.push('/career-test')}
-                className="w-full text-center py-2 bg-purple-600/20 hover:bg-purple-600 border border-purple-500/30 hover:border-purple-500 text-purple-300 hover:text-white rounded-xl text-xs font-semibold transition-all duration-200"
+                className="w-full text-center py-2 rounded-xl text-xs font-semibold transition-all duration-200"
+                style={{ background: 'var(--purple-bg)', color: 'var(--purple)', border: '1px solid var(--purple-bg)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--purple)'; e.currentTarget.style.color = '#fff' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--purple-bg)'; e.currentTarget.style.color = 'var(--purple)' }}
               >
                 Start Career Test →
               </button>
@@ -217,15 +265,19 @@ export default function JobTracker() {
           </div>
         </div>
 
-        <div className="flex items-center justify-between border-b border-[color:var(--border)] pb-3">
-          <div className="flex flex-wrap gap-1.5 bg-[color:var(--bg-card)] p-1 rounded-xl border border-[color:var(--border)] backdrop-blur-md">
+        <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
+          <div
+            className="flex flex-wrap gap-1.5 p-1 rounded-xl"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+          >
             <button
               onClick={() => setActiveTab('all')}
-              className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                activeTab === 'all' 
-                  ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm' 
-                  : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]'
-              }`}
+              className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
+              style={
+                activeTab === 'all'
+                  ? { background: 'var(--accent-bg)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }
+                  : { color: 'var(--text-secondary)', border: '1px solid transparent' }
+              }
             >
               All Columns
             </button>
@@ -233,11 +285,12 @@ export default function JobTracker() {
               <button
                 key={c.id}
                 onClick={() => setActiveTab(c.id)}
-                className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 ${
-                  activeTab === c.id 
-                    ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                    : 'text-[color:var(--text-secondary)] hover:text-[color:var(--text-primary)]'
-                }`}
+                className="px-4 py-1.5 rounded-lg text-xs font-medium transition-all duration-200"
+                style={
+                  activeTab === c.id
+                    ? { background: 'var(--accent-bg)', color: 'var(--accent)', border: '1px solid var(--accent-border)' }
+                    : { color: 'var(--text-secondary)', border: '1px solid transparent' }
+                }
               >
                 {c.label}
               </button>
@@ -247,74 +300,118 @@ export default function JobTracker() {
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-3">
-            <div className="w-6 h-6 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-            <div className="text-[color:var(--text-muted)] text-sm tracking-wide">Syncing your pipeline...</div>
+            <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+            <div className="text-sm tracking-wide" style={{ color: 'var(--text-muted)' }}>Syncing your pipeline...</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
             {COLS.filter(col => activeTab === 'all' || activeTab === col.id).map(col => {
               const colJobs = jobs.filter(j => j.status === col.id)
               return (
-                <div key={col.id} className="flex flex-col gap-3 w-full bg-[color:var(--bg-card)] p-3 rounded-2xl border border-[color:var(--border)] backdrop-blur-sm">
-
+                <div
+                  key={col.id}
+                  className="flex flex-col gap-3 w-full p-3 rounded-2xl"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}
+                >
                   <div className="flex items-center justify-between px-1 py-0.5">
-                    <div className={`flex items-center gap-2 text-xs font-bold tracking-wider uppercase ${col.text}`}>
-                      <span className={`w-2 h-2 rounded-full ${col.dot} ${col.glow}`} />
+                    <div className="flex items-center gap-2 text-xs font-bold tracking-wider uppercase" style={{ color: col.color }}>
+                      <span className="w-2 h-2 rounded-full" style={{ background: col.color }} />
                       {col.label}
                     </div>
-                    <span className="text-[11px] font-mono font-bold bg-[color:var(--bg-card)] text-[color:var(--text-secondary)] border border-[color:var(--border)] rounded-full px-2 py-0.5">
+                    <span
+                      className="text-[11px] font-mono font-bold rounded-full px-2 py-0.5"
+                      style={{ background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+                    >
                       {colJobs.length}
                     </span>
                   </div>
 
                   <div className="space-y-3 min-h-[150px]">
                     {colJobs.length === 0 ? (
-                      <div className={`border border-dashed ${col.border} rounded-xl p-6 text-center text-[color:var(--text-faint)] text-xs bg-[color:var(--bg-card)] transition-colors`}>
-                        Koi job nahi
+                      <div
+                        className="rounded-xl p-6 text-center text-xs"
+                        style={{ border: `1px dashed ${col.border}`, color: 'var(--text-faint)', background: 'var(--bg-card)' }}
+                      >
+                        No jobs yet
                       </div>
                     ) : (
                       colJobs.map(job => (
-                        <div 
-                          key={job.id} 
-                          className="group bg-[color:var(--bg-card)] backdrop-blur-md rounded-xl border border-[color:var(--border)] hover:border-[color:var(--border-strong)] p-4 transition-all duration-200 shadow-md hover:shadow-xl hover:-translate-y-0.5"
+                        <div
+                          key={job.id}
+                          className="group rounded-xl p-4 transition-all duration-200 hover:-translate-y-0.5"
+                          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = 'var(--border-strong)' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
                         >
                           <div className="flex items-start justify-between gap-3 mb-3">
                             <div className="flex items-center gap-2.5 min-w-0">
-                              <div className="w-8 h-8 rounded-lg bg-[color:var(--bg-subtle)] text-[color:var(--text-secondary)] flex items-center justify-center text-xs font-bold flex-shrink-0 border border-[color:var(--border-strong)] group-hover:border-[color:var(--border-strong)]">
+                              <div
+                                className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border-strong)' }}
+                              >
                                 {initials(job.company)}
                               </div>
                               <div className="min-w-0">
-                                <div className="text-sm font-semibold text-[color:var(--text-primary)] truncate group-hover:text-white transition-colors">{job.title}</div>
-                                <div className="text-xs text-[color:var(--text-muted)] truncate">{job.company}</div>
+                                <div className="text-sm font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{job.title}</div>
+                                <div className="text-xs truncate" style={{ color: 'var(--text-muted)' }}>{job.company}</div>
                               </div>
                             </div>
                             <div className="flex gap-0.5 opacity-40 group-hover:opacity-100 transition-opacity flex-shrink-0">
-                              <button onClick={() => openEdit(job)} className="text-[color:var(--text-secondary)] hover:text-white text-xs p-1 rounded hover:bg-[color:var(--bg-subtle)] transition">✏️</button>
-                              <button onClick={() => deleteJob(job.id)} className="text-[color:var(--text-secondary)] hover:text-rose-400 text-xs p-1 rounded hover:bg-[color:var(--bg-subtle)] transition">🗑️</button>
+                              <button
+                                onClick={() => openEdit(job)}
+                                className="text-xs p-1 rounded transition"
+                                style={{ color: 'var(--text-secondary)' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                              >
+                                ✏️
+                              </button>
+                              <button
+                                onClick={() => deleteJob(job.id)}
+                                className="text-xs p-1 rounded transition"
+                                style={{ color: 'var(--text-secondary)' }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.color = '#f43f5e' }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+                              >
+                                🗑️
+                              </button>
                             </div>
                           </div>
 
                           <div className="flex flex-wrap gap-1.5 mb-3">
                             {job.location && (
-                              <span className="text-[11px] font-medium bg-[color:var(--bg-subtle)] text-[color:var(--text-secondary)] rounded-md px-2 py-0.5 border border-[color:var(--border)]">
+                              <span
+                                className="text-[11px] font-medium rounded-md px-2 py-0.5"
+                                style={{ background: 'var(--bg-subtle)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+                              >
                                 📍 {job.location}
                               </span>
                             )}
                             {job.type && (
-                              <span className={`text-[11px] font-medium rounded-md px-2 py-0.5 ${TYPE_COLORS[job.type] || 'bg-[color:var(--bg-subtle)] text-[color:var(--text-secondary)]'}`}>
+                              <span
+                                className="text-[11px] font-medium rounded-md px-2 py-0.5"
+                                style={
+                                  TYPE_COLORS[job.type]
+                                    ? { background: TYPE_COLORS[job.type].bg, color: TYPE_COLORS[job.type].color, border: `1px solid ${TYPE_COLORS[job.type].bg}` }
+                                    : { background: 'var(--bg-subtle)', color: 'var(--text-secondary)' }
+                                }
+                              >
                                 {job.type}
                               </span>
                             )}
                           </div>
 
                           {job.note && (
-                            <div className="text-xs text-[color:var(--text-secondary)] bg-[color:var(--bg-base)] rounded-lg p-2.5 border-l-2 border-[color:var(--border-strong)] mb-3 break-words line-clamp-2 hover:line-clamp-none transition-all duration-300">
+                            <div
+                              className="text-xs rounded-lg p-2.5 mb-3 break-words line-clamp-2 hover:line-clamp-none transition-all duration-300"
+                              style={{ color: 'var(--text-secondary)', background: 'var(--bg-base)', borderLeft: '2px solid var(--border-strong)' }}
+                            >
                               {job.note}
                             </div>
                           )}
 
                           {job.date && (
-                            <div className="text-[10px] font-medium text-[color:var(--text-muted)] flex items-center gap-1">
+                            <div className="text-[10px] font-medium flex items-center gap-1" style={{ color: 'var(--text-muted)' }}>
                               📅 {formatDate(job.date)}
                             </div>
                           )}
@@ -330,62 +427,146 @@ export default function JobTracker() {
       </div>
 
       {modal && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn" onClick={() => setModal(false)}>
-          <div className="bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-2xl p-6 w-full max-w-md shadow-2xl shadow-black/80 backdrop-blur-xl transition-all relative transform scale-100" onClick={e => e.stopPropagation()}>
+        <div
+          className="fixed inset-0 flex items-center justify-center z-50 p-4 animate-fadeIn"
+          style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }}
+          onClick={() => setModal(false)}
+        >
+          <div
+            className="rounded-2xl p-6 w-full max-w-md relative"
+            style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', boxShadow: 'var(--shadow-card)' }}
+            onClick={e => e.stopPropagation()}
+          >
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-lg font-bold text-white tracking-tight">{editJob ? 'Edit Application Details' : 'Track New Application'}</h2>
-              <button onClick={() => setModal(false)} className="w-7 h-7 bg-[color:var(--bg-card)] hover:bg-[color:var(--bg-subtle)] text-[color:var(--text-secondary)] hover:text-white rounded-lg flex items-center justify-center text-xs border border-[color:var(--border)] transition-colors">✕</button>
+              <h2 className="text-lg font-bold tracking-tight" style={{ color: 'var(--text-primary)' }}>
+                {editJob ? 'Edit Application Details' : 'Track New Application'}
+              </h2>
+              <button
+                onClick={() => setModal(false)}
+                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs transition-colors"
+                style={{ background: 'var(--bg-card)', color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'var(--bg-card)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+              >
+                ✕
+              </button>
             </div>
 
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1.5 block">Job Title *</label>
-                  <input className="w-full bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-sm text-white placeholder-[color:var(--text-faint)] focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="e.g. Frontend Dev" value={form.title} onChange={e => setForm({...form, title: e.target.value})} />
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Job Title *</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    placeholder="e.g. Frontend Dev"
+                    value={form.title}
+                    onChange={e => setForm({ ...form, title: e.target.value })}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                  />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1.5 block">Company *</label>
-                  <input className="w-full bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-sm text-white placeholder-[color:var(--text-faint)] focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="e.g. Google" value={form.company} onChange={e => setForm({...form, company: e.target.value})} />
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Company *</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    placeholder="e.g. Google"
+                    value={form.company}
+                    onChange={e => setForm({ ...form, company: e.target.value })}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                  />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1.5 block">Location</label>
-                  <input className="w-full bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-sm text-white placeholder-[color:var(--text-faint)] focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition-all" placeholder="Bangalore / Remote" value={form.location} onChange={e => setForm({...form, location: e.target.value})} />
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Location</label>
+                  <input
+                    className="w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    placeholder="Bangalore / Remote"
+                    value={form.location}
+                    onChange={e => setForm({ ...form, location: e.target.value })}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                  />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1.5 block">Job Type</label>
-                  <select className="w-full bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all appearance-none" value={form.type} onChange={e => setForm({...form, type: e.target.value})}>
-                    {['Full-time','Remote','Hybrid','Internship','Contract'].map(t => <option key={t} className="bg-[color:var(--bg-card)] text-white">{t}</option>)}
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Job Type</label>
+                  <select
+                    className="w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none appearance-none"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    value={form.type}
+                    onChange={e => setForm({ ...form, type: e.target.value })}
+                  >
+                    {['Full-time', 'Remote', 'Hybrid', 'Internship', 'Contract'].map(t => (
+                      <option key={t} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{t}</option>
+                    ))}
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1.5 block">Status</label>
-                  <select className="w-full bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all" value={form.status} onChange={e => setForm({...form, status: e.target.value})}>
-                    {COLS.map(c => <option key={c.id} value={c.id} className="bg-[color:var(--bg-card)] text-white">{c.label}</option>)}
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Status</label>
+                  <select
+                    className="w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    value={form.status}
+                    onChange={e => setForm({ ...form, status: e.target.value })}
+                  >
+                    {COLS.map(c => (
+                      <option key={c.id} value={c.id} style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>{c.label}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1.5 block">Applied On</label>
-                  <input type="date" className="w-full bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 transition-all custom-calendar" value={form.date} onChange={e => setForm({...form, date: e.target.value})} />
+                  <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Applied On</label>
+                  <input
+                    type="date"
+                    className="w-full rounded-xl px-3 py-2 text-sm transition-all focus:outline-none"
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                    value={form.date}
+                    onChange={e => setForm({ ...form, date: e.target.value })}
+                    onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+                    onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="text-xs font-semibold text-[color:var(--text-secondary)] mb-1.5 block">Notes</label>
-                <textarea className="w-full bg-[color:var(--bg-card)] border border-[color:var(--border)] rounded-xl px-3 py-2 text-sm text-white placeholder-[color:var(--text-faint)] focus:outline-none focus:border-emerald-500 transition-all resize-none" rows={3} placeholder="Interview round updates, packages, referrals..." value={form.note} onChange={e => setForm({...form, note: e.target.value})} />
+                <label className="text-xs font-semibold mb-1.5 block" style={{ color: 'var(--text-secondary)' }}>Notes</label>
+                <textarea
+                  className="w-full rounded-xl px-3 py-2 text-sm transition-all resize-none focus:outline-none"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text-primary)' }}
+                  rows={3}
+                  placeholder="Interview round updates, packages, referrals..."
+                  value={form.note}
+                  onChange={e => setForm({ ...form, note: e.target.value })}
+                  onFocus={e => { e.currentTarget.style.borderColor = 'var(--accent)' }}
+                  onBlur={e => { e.currentTarget.style.borderColor = 'var(--border)' }}
+                />
               </div>
             </div>
 
             <div className="flex gap-2 justify-end mt-6">
-              <button onClick={() => setModal(false)} className="px-4 py-2 text-sm font-medium text-[color:var(--text-secondary)] border border-[color:var(--border)] rounded-xl hover:bg-[color:var(--bg-card)] hover:text-white transition-all">
+              <button
+                onClick={() => setModal(false)}
+                className="px-4 py-2 text-sm font-medium rounded-xl transition-all"
+                style={{ color: 'var(--text-secondary)', border: '1px solid var(--border)' }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'var(--bg-subtle)'; e.currentTarget.style.color = 'var(--text-primary)' }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--text-secondary)' }}
+              >
                 Cancel
               </button>
-              <button onClick={saveJob} disabled={saving} className="px-5 py-2 text-sm font-medium bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl disabled:opacity-50 transition-all shadow-lg shadow-emerald-600/10">
+              <button
+                onClick={saveJob}
+                disabled={saving}
+                className="px-5 py-2 text-sm font-medium rounded-xl disabled:opacity-50 transition-all"
+                style={{ background: 'var(--accent)', color: '#fff', boxShadow: '0 4px 14px var(--accent-bg)' }}
+              >
                 {saving ? 'Saving...' : editJob ? 'Save Changes' : 'Add Job'}
               </button>
             </div>

@@ -64,7 +64,7 @@ export default function ResumePage() {
       const data = await res.json()
       setResult(data.result)
     } catch {
-      alert('Error aaya — dobara try karo')
+      alert('Something went wrong — please try again')
     }
     setLoading(false)
   }

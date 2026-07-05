@@ -6,9 +6,6 @@ import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeProvider'
 
-/* ─────────────────────────────────────────
-   DATA
-───────────────────────────────────────── */
 const FEATURES = [
   {
     href: '/interview/setup',
