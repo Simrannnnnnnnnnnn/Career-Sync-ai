@@ -2,6 +2,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import { useTheme } from '@/components/ThemeProvider'
 
 type ProfileKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H'
 
@@ -343,6 +344,7 @@ const inputClass =
 function GrowthHubInner() {
   const [activeTab, setActiveTab] = useState('linkedin')
   const searchParams = useSearchParams()
+  const { theme } = useTheme()
 
   useEffect(() => {
     const tab = searchParams.get('tab')
@@ -507,7 +509,11 @@ function GrowthHubInner() {
   const overallTotal   = LAYER1_TOTAL + (ikigaiQuestions.length || 4)
 
   return (
-    <div className="min-h-screen bg-[color:var(--bg-base)] text-[color:var(--text-primary)]">
+    <div
+      className={`min-h-screen transition-colors duration-200 ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}
+      data-theme={theme}
+      style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
+    >
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         <div className="absolute top-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full"
           style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--accent) 6%, transparent) 0%, transparent 70%)' }} />

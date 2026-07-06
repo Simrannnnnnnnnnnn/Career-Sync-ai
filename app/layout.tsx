@@ -28,6 +28,9 @@ const themeScript = `
       var preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       var theme = stored || preferred;
       document.documentElement.setAttribute('data-theme', theme);
+      document.documentElement.style.colorScheme = theme;
+      document.body && document.body.setAttribute('data-theme', theme);
+      document.body && (document.body.style.colorScheme = theme);
     } catch(e) {}
   })();
 `

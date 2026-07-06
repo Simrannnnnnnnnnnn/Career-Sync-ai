@@ -24,6 +24,11 @@ function applyTheme(theme: Theme) {
   if (typeof document === 'undefined') return
   document.documentElement.setAttribute('data-theme', theme)
   document.documentElement.style.colorScheme = theme
+
+  if (document.body) {
+    document.body.setAttribute('data-theme', theme)
+    document.body.style.colorScheme = theme
+  }
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {

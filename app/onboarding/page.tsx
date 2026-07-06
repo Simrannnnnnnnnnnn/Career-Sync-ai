@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
+import { useTheme } from '@/components/ThemeProvider'
 
 const COLS = [
   { id: 'applied',   label: 'Applied',   color: 'var(--accent)', bg: 'var(--accent-bg)', border: 'var(--accent-border)' },
@@ -46,6 +47,7 @@ export default function JobTracker() {
   const [activeTab, setActiveTab] = useState<string>('all')
   const router = useRouter()
   const supabase = createClient()
+  const { theme } = useTheme()
 
   useEffect(() => {
     checkAuth()
@@ -123,7 +125,8 @@ export default function JobTracker() {
 
   return (
     <div
-      className="min-h-screen p-4 md:p-8 antialiased relative"
+      className={`min-h-screen p-4 md:p-8 antialiased relative transition-colors duration-200 ${theme === 'dark' ? 'bg-slate-950 text-white' : 'bg-slate-50 text-slate-900'}`}
+      data-theme={theme}
       style={{ background: 'var(--bg-base)', color: 'var(--text-primary)' }}
     >
       <div className="max-w-6xl mx-auto space-y-8 relative z-10">
