@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createClient } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/components/ThemeProvider'
@@ -256,28 +256,7 @@ export default function Dashboard() {
   const supabase = createClient()
   const router = useRouter()
 
-  useEffect(() => {
-    async function init() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
-      setUser(user)
-
-      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      setProfile(profileData)
-
-      await fetchStats(user.id)
-    }
-    init()
-
-    const h = new Date().getHours()
-    if (h < 12) { setTimeLabel('Good morning'); setVibe(VIBE.morning) }
-    else if (h < 17) { setTimeLabel('Good afternoon'); setVibe(VIBE.afternoon) }
-    else { setTimeLabel('Good evening'); setVibe(VIBE.evening) }
-
-    setTip(TIPS[Math.floor(Math.random() * TIPS.length)])
-  }, [])
-
-  async function fetchStats(userId: string) {
+  const fetchStats = useCallback(async (userId: string) => {
     setStatsLoading(true)
     try {
       // Interviews
@@ -324,7 +303,28 @@ export default function Dashboard() {
       console.error('Failed to fetch stats:', e)
     }
     setStatsLoading(false)
-  }
+  }, [supabase])
+
+  useEffect(() => {
+    async function init() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) { router.push('/login'); return }
+      setUser(user)
+
+      const { data: profileData } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      setProfile(profileData)
+
+      await fetchStats(user.id)
+    }
+    init()
+
+    const h = new Date().getHours()
+    if (h < 12) { setTimeLabel('Good morning'); setVibe(VIBE.morning) }
+    else if (h < 17) { setTimeLabel('Good afternoon'); setVibe(VIBE.afternoon) }
+    else { setTimeLabel('Good evening'); setVibe(VIBE.evening) }
+
+    setTip(TIPS[Math.floor(Math.random() * TIPS.length)])
+  }, [fetchStats, router, supabase])
 
   async function handleLogout() {
     await supabase.auth.signOut()

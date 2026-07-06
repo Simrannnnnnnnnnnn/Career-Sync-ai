@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, Suspense } from 'react'
+import { useCallback, useEffect, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 
@@ -59,7 +59,7 @@ function ReportInner() {
   const [saved,     setSaved]     = useState(false)
 
   // Save to Supabase
-  async function saveToSupabase(r: Report, durationSeconds: number) {
+  const saveToSupabase = useCallback(async (r: Report, durationSeconds: number) => {
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
@@ -81,7 +81,7 @@ function ReportInner() {
     } catch (e) {
       console.error('Failed to save interview:', e)
     }
-  }
+  }, [difficulty, role, round, supabase])
 
   useEffect(() => {
     async function generateReport() {
@@ -127,7 +127,7 @@ function ReportInner() {
     }
 
     generateReport()
-  }, [])
+  }, [role, round, difficulty, saveToSupabase])
 
   const verdictColor = report?.verdict === 'Ready' ? 'var(--accent)' : report?.verdict === 'Needs Practice' ? 'var(--amber)' : 'var(--coral)'
   const verdictBg    = report?.verdict === 'Ready' ? 'var(--accent-bg)' : report?.verdict === 'Needs Practice' ? 'var(--amber-bg)' : 'var(--coral-bg)'

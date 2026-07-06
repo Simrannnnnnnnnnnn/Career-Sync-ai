@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase'
 import { useTheme } from '@/components/ThemeProvider'
@@ -49,23 +49,23 @@ export default function JobTracker() {
   const supabase = createClient()
   const { theme } = useTheme()
 
-  useEffect(() => {
-    checkAuth()
-  }, [])
-
-  async function checkAuth() {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) { router.push('/login'); return }
-    fetchJobs()
-  }
-
-  async function fetchJobs() {
+  const fetchJobs = useCallback(async () => {
     setLoading(true)
     const res = await fetch('/api/job-tracker')
     const data = await res.json()
     setJobs(Array.isArray(data) ? data : [])
     setLoading(false)
-  }
+  }, [])
+
+  const checkAuth = useCallback(async () => {
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/login'); return }
+    fetchJobs()
+  }, [fetchJobs, router, supabase])
+
+  useEffect(() => {
+    checkAuth()
+  }, [checkAuth])
 
   function openAdd() {
     setEditJob(null)

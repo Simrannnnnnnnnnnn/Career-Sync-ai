@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef, Suspense } from 'react'
+import { useCallback, useEffect, useState, useRef, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 
 const COMPANY_TAGS: Record<string, string[]> = {
@@ -212,7 +212,7 @@ function MockInner() {
   const diffLabel = difficulty === 'easy'   ? 'Entry Level'
     : difficulty === 'medium' ? 'Mid Level' : 'Senior Level'
 
-  async function fetchQuestion(index: number) {
+  const fetchQuestion = useCallback(async (index: number) => {
     if (index === 0) setLoading(true)
     else setLoadingNext(true)
 
@@ -255,9 +255,9 @@ function MockInner() {
 
     setLoading(false)
     setLoadingNext(false)
-  }
+  }, [difficulty, role, round])
 
-  useEffect(() => { fetchQuestion(0) }, [])
+  useEffect(() => { fetchQuestion(0) }, [fetchQuestion])
 
   function handleNext() {
     if (userAnswer.trim()) setSavedAnswers(p => ({ ...p, [currentIndex]: userAnswer }))

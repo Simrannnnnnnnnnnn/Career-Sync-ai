@@ -155,7 +155,7 @@ export default function ProfileOptimizerPage() {
       setLoadingProfile(false)
     }
     init()
-  }, [])
+  }, [router, supabase])
 
   async function analyzeGithub() {
     if (!githubUrl.trim()) return

@@ -22,7 +22,7 @@ export default function ProfilePage() {
       setLoading(false)
     }
     getUser()
-  }, [])
+  }, [router, supabase])
 
   async function handleLogout() {
     await supabase.auth.signOut()

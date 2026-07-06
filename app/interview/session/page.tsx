@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, Suspense } from 'react'
+import { useCallback, useEffect, useRef, useState, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
@@ -175,6 +175,30 @@ function InterviewSessionInner() {
     a.click(); URL.revokeObjectURL(url)
   }
 
+  // ── Proctoring ────────────────────────────────────────────────────────────
+  const triggerViolation = useCallback((type: 'tab' | 'fullscreen' = 'tab') => {
+    if (!sessionStarted || interviewDone) return
+    warningRef.current += 1
+    const count = warningRef.current
+    setTabWarnings(count)
+    if (count >= 3) {
+      playWarningBeep('critical')
+      setWarningMsg('🚫 Session Terminated — 3 violations detected. Redirecting...')
+      setShowWarning(true)
+      stopCamera(); window.speechSynthesis.cancel()
+      setTimeout(() => router.push('/dashboard'), 3500)
+    } else {
+      playWarningBeep(count === 2 ? 'critical' : 'warn')
+      setWarningMsg(
+        type === 'tab'
+          ? `Warning ${count}/3 — Tab/window switch detected. Third violation terminates session.`
+          : `Warning ${count}/3 — Fullscreen exited. Stay in fullscreen during the interview.`
+      )
+      setShowWarning(true)
+      setTimeout(() => setShowWarning(false), 5000)
+    }
+  }, [interviewDone, router, sessionStarted])
+
   // ── Fullscreen ────────────────────────────────────────────────────────────
   function enterFullscreen() {
     try {
@@ -198,31 +222,7 @@ function InterviewSessionInner() {
       document.removeEventListener('fullscreenchange', handler)
       document.removeEventListener('webkitfullscreenchange', handler)
     }
-  }, [sessionStarted, interviewDone])
-
-  // ── Proctoring ────────────────────────────────────────────────────────────
-  function triggerViolation(type: 'tab' | 'fullscreen' = 'tab') {
-    if (!sessionStarted || interviewDone) return
-    warningRef.current += 1
-    const count = warningRef.current
-    setTabWarnings(count)
-    if (count >= 3) {
-      playWarningBeep('critical')
-      setWarningMsg('🚫 Session Terminated — 3 violations detected. Redirecting...')
-      setShowWarning(true)
-      stopCamera(); window.speechSynthesis.cancel()
-      setTimeout(() => router.push('/dashboard'), 3500)
-    } else {
-      playWarningBeep(count === 2 ? 'critical' : 'warn')
-      setWarningMsg(
-        type === 'tab'
-          ? `Warning ${count}/3 — Tab/window switch detected. Third violation terminates session.`
-          : `Warning ${count}/3 — Fullscreen exited. Stay in fullscreen during the interview.`
-      )
-      setShowWarning(true)
-      setTimeout(() => setShowWarning(false), 5000)
-    }
-  }
+  }, [interviewDone, sessionStarted, triggerViolation])
 
   useEffect(() => {
     if (!sessionStarted || interviewDone) return
@@ -234,7 +234,7 @@ function InterviewSessionInner() {
       document.removeEventListener('visibilitychange', onVis)
       window.removeEventListener('blur', onBlur)
     }
-  }, [sessionStarted, interviewDone])
+  }, [interviewDone, sessionStarted, triggerViolation])
 
   // ── AI tool detection — copy/paste ALLOWED in coding mode ─────────────────
   useEffect(() => {
@@ -273,7 +273,7 @@ function InterviewSessionInner() {
       document.removeEventListener('contextmenu', noCtx)
       clearInterval(devCheck)
     }
-  }, [sessionStarted, interviewDone, isCodingMode])
+  }, [sessionStarted, interviewDone, isCodingMode, triggerViolation])
 
   // ── TTS ───────────────────────────────────────────────────────────────────
   function speakText(text: string) {
