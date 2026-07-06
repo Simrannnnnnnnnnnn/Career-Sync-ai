@@ -319,6 +319,45 @@ function getIkigaiQuestions(topProfiles: ProfileKey[]): IkigaiQuestion[] {
 const layer1Questions = layer1Sections.flatMap(s => s.questions.map(q => ({ ...q, section: s })))
 const LAYER1_TOTAL = layer1Questions.length
 
+const discoveryQuestions = [
+  {
+    id: 'disc1',
+    q: 'Which subjects or activities feel most natural to you right now?',
+    options: [
+      'Science, math, and logic-based problem solving',
+      'Technology, coding, AI, and building tools',
+      'Medicine, healthcare, or biology-related work',
+      'Business, finance, and strategy',
+      'Design, art, writing, or creative expression',
+      'People, teaching, counselling, or helping professions',
+    ],
+  },
+  {
+    id: 'disc2',
+    q: 'What kind of daily work sounds most exciting to you?',
+    options: [
+      'Solving analytical puzzles and making sharp decisions',
+      'Creating products, systems, or technology that people use',
+      'Working directly with people and improving their lives',
+      'Building ideas through design, storytelling, or creativity',
+      'Leading a team and making important strategic choices',
+      'Running operations and making things work smoothly',
+    ],
+  },
+  {
+    id: 'disc3',
+    q: 'Which career environments would you genuinely enjoy exploring?',
+    options: [
+      'Labs, research, analytics, or technical problem solving',
+      'Startups, engineering teams, or AI-driven companies',
+      'Hospitals, clinics, schools, or social-impact spaces',
+      'Media, design studios, content, or brand work',
+      'Corporate leadership, consulting, or business roles',
+      'Operations, logistics, manufacturing, or project delivery',
+    ],
+  },
+]
+
 function computeTopProfiles(answers: { profile: ProfileKey }[]): ProfileKey[] {
   const counts: Record<string, number> = {}
   answers.forEach(a => { counts[a.profile] = (counts[a.profile] || 0) + 1 })
@@ -366,6 +405,12 @@ function GrowthHubInner() {
   const [portfolioResult, setPortfolioResult] = useState<any>(null)
 
   const [testStarted,    setTestStarted]    = useState(false)
+  const [assessmentStage, setAssessmentStage] = useState<'intro' | 'discovery' | 'assessment'>('intro')
+  const [educationLevel, setEducationLevel] = useState('')
+  const [marks, setMarks] = useState('')
+  const [academicNotes, setAcademicNotes] = useState('')
+  const [discoveryStep, setDiscoveryStep] = useState(0)
+  const [discoveryAnswers, setDiscoveryAnswers] = useState<string[]>([])
   const [layer,          setLayer]          = useState<1|2>(1)
   const [currentQ,       setCurrentQ]       = useState(0)
   const [l1Answers,      setL1Answers]      = useState<{ profile: ProfileKey; text: string }[]>([])
@@ -378,6 +423,32 @@ function GrowthHubInner() {
   const [roadmapCareer,  setRoadmapCareer]  = useState('')
   const [roadmapLoading, setRoadmapLoading] = useState(false)
   const [roadmapResult,  setRoadmapResult]  = useState<any>(null)
+
+  function handleStartAssessment() {
+    if (!educationLevel || !marks) return
+    setAssessmentStage('discovery')
+    setDiscoveryStep(0)
+    setDiscoveryAnswers([])
+  }
+
+  function handleDiscoveryOption(idx: number) {
+    const chosen = discoveryQuestions[discoveryStep].options[idx]
+    const nextAnswers = [...discoveryAnswers, chosen]
+    setDiscoveryAnswers(nextAnswers)
+
+    if (discoveryStep + 1 < discoveryQuestions.length) {
+      setDiscoveryStep(discoveryStep + 1)
+    } else {
+      setAssessmentStage('assessment')
+      setTestStarted(true)
+      setLayer(1)
+      setCurrentQ(0)
+      setL1Answers([])
+      setL2Answers([])
+      setIkigaiQuestions([])
+      setSelectedOption(null)
+    }
+  }
 
   async function analyzeLinkedIn() {
     if (!headline && !about && !skills) return
@@ -472,6 +543,12 @@ function GrowthHubInner() {
           topProfiles,
           framework: '4Ps-two-layer-Ikigai',
           sections: layer1Sections.map(s => s.label),
+          academicBackground: {
+            educationLevel,
+            marks,
+            notes: academicNotes,
+          },
+          discoveryAnswers,
         }),
       })
       setTestResult(await res.json())
@@ -482,7 +559,8 @@ function GrowthHubInner() {
   function resetTest() {
     setCurrentQ(0); setL1Answers([]); setL2Answers([])
     setTestResult(null); setTestStarted(false)
-    setSelectedOption(null); setLayer(1); setIkigaiQuestions([])
+    setAssessmentStage('intro'); setEducationLevel(''); setMarks(''); setAcademicNotes('')
+    setSelectedOption(null); setLayer(1); setIkigaiQuestions([]); setDiscoveryStep(0); setDiscoveryAnswers([])
   }
 
   async function generateRoadmap() {
@@ -921,7 +999,7 @@ function GrowthHubInner() {
         {activeTab === 'career-test' && (
           <div className="max-w-2xl mx-auto">
 
-            {!testStarted && !testResult && (
+            {!testStarted && !testResult && assessmentStage === 'intro' && (
               <div className="space-y-5">
                 <div className="relative rounded-3xl p-7 md:p-8 overflow-hidden text-center"
                   style={{
@@ -932,22 +1010,52 @@ function GrowthHubInner() {
                     style={{ background: 'color-mix(in srgb, var(--purple) 15%, transparent)', filter: 'blur(35px)' }} />
                   <div className="relative">
                     <div className="text-4xl mb-3">🧪</div>
-                    <h2 className="text-xl md:text-2xl font-black mb-1">Career Path Test</h2>
+                    <h2 className="text-xl md:text-2xl font-black mb-1">Career Guidance Assessment</h2>
                     <p className="text-[color:var(--text-muted)] text-sm mb-1">
-                      2-layer system · {LAYER1_TOTAL} + 4 adaptive questions
+                      A guided, counselor-style assessment · {LAYER1_TOTAL} + 4 adaptive questions
                     </p>
                     <p className="text-[color:var(--text-muted)] text-xs mb-2">
-                      Layer 1 covers all career types across 4 P's — analytical, creative, management, operations, social, and more.
+                      We begin with your academic background so the advice feels realistic and personal.
                     </p>
                     <p className="text-[color:var(--text-muted)] text-xs mb-6">
-                      Layer 2 unlocks personalised Ikigai questions based on YOUR specific profile pattern.
+                      Then we explore your natural strengths, preferred work style, and what daily life in a career would actually look like.
                     </p>
-                    <button onClick={() => setTestStarted(true)}
-                      className="font-bold px-8 py-3 rounded-2xl transition-all text-sm"
-                      style={{ background: 'linear-gradient(135deg, var(--purple), var(--indigo))', color: '#fff', boxShadow: '0 0 30px color-mix(in srgb, var(--purple) 25%, transparent)' }}>
-                      Start the Test →
-                    </button>
                   </div>
+                </div>
+
+                <div className="rounded-2xl p-5 space-y-4"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase">Before we begin</p>
+                  <div>
+                    <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">Current education level</label>
+                    <select value={educationLevel} onChange={e => setEducationLevel(e.target.value)}
+                      className={inputClass} style={glass}>
+                      <option value="">Select your current stage</option>
+                      <option value="10th grade">10th grade</option>
+                      <option value="12th grade">12th grade</option>
+                      <option value="Diploma">Diploma</option>
+                      <option value="Undergraduate">Undergraduate</option>
+                      <option value="Postgraduate">Postgraduate</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">Marks or grades</label>
+                    <input type="text" value={marks} onChange={e => setMarks(e.target.value)}
+                      placeholder="e.g. 78%, 8.2 CGPA, A grade"
+                      className={inputClass} style={glass} />
+                  </div>
+                  <div>
+                    <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">What subjects or activities feel most natural?</label>
+                    <textarea value={academicNotes} onChange={e => setAcademicNotes(e.target.value)} rows={3}
+                      placeholder="Tell us a little about your interests, preferred subjects, or strengths..."
+                      className={inputClass} style={glass} />
+                  </div>
+                  <button onClick={handleStartAssessment}
+                    disabled={!educationLevel || !marks}
+                    className="w-full font-bold px-8 py-3 rounded-2xl transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+                    style={{ background: 'linear-gradient(135deg, var(--purple), var(--indigo))', color: '#fff', boxShadow: '0 0 30px color-mix(in srgb, var(--purple) 25%, transparent)' }}>
+                    Start Guided Assessment →
+                  </button>
                 </div>
 
                 <div className="rounded-2xl p-5 space-y-4"
@@ -959,9 +1067,9 @@ function GrowthHubInner() {
                       1
                     </div>
                     <div>
-                      <p className="text-[color:var(--text-primary)] text-sm font-bold mb-0.5">Layer 1 — 4 P's Profiling ({LAYER1_TOTAL} questions)</p>
+                      <p className="text-[color:var(--text-primary)] text-sm font-bold mb-0.5">Academic context</p>
                       <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">
-                        Broad questions across Passion, Proficiency, Pay, and Priorities. Options cover ALL career types — analytical, creative, management, operations, social, entrepreneurial, and more. No bias toward tech.
+                        We begin with your education level and grades so the guidance feels grounded in your current reality.
                       </p>
                     </div>
                   </div>
@@ -971,24 +1079,44 @@ function GrowthHubInner() {
                       2
                     </div>
                     <div>
-                      <p className="text-[color:var(--text-primary)] text-sm font-bold mb-0.5">Layer 2 — Personalised Ikigai (4 adaptive questions)</p>
+                      <p className="text-[color:var(--text-primary)] text-sm font-bold mb-0.5">Career discovery</p>
                       <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">
-                        Based on your Layer 1 profile, the system generates Ikigai questions with options tailored to YOUR specific profile mix — not generic options. This finds your true career sweet spot.
+                        We then explore your interests and the kind of day-to-day work that would genuinely suit you.
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 items-start">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black"
+                      style={{ background: 'var(--accent-bg)', border: '1px solid color-mix(in srgb, var(--accent) 25%, transparent)', color: 'var(--accent)' }}>
+                      3
+                    </div>
+                    <div>
+                      <p className="text-[color:var(--text-primary)] text-sm font-bold mb-0.5">Career match + roadmap</p>
+                      <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">
+                        Finally, we map your profile to realistic career paths and suggest the next steps to explore.
                       </p>
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
 
-                <div className="grid grid-cols-2 gap-3">
-                  {layer1Sections.map(s => (
-                    <div key={s.id} className="rounded-2xl p-4"
-                      style={{ background: s.accent, border: `1px solid ${s.border}` }}>
-                      <div className="text-xl mb-2">{s.emoji}</div>
-                      <p className="font-bold text-sm text-[color:var(--text-primary)]">{s.label}</p>
-                      <p className="text-xs mt-0.5" style={{ color: s.color }}>{s.subtitle}</p>
-                      <p className="text-[color:var(--text-muted)] text-xs mt-1">{s.questions.length} questions</p>
-                    </div>
-                  ))}
+            {!testStarted && !testResult && assessmentStage === 'discovery' && (
+              <div className="space-y-5">
+                <div className="rounded-3xl p-6 md:p-7"
+                  style={{ background: 'var(--bg-card)', border: '1px solid var(--border)' }}>
+                  <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2">Step {discoveryStep + 1} of {discoveryQuestions.length}</p>
+                  <h3 className="text-lg font-black mb-3">A few deeper questions</h3>
+                  <p className="text-[color:var(--text-secondary)] text-sm leading-relaxed mb-4">{discoveryQuestions[discoveryStep].q}</p>
+                  <div className="space-y-2.5">
+                    {discoveryQuestions[discoveryStep].options.map((opt, i) => (
+                      <button key={i} onClick={() => handleDiscoveryOption(i)}
+                        className="w-full text-left px-4 py-3 rounded-2xl text-sm font-medium transition-all"
+                        style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', color: 'var(--text-secondary)' }}>
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}

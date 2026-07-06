@@ -4,17 +4,28 @@ import Groq from "groq-sdk";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 export async function POST(req: NextRequest) {
-  const { answers, questions } = await req.json();
+  const {
+    layer1Answers,
+    layer2Answers,
+    layer1Questions,
+    layer2Questions,
+    topProfiles,
+    academicBackground,
+    discoveryAnswers,
+  } = await req.json();
 
-  const combined = questions.map((q: string, i: number) => 
-    `Q: ${q}\nA: ${answers[i]}`
-  ).join("\n\n");
+  const combined = [
+    academicBackground ? `Academic background: Education Level - ${academicBackground.educationLevel || 'Not provided'}; Marks/Grades - ${academicBackground.marks || 'Not provided'}; Notes - ${academicBackground.notes || 'Not provided'}` : '',
+    discoveryAnswers?.length ? `Discovery answers:\n${discoveryAnswers.map((a: string, i: number) => `${i + 1}. ${a}`).join('\n')}` : '',
+    layer1Questions?.length ? `Layer 1 questions and answers:\n${layer1Questions.map((q: string, i: number) => `Q: ${q}\nA: ${layer1Answers?.[i] || 'Not answered'}`).join('\n\n')}` : '',
+    layer2Questions?.length ? `Ikigai questions and answers:\n${layer2Questions.map((q: string, i: number) => `Q: ${q}\nA: ${layer2Answers?.[i] || 'Not answered'}`).join('\n\n')}` : '',
+  ].filter(Boolean).join('\n\n');
 
   const prompt = `
-You are a supportive career counselor for confused students. Based on these quiz answers, suggest the top 3 career paths and give practical career advice.
+You are an experienced career counselor helping a student who is confused about their future. Use the academic background, discovery answers, and personality-style responses to provide realistic and practical guidance.
 Return ONLY a JSON object, no extra text.
 
-Quiz Answers:
+Student Profile:
 ${combined}
 
 Return this exact JSON:
