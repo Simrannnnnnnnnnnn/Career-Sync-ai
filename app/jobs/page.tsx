@@ -192,7 +192,7 @@ export default function JobTracker() {
             </div>
 
             <button
-              onClick={() => router.push('/roadmap')}
+              onClick={() => router.push('/growth?tab=roadmap')}
               className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all duration-300 hover:scale-[1.02]"
               style={{ background: `linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black))`, color: '#fff', boxShadow: '0 4px 14px var(--accent-bg)' }}
             >
@@ -253,7 +253,7 @@ export default function JobTracker() {
                 />
               </div>
               <button
-                onClick={() => router.push('/career-test')}
+                onClick={() => router.push('/growth?tab=career-test')}
                 className="w-full text-center py-2 rounded-xl text-xs font-semibold transition-all duration-200"
                 style={{ background: 'var(--purple-bg)', color: 'var(--purple)', border: '1px solid var(--purple-bg)' }}
                 onMouseEnter={e => { e.currentTarget.style.background = 'var(--purple)'; e.currentTarget.style.color = '#fff' }}

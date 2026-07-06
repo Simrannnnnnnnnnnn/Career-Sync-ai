@@ -1,7 +1,7 @@
 'use client'
-
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
 type ProfileKey = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H'
 
@@ -338,9 +338,14 @@ const glass = {
 
 const inputClass =
   'w-full rounded-2xl px-4 py-3 text-[color:var(--text-primary)] text-sm placeholder-[color:var(--text-faint)] focus:outline-none focus:ring-1 transition resize-none'
-
-export default function GrowthHub() {
+function GrowthHubInner() {
   const [activeTab, setActiveTab] = useState('linkedin')
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const tab = searchParams.get('tab')
+    if (tab) setActiveTab(tab)
+  }, [searchParams])
 
   const [headline, setHeadline] = useState('')
   const [about, setAbout]       = useState('')
@@ -1068,5 +1073,17 @@ export default function GrowthHub() {
 
       </div>
     </div>
+  )
+}
+
+export default function GrowthHub() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
+        <div className="w-8 h-8 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
+      </div>
+    }>
+      <GrowthHubInner />
+    </Suspense>
   )
 }
