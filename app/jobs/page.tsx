@@ -146,7 +146,7 @@ export default function JobTracker() {
               Job Tracker
             </h1>
             <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
-              Optimize your application pipeline
+              Organize and track your job applications in one place
             </p>
           </div>
           <div className="flex items-center gap-3">
@@ -183,28 +183,19 @@ export default function JobTracker() {
                 className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full"
                 style={{ color: 'var(--accent)', background: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}
               >
-                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} /> Growth Analytics
+                <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} /> Application Overview
               </span>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Career Momentum</h2>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Stay on top of every opportunity</h2>
               <p className="text-sm max-w-xl" style={{ color: 'var(--text-secondary)' }}>
-                You're tracking a total of <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{jobs.length} jobs</span>. Keep applying consistently and monitor your metrics.
+                You are tracking <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{jobs.length} applications</span>. Keep your search organized and review your progress regularly.
               </p>
             </div>
-
-            <button
-              onClick={() => router.push('/growth?tab=roadmap')}
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl font-medium text-sm transition-all duration-300 hover:scale-[1.02]"
-              style={{ background: `linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 80%, black))`, color: '#fff', boxShadow: '0 4px 14px var(--accent-bg)' }}
-            >
-              <span>View Career Roadmap</span>
-              <span className="text-xs">⚡</span>
-            </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
 
-          <div className="lg:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {COLS.map(col => {
               const count = jobs.filter(j => j.status === col.id).length
               return (
@@ -227,42 +218,6 @@ export default function JobTracker() {
             })}
           </div>
 
-          <div
-            className="rounded-2xl p-5 flex flex-col justify-between"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--purple-bg)' }}
-          >
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-semibold tracking-wide uppercase" style={{ color: 'var(--purple)' }}>Evaluate Skills</h3>
-                <span
-                  className="text-[10px] rounded-full px-2 py-0.5 font-medium"
-                  style={{ background: 'var(--purple-bg)', color: 'var(--purple)', border: '1px solid var(--purple-bg)' }}
-                >
-                  Quick Test
-                </span>
-              </div>
-              <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Take a career test to check your technical competence and industry alignment.
-              </p>
-            </div>
-            <div className="space-y-3">
-              <div className="w-full rounded-full h-1.5 overflow-hidden" style={{ background: 'var(--bg-subtle)' }}>
-                <div
-                  className="h-full rounded-full w-[65%] transition-all duration-500"
-                  style={{ background: 'var(--purple)', boxShadow: '0 0 8px var(--purple-bg)' }}
-                />
-              </div>
-              <button
-                onClick={() => router.push('/growth?tab=career-test')}
-                className="w-full text-center py-2 rounded-xl text-xs font-semibold transition-all duration-200"
-                style={{ background: 'var(--purple-bg)', color: 'var(--purple)', border: '1px solid var(--purple-bg)' }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'var(--purple)'; e.currentTarget.style.color = '#fff' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'var(--purple-bg)'; e.currentTarget.style.color = 'var(--purple)' }}
-              >
-                Start Career Test →
-              </button>
-            </div>
-          </div>
         </div>
 
         <div className="flex items-center justify-between pb-3" style={{ borderBottom: '1px solid var(--border)' }}>
@@ -301,7 +256,7 @@ export default function JobTracker() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-3">
             <div className="w-6 h-6 border-2 rounded-full animate-spin" style={{ borderColor: 'var(--accent)', borderTopColor: 'transparent' }} />
-            <div className="text-sm tracking-wide" style={{ color: 'var(--text-muted)' }}>Syncing your pipeline...</div>
+            <div className="text-sm tracking-wide" style={{ color: 'var(--text-muted)' }}>Refreshing your applications...</div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 items-start">
@@ -332,7 +287,7 @@ export default function JobTracker() {
                         className="rounded-xl p-6 text-center text-xs"
                         style={{ border: `1px dashed ${col.border}`, color: 'var(--text-faint)', background: 'var(--bg-card)' }}
                       >
-                        No jobs yet
+                        No applications yet
                       </div>
                     ) : (
                       colJobs.map(job => (

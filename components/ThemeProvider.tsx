@@ -9,22 +9,66 @@ const ThemeContext = createContext<{
   toggle: () => void
 }>({ theme: 'dark', toggle: () => {} })
 
+function getSystemTheme(): Theme {
+  if (typeof window === 'undefined') return 'dark'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+}
+
+function getStoredTheme(): Theme | null {
+  if (typeof window === 'undefined') return null
+  const stored = window.localStorage.getItem('cs-theme')
+  return stored === 'dark' || stored === 'light' ? stored : null
+}
+
+function applyTheme(theme: Theme) {
+  if (typeof document === 'undefined') return
+  document.documentElement.setAttribute('data-theme', theme)
+  document.documentElement.style.colorScheme = theme
+}
+
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>('dark')
+  const [theme, setTheme] = useState<Theme>(() => {
+    if (typeof window === 'undefined') return 'dark'
+    const storedTheme = getStoredTheme()
+    const initialTheme = storedTheme ?? getSystemTheme()
+    applyTheme(initialTheme)
+    return initialTheme
+  })
 
   useEffect(() => {
-    const stored = localStorage.getItem('cs-theme') as Theme | null
-    const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
-    const initial = stored ?? preferred
-    setTheme(initial)
-    document.documentElement.setAttribute('data-theme', initial)
+    const syncTheme = () => {
+      const storedTheme = getStoredTheme()
+      const initialTheme = storedTheme ?? getSystemTheme()
+      setTheme(initialTheme)
+      applyTheme(initialTheme)
+    }
+
+    syncTheme()
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleSystemThemeChange = () => {
+      const storedTheme = getStoredTheme()
+      if (!storedTheme) {
+        const nextTheme = getSystemTheme()
+        setTheme(nextTheme)
+        applyTheme(nextTheme)
+      }
+    }
+
+    mediaQuery.addEventListener?.('change', handleSystemThemeChange)
+    window.addEventListener('storage', syncTheme)
+
+    return () => {
+      mediaQuery.removeEventListener?.('change', handleSystemThemeChange)
+      window.removeEventListener('storage', syncTheme)
+    }
   }, [])
 
   const toggle = () => {
     setTheme(prev => {
       const next = prev === 'dark' ? 'light' : 'dark'
-      localStorage.setItem('cs-theme', next)
-      document.documentElement.setAttribute('data-theme', next)
+      window.localStorage.setItem('cs-theme', next)
+      applyTheme(next)
       return next
     })
   }
