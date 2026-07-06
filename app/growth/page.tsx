@@ -326,6 +326,8 @@ function computeTopProfiles(answers: { profile: ProfileKey }[]): ProfileKey[] {
 
 const TABS = [
   { id: 'linkedin',     label: '🔗 LinkedIn',   fullLabel: '🔗 LinkedIn Optimizer' },
+  { id: 'github',       label: '💻 GitHub',     fullLabel: '💻 GitHub Optimizer' },
+  { id: 'portfolio',    label: '🌐 Portfolio',  fullLabel: '🌐 Portfolio Optimizer' },
   { id: 'career-test', label: '🧪 Career Test', fullLabel: '🧪 Career Path Test'  },
   { id: 'roadmap',     label: '🗺️ Roadmap',     fullLabel: '🗺️ Learning Roadmap'  },
 ]
@@ -353,6 +355,14 @@ function GrowthHubInner() {
   const [linkedinLoading, setLinkedinLoading] = useState(false)
   const [linkedinResult,  setLinkedinResult]  = useState<any>(null)
 
+  const [githubUrl, setGithubUrl] = useState('')
+  const [githubLoading, setGithubLoading] = useState(false)
+  const [githubResult, setGithubResult] = useState<any>(null)
+
+  const [portfolioUrl, setPortfolioUrl] = useState('')
+  const [portfolioLoading, setPortfolioLoading] = useState(false)
+  const [portfolioResult, setPortfolioResult] = useState<any>(null)
+
   const [testStarted,    setTestStarted]    = useState(false)
   const [layer,          setLayer]          = useState<1|2>(1)
   const [currentQ,       setCurrentQ]       = useState(0)
@@ -378,6 +388,34 @@ function GrowthHubInner() {
       setLinkedinResult(await res.json())
     } catch (err) { console.error(err) }
     finally { setLinkedinLoading(false) }
+  }
+
+  async function analyzeGitHub() {
+    if (!githubUrl.trim()) return
+    setGithubLoading(true); setGithubResult(null)
+    try {
+      const res = await fetch('/api/profile_analyzer/github', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ githubUrl }),
+      })
+      const data = await res.json()
+      setGithubResult(data.result || null)
+    } catch (err) { console.error(err) }
+    finally { setGithubLoading(false) }
+  }
+
+  async function analyzePortfolio() {
+    if (!portfolioUrl.trim()) return
+    setPortfolioLoading(true); setPortfolioResult(null)
+    try {
+      const res = await fetch('/api/profile_analyzer/portfolio', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ portfolioUrl }),
+      })
+      const data = await res.json()
+      setPortfolioResult(data.result || null)
+    } catch (err) { console.error(err) }
+    finally { setPortfolioLoading(false) }
   }
 
   function handleOptionClick(idx: number) {
@@ -506,7 +544,7 @@ function GrowthHubInner() {
                 Level Up <span style={{ color: 'var(--accent)' }}>Your Career</span> 🚀
               </h1>
               <p className="text-[color:var(--text-muted)] text-sm md:text-base">
-                LinkedIn optimizer · 4 P's career test · AI learning roadmap
+                LinkedIn, GitHub, and portfolio optimizers · 4 P's career test · AI learning roadmap
               </p>
               <div className="flex flex-wrap gap-2 mt-4">
                 {[
@@ -650,6 +688,220 @@ function GrowthHubInner() {
                         <li key={i} className="flex gap-3 text-sm">
                           <span style={{ color: 'var(--accent)' }} className="font-bold mt-0.5 flex-shrink-0">→</span>
                           <span className="text-[color:var(--text-secondary)] leading-relaxed">{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'github' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
+              style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}>
+              <span style={{ color: 'var(--accent)' }} className="mt-0.5 text-base">💻</span>
+              <p className="text-[color:var(--text-secondary)] text-xs leading-relaxed">
+                Paste your GitHub profile URL. We will review your repositories, highlight your strongest work, and suggest which projects should appear on your resume and portfolio.
+              </p>
+            </div>
+
+            <div>
+              <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">GitHub Profile URL</label>
+              <input type="text" value={githubUrl} onChange={e => setGithubUrl(e.target.value)}
+                placeholder="https://github.com/yourusername"
+                className={inputClass} style={glass} />
+            </div>
+
+            <button onClick={analyzeGitHub}
+              disabled={githubLoading || !githubUrl.trim()}
+              className="w-full font-bold py-3.5 rounded-2xl transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                background: githubLoading ? 'var(--accent-bg)' : `linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 80%, black) 100%)`,
+                color: '#fff',
+                boxShadow: githubLoading ? 'none' : '0 0 40px var(--accent-bg)',
+              }}>
+              {githubLoading
+                ? <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid color-mix(in srgb, var(--accent) 30%, transparent)', borderTopColor: 'var(--accent)' }} />
+                    Analyzing your GitHub profile...
+                  </span>
+                : '🔍 Analyze GitHub Profile'}
+            </button>
+
+            {githubResult && (
+              <div className="space-y-3 mt-2">
+                <div className="rounded-2xl p-5" style={glass}>
+                  <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">Profile Score</p>
+                  <div className="flex items-end gap-2 mb-3">
+                    <span className="text-5xl font-black" style={{ color: githubResult.score >= 70 ? 'var(--accent)' : githubResult.score >= 50 ? 'var(--amber)' : '#ef4444' }}>{githubResult.score}</span>
+                    <span className="text-[color:var(--text-faint)] text-xl mb-1.5">/100</span>
+                  </div>
+                  <p className="text-[color:var(--text-secondary)] text-sm mb-2">{githubResult.verdict}</p>
+                  <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">Use the strongest repositories as resume bullet points and portfolio case studies.</p>
+                </div>
+                {githubResult.profileSummary && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">Quick Profile Snapshot</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-[color:var(--text-faint)] text-[10px] uppercase tracking-wider">Repositories</p>
+                        <p className="text-[color:var(--text-primary)] font-semibold">{githubResult.profileSummary.totalRepos}</p>
+                      </div>
+                      <div>
+                        <p className="text-[color:var(--text-faint)] text-[10px] uppercase tracking-wider">Languages</p>
+                        <p className="text-[color:var(--text-primary)] font-semibold">{(githubResult.profileSummary.activeLanguages || []).join(', ') || '—'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {githubResult.strengths?.length > 0 && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">✅ Strengths</p>
+                    <ul className="space-y-2">
+                      {githubResult.strengths.map((item: string, i: number) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span style={{ color: 'var(--accent)' }} className="font-bold">•</span>
+                          <span className="text-[color:var(--text-secondary)]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {githubResult.improvements?.length > 0 && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">📈 What to Improve</p>
+                    <ul className="space-y-2">
+                      {githubResult.improvements.map((item: string, i: number) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span style={{ color: 'var(--amber)' }} className="font-bold">→</span>
+                          <span className="text-[color:var(--text-secondary)]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {githubResult.quickWins?.length > 0 && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">⚡ Quick Wins</p>
+                    <ul className="space-y-2">
+                      {githubResult.quickWins.map((item: string, i: number) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span style={{ color: 'var(--purple)' }} className="font-bold">•</span>
+                          <span className="text-[color:var(--text-secondary)]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {activeTab === 'portfolio' && (
+          <div className="space-y-4">
+            <div className="rounded-2xl px-4 py-3 flex items-start gap-3"
+              style={{ background: 'var(--accent-bg)', border: '1px solid var(--accent-border)' }}>
+              <span style={{ color: 'var(--accent)' }} className="mt-0.5 text-base">🌐</span>
+              <p className="text-[color:var(--text-secondary)] text-xs leading-relaxed">
+                Share your portfolio website URL. We will review the content structure, clarity, and recruiter-friendliness, then suggest what to fix to make it stronger.
+              </p>
+            </div>
+
+            <div>
+              <label className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2 block">Portfolio Website URL</label>
+              <input type="text" value={portfolioUrl} onChange={e => setPortfolioUrl(e.target.value)}
+                placeholder="https://yourportfolio.com"
+                className={inputClass} style={glass} />
+            </div>
+
+            <button onClick={analyzePortfolio}
+              disabled={portfolioLoading || !portfolioUrl.trim()}
+              className="w-full font-bold py-3.5 rounded-2xl transition-all text-sm disabled:opacity-30 disabled:cursor-not-allowed"
+              style={{
+                background: portfolioLoading ? 'var(--accent-bg)' : `linear-gradient(135deg, var(--accent) 0%, color-mix(in srgb, var(--accent) 80%, black) 100%)`,
+                color: '#fff',
+                boxShadow: portfolioLoading ? 'none' : '0 0 40px var(--accent-bg)',
+              }}>
+              {portfolioLoading
+                ? <span className="flex items-center justify-center gap-2">
+                    <span className="w-4 h-4 rounded-full animate-spin" style={{ border: '2px solid color-mix(in srgb, var(--accent) 30%, transparent)', borderTopColor: 'var(--accent)' }} />
+                    Reviewing your portfolio...
+                  </span>
+                : '🔍 Analyze Portfolio'}
+            </button>
+
+            {portfolioResult && (
+              <div className="space-y-3 mt-2">
+                <div className="rounded-2xl p-5" style={glass}>
+                  <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">Portfolio Score</p>
+                  <div className="flex items-end gap-2 mb-3">
+                    <span className="text-5xl font-black" style={{ color: portfolioResult.score >= 70 ? 'var(--accent)' : portfolioResult.score >= 50 ? 'var(--amber)' : '#ef4444' }}>{portfolioResult.score}</span>
+                    <span className="text-[color:var(--text-faint)] text-xl mb-1.5">/100</span>
+                  </div>
+                  <p className="text-[color:var(--text-secondary)] text-sm mb-2">{portfolioResult.verdict}</p>
+                  <p className="text-[color:var(--text-muted)] text-xs leading-relaxed">Your portfolio should clearly show what you built, the impact, and why recruiters should care.</p>
+                </div>
+                {portfolioResult.detected && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">What We Detected</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-[color:var(--text-faint)] text-[10px] uppercase tracking-wider">About Section</p>
+                        <p className="text-[color:var(--text-primary)] font-semibold">{portfolioResult.detected.hasAboutSection ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[color:var(--text-faint)] text-[10px] uppercase tracking-wider">Projects</p>
+                        <p className="text-[color:var(--text-primary)] font-semibold">{portfolioResult.detected.hasProjects ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[color:var(--text-faint)] text-[10px] uppercase tracking-wider">Contact Info</p>
+                        <p className="text-[color:var(--text-primary)] font-semibold">{portfolioResult.detected.hasContactInfo ? 'Yes' : 'No'}</p>
+                      </div>
+                      <div>
+                        <p className="text-[color:var(--text-faint)] text-[10px] uppercase tracking-wider">Resume Link</p>
+                        <p className="text-[color:var(--text-primary)] font-semibold">{portfolioResult.detected.hasResumeLink ? 'Yes' : 'No'}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {portfolioResult.strengths?.length > 0 && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">✅ Strengths</p>
+                    <ul className="space-y-2">
+                      {portfolioResult.strengths.map((item: string, i: number) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span style={{ color: 'var(--accent)' }} className="font-bold">•</span>
+                          <span className="text-[color:var(--text-secondary)]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {portfolioResult.improvements?.length > 0 && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">📈 What to Improve</p>
+                    <ul className="space-y-2">
+                      {portfolioResult.improvements.map((item: string, i: number) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span style={{ color: 'var(--amber)' }} className="font-bold">→</span>
+                          <span className="text-[color:var(--text-secondary)]">{item}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {portfolioResult.quickWins?.length > 0 && (
+                  <div className="rounded-2xl p-5" style={glass}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-3">⚡ Quick Wins</p>
+                    <ul className="space-y-2">
+                      {portfolioResult.quickWins.map((item: string, i: number) => (
+                        <li key={i} className="flex gap-2 text-sm">
+                          <span style={{ color: 'var(--purple)' }} className="font-bold">•</span>
+                          <span className="text-[color:var(--text-secondary)]">{item}</span>
                         </li>
                       ))}
                     </ul>
