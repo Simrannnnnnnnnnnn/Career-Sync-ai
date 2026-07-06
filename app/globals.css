@@ -3,7 +3,6 @@
 @tailwind utilities;
 
 /* ─── DARK THEME (default) ─── */
-:root,
 [data-theme='dark'],
 :root:not([data-theme]) {
   --bg-base:        #09090b;
