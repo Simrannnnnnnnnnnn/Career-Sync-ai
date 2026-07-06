@@ -73,7 +73,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Avatar + Name Card */}
-        <div className="relative rounded-3xl p-6 md:p-8 mb-4 overflow-hidden"
+        <div id="profile-overview" className="relative rounded-3xl p-6 md:p-8 mb-4 overflow-hidden"
           style={{
             background: `linear-gradient(135deg, var(--accent-bg) 0%, var(--purple-bg) 50%, var(--blue-bg) 100%)`,
             border: '1px solid var(--accent-border)',
@@ -184,7 +184,7 @@ export default function ProfilePage() {
                 Links &amp; Portfolio
               </p>
               {!hasLinks && (
-                <Link href="/onboarding" className="text-[10px] font-semibold" style={{ color: 'var(--accent)' }}>
+                <Link href="/profile#links-section" className="text-[10px] font-semibold" style={{ color: 'var(--accent)' }}>
                   + Add links
                 </Link>
               )}
@@ -218,7 +218,7 @@ export default function ProfilePage() {
 
             <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
               <ActionRow
-                href="/onboarding"
+                href="/profile#profile-overview"
                 icon="✏️"
                 label="Edit Profile"
                 desc="Update your info, target role & links"

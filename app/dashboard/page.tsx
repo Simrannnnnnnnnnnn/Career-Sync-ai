@@ -564,7 +564,7 @@ export default function Dashboard() {
               </div>
             </div>
             <Link
-              href="/onboarding"
+              href="/profile"
               style={{
                 fontSize: 12, color: 'var(--text-secondary)', textDecoration: 'none',
                 padding: '7px 14px', borderRadius: 10, border: '1px solid var(--border-strong)',
