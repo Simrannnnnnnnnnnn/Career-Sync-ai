@@ -1166,6 +1166,14 @@ function GrowthHubInner() {
                   </div>
                 )}
 
+                {testResult.advice && (
+                  <div className="rounded-2xl p-5"
+                    style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent) 0%, color-mix(in srgb, var(--purple) 8%, transparent) 100%)', border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)' }}>
+                    <p className="text-[color:var(--text-muted)] text-[10px] font-bold tracking-[0.15em] uppercase mb-2">💡 Career Advice</p>
+                    <p className="text-[color:var(--text-secondary)] text-sm leading-relaxed">{testResult.advice}</p>
+                  </div>
+                )}
+
                 {testResult.profileBreakdown && (
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     {layer1Sections.map(s => (
@@ -1206,15 +1214,53 @@ function GrowthHubInner() {
                         }} />
                     </div>
                     <p className="text-[color:var(--text-muted)] text-xs leading-relaxed mb-3">{career.reason}</p>
-                    {career.strengths && (
-                      <div className="flex flex-wrap gap-1.5 mb-3">
-                        {career.strengths.map((s: string, j: number) => (
-                          <span key={j} className="text-[10px] px-2 py-1 rounded-full"
-                            style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
-                            {s}
-                          </span>
-                        ))}
+                    {career.ikigaiFit && (
+                      <p className="text-[11px] mb-3" style={{ color: 'var(--purple)' }}>☯ {career.ikigaiFit}</p>
+                    )}
+                    {career.bestFor && (
+                      <p className="text-[11px] mb-2" style={{ color: 'var(--text-secondary)' }}><span className="font-semibold">Best for:</span> {career.bestFor}</p>
+                    )}
+                    {career.strengths?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Strengths</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {career.strengths.map((s: string, j: number) => (
+                            <span key={j} className="text-[10px] px-2 py-1 rounded-full"
+                              style={{ background: 'var(--bg-muted)', border: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+                              {s}
+                            </span>
+                          ))}
+                        </div>
                       </div>
+                    )}
+                    {career.skillsToBuild?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Skills to build</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {career.skillsToBuild.map((s: string, j: number) => (
+                            <span key={j} className="text-[10px] px-2 py-1 rounded-full"
+                              style={{ background: 'color-mix(in srgb, var(--accent) 10%, transparent)', border: '1px solid color-mix(in srgb, var(--accent) 20%, transparent)', color: 'var(--accent)' }}>
+                              {s}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                    {career.nextSteps?.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>Next steps</p>
+                        <ul className="space-y-1">
+                          {career.nextSteps.map((step: string, j: number) => (
+                            <li key={j} className="flex gap-2 text-[11px]" style={{ color: 'var(--text-secondary)' }}>
+                              <span className="font-bold" style={{ color: 'var(--accent)' }}>•</span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {career.watchOut && (
+                      <p className="text-[11px] mb-3" style={{ color: 'var(--amber)' }}><span className="font-semibold">Watch out:</span> {career.watchOut}</p>
                     )}
                     <button onClick={() => handleBuildRoadmap(career.title)}
                       className="text-xs px-3.5 py-1.5 rounded-xl font-semibold transition-all"

@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   ).join("\n\n");
 
   const prompt = `
-You are a career counselor. Based on these quiz answers, suggest the top 3 career paths.
+You are a supportive career counselor for confused students. Based on these quiz answers, suggest the top 3 career paths and give practical career advice.
 Return ONLY a JSON object, no extra text.
 
 Quiz Answers:
@@ -19,21 +19,47 @@ ${combined}
 
 Return this exact JSON:
 {
+  "ikigaiSummary": "A short and encouraging summary of the student's core career personality and motivation",
+  "profileBreakdown": {
+    "passion": "One line about their motivation and interests",
+    "proficiency": "One line about their strengths and skill fit",
+    "pay": "One line about their financial priorities",
+    "priorities": "One line about what matters most in a career"
+  },
+  "advice": "A clear, practical career guidance paragraph that tells the student what to do next and how to think about their career choice",
   "careers": [
     {
       "title": "Career Path Name",
       "match": <number 60-99>,
-      "reason": "2-3 lines explaining why this suits them based on their answers"
+      "reason": "2-3 lines explaining why this suits them based on their answers",
+      "ikigaiFit": "A short sentence connecting this career to their personal purpose and strengths",
+      "strengths": ["Skill or trait 1", "Skill or trait 2", "Skill or trait 3"],
+      "skillsToBuild": ["Skill to learn 1", "Skill to learn 2", "Skill to learn 3"],
+      "nextSteps": ["First practical action", "Second practical action", "Third practical action"],
+      "bestFor": "Who this path is best suited for",
+      "watchOut": "One realistic challenge or caution"
     },
     {
-      "title": "Career Path Name", 
+      "title": "Career Path Name",
       "match": <number 50-90>,
-      "reason": "2-3 lines explaining why"
+      "reason": "2-3 lines explaining why",
+      "ikigaiFit": "A short sentence connecting this career to their personal purpose and strengths",
+      "strengths": ["Skill or trait 1", "Skill or trait 2", "Skill or trait 3"],
+      "skillsToBuild": ["Skill to learn 1", "Skill to learn 2", "Skill to learn 3"],
+      "nextSteps": ["First practical action", "Second practical action", "Third practical action"],
+      "bestFor": "Who this path is best suited for",
+      "watchOut": "One realistic challenge or caution"
     },
     {
       "title": "Career Path Name",
       "match": <number 40-80>,
-      "reason": "2-3 lines explaining why"
+      "reason": "2-3 lines explaining why",
+      "ikigaiFit": "A short sentence connecting this career to their personal purpose and strengths",
+      "strengths": ["Skill or trait 1", "Skill or trait 2", "Skill or trait 3"],
+      "skillsToBuild": ["Skill to learn 1", "Skill to learn 2", "Skill to learn 3"],
+      "nextSteps": ["First practical action", "Second practical action", "Third practical action"],
+      "bestFor": "Who this path is best suited for",
+      "watchOut": "One realistic challenge or caution"
     }
   ]
 }
