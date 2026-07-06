@@ -188,9 +188,9 @@ export default function JobTracker() {
               >
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} /> Application Overview
               </span>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Stay on top of every opportunity</h2>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Stay organized throughout your job search</h2>
               <p className="text-sm max-w-xl" style={{ color: 'var(--text-secondary)' }}>
-                You are tracking <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{jobs.length} applications</span>. Keep your search organized and review your progress regularly.
+                You are tracking <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{jobs.length} applications</span>. Keep your search structured and review your progress regularly.
               </p>
             </div>
           </div>

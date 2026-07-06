@@ -188,9 +188,9 @@ export default function JobTracker() {
               >
                 <span className="w-1.5 h-1.5 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} /> Growth Analytics
               </span>
-              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Career Momentum</h2>
+              <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Your Career Progress</h2>
               <p className="text-sm max-w-xl" style={{ color: 'var(--text-secondary)' }}>
-                You're tracking a total of <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{jobs.length} jobs</span>. Keep applying consistently and monitor your metrics.
+                You are tracking <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{jobs.length} opportunities</span>. Keep applying consistently and review your progress regularly.
               </p>
             </div>
 
@@ -245,7 +245,7 @@ export default function JobTracker() {
                 </span>
               </div>
               <p className="text-xs mb-4 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
-                Take a career test to check your technical competence and industry alignment.
+                Take a quick career test to assess your strengths and identify the best fit for your next step.
               </p>
             </div>
             <div className="space-y-3">
