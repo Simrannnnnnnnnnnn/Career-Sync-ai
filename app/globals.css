@@ -4,7 +4,8 @@
 
 /* ─── DARK THEME (default) ─── */
 :root,
-[data-theme='dark'] {
+[data-theme='dark'],
+:root:not([data-theme]) {
   --bg-base:        #09090b;
   --bg-card:        #141416;
   --bg-card-hover:  #1c1c1f;
