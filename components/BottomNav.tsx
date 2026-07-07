@@ -3,7 +3,6 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState } from 'react'
-import { useTheme } from '@/components/ThemeProvider'
 
 const NAV_ITEMS = [
   {
@@ -91,27 +90,11 @@ export default function BottomNav() {
   const pathname = usePathname()
   const router = useRouter()
   const [showPracticeSheet, setShowPracticeSheet] = useState(false)
-  const { theme } = useTheme()
 
   const hideOn = ['/login', '/onboarding', '/interview/session', '/interview/report']
   if (hideOn.some(p => pathname.startsWith(p))) return null
 
   const isPracticeActive = pathname.startsWith('/interview')
-
-  // Nav background: dark = glass blur, light = solid white with shadow
-  const navBg = theme === 'dark'
-    ? 'rgba(9,9,11,0.88)'
-    : 'rgba(255,255,255,0.92)'
-
-  const navBorder = theme === 'dark'
-    ? '1px solid rgba(255,255,255,0.07)'
-    : '1px solid rgba(0,0,0,0.08)'
-
-  const sheetBg = theme === 'dark' ? '#111113' : '#ffffff'
-  const sheetBorder = theme === 'dark'
-    ? '1px solid rgba(255,255,255,0.08)'
-    : '1px solid rgba(0,0,0,0.08)'
-  const handleBg = theme === 'dark' ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'
 
   return (
     <>
@@ -119,10 +102,10 @@ export default function BottomNav() {
       <nav
         className="fixed bottom-0 left-0 right-0 z-50 flex justify-around items-center px-2 py-2 pb-safe"
         style={{
-          background: navBg,
+          background: 'var(--nav-bg)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          borderTop: navBorder,
+          borderTop: 'var(--nav-border)',
           transition: 'background 0.25s ease, border-color 0.25s ease',
         }}
       >
@@ -193,8 +176,8 @@ export default function BottomNav() {
           {/* Sheet */}
           <div style={{
             position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 70,
-            background: sheetBg,
-            borderTop: sheetBorder,
+            background: 'var(--sheet-bg)',
+            borderTop: 'var(--sheet-border)',
             borderRadius: '20px 20px 0 0',
             padding: '20px 20px 40px',
             transition: 'background 0.25s ease',
@@ -203,7 +186,7 @@ export default function BottomNav() {
             {/* Handle */}
             <div style={{
               width: 36, height: 4, borderRadius: 99,
-              background: handleBg,
+              background: 'var(--handle-bg)',
               margin: '0 auto 20px',
             }} />
 
