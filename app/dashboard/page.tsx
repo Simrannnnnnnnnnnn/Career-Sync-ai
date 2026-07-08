@@ -48,17 +48,6 @@ const FEATURES = [
     badge: null,
   },
   {
-    href: '/profile-optimizer',
-    icon: '🚀',
-    title: 'Profile Optimizer',
-    desc: 'GitHub, LinkedIn, StackOverflow & portfolio scores',
-    color: 'var(--accent)',
-    bg: 'var(--accent-bg)',
-    badge: 'NEW',
-    badgeColor: 'var(--accent)',
-    badgeBg: 'var(--accent-bg)',
-  },
-  {
     href: '/growth',
     icon: '📈',
     title: 'Growth Hub',
