@@ -33,7 +33,7 @@ Make 3-4 phases. Keep it practical and beginner-friendly.
 
   try {
     const completion = await groq.chat.completions.create({
-      model: "llama-3.3-70b-versatile",
+      model: "openai/gpt-oss-20b",
       messages: [{ role: "user", content: prompt }],
       temperature: 0.7,
     });

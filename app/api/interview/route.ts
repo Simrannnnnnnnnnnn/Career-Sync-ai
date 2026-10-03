@@ -37,7 +37,7 @@ async function tryCerebras(systemPrompt: string, messages: any[], maxTokens: num
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
-      model: 'llama-3.3-70b',
+      model: 'openai/gpt-oss-120b',
       messages: [{ role: 'system', content: systemPrompt }, ...messages],
       max_tokens: maxTokens,
       temperature: 0.7,
@@ -59,7 +59,7 @@ async function tryGroq(systemPrompt: string, messages: any[], maxTokens: number)
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
     body: JSON.stringify({
-      model: 'llama-3.3-70b-versatile',
+      model: 'openai/gpt-oss-120b',
       messages: [{ role: 'system', content: systemPrompt }, ...messages],
       max_tokens: maxTokens,
       temperature: 0.7,
